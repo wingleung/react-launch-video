@@ -1,0 +1,24 @@
+{
+  "name": "relay-web",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "description": "Relay: a small issue tracker. Test fixture for the product-reel plugin.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.2.8",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "5.1.0",
+    "typescript": "5.9.3",
+    "vite": "7.1.12"
+  }
+}

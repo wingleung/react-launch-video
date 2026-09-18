@@ -1,0 +1,12 @@
+node_modules/
+out/
+evals/results/
+.DS_Store
+dist/
+
+# Patterns the leak gate should also catch on this machine, never in the repo.
+.private-names
+
+# Rendered reels: kept locally for reference, far too big for the repo.
+renders/*
+!renders/README.md

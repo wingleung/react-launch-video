@@ -1,0 +1,12 @@
+/* Remotion renders frame by frame, so CSS transitions and keyframes would freeze mid-flight. Motion is frame-driven. */
+*,
+*::before,
+*::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

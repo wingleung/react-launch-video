@@ -1,0 +1,15 @@
+{
+  "name": "product-reel",
+  "description": "Claude Code plugins for making product videos.",
+  "owner": {
+    "name": "Wing Leung",
+    "url": "https://github.com/wingleung/product-reel"
+  },
+  "plugins": [
+    {
+      "name": "product-reel",
+      "source": "./plugin",
+      "description": "Cinematic product reels of React apps and CLIs in Remotion, with a review counterpart."
+    }
+  ]
+}

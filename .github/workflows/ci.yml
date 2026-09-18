@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: evals/fixtures/relay-web/package-lock.json
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate the marketplace and plugin manifests
+        run: |
+          claude plugin validate --strict .
+          claude plugin validate --strict plugin
+
+      - name: No personal paths
+        run: |
+          if grep -rniE --binary-files=without-match '/Users/|/home/[a-z]|C:\\Users\\' . \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist \
+            --exclude=check.sh --exclude=ci.yml; then
+            echo "::error::the matches above must not ship"
+            exit 1
+          fi
+
+      - name: Formatting
+        run: npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}"
+
+      - name: Kit typecheck
+        run: node scripts/kit-typecheck.mjs
+
+      - name: Storyboard easings match the kit
+        run: |
+          node plugin/skills/create/scripts/easing-inventory.mjs plugin/skills/create/assets/kit \
+            --storyboard plugin/skills/create/references/storyboard.md
+
+      - name: Fixtures
+        run: |
+          npm ci --prefix evals/fixtures/relay-web
+          npm run build --prefix evals/fixtures/relay-web
+          node --test evals/fixtures/relay-cli/test/*.test.js
+
+      - name: Gate scripts
+        run: |
+          node plugin/skills/create/scripts/doctor.mjs
+          node --test test/gates/*.test.mjs

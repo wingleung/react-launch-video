@@ -1,0 +1,137 @@
+import { Easing, interpolate, spring, type SpringConfig } from "remotion";
+
+export const easeOut = Easing.bezier(0.16, 1, 0.3, 1);
+export const easeInOut = Easing.bezier(0.65, 0, 0.35, 1);
+/** Material 3 emphasized decelerate: large things arriving on screen. */
+export const emphasizedIn = Easing.bezier(0.05, 0.7, 0.1, 1);
+/** Material 3 emphasized accelerate: large things leaving. */
+export const emphasizedOut = Easing.bezier(0.3, 0, 0.8, 0.15);
+
+export const SMOOTH: Partial<SpringConfig> = { damping: 200 };
+export const SNAPPY: Partial<SpringConfig> = { damping: 22, stiffness: 260, mass: 0.7 };
+
+/** Clamped interpolation between two cue points given in seconds. */
+export function tween(
+  frame: number,
+  fps: number,
+  [start, end]: [number, number],
+  [from, to]: [number, number],
+  easing = easeOut,
+) {
+  return interpolate(frame, [start * fps, end * fps], [from, to], {
+    easing,
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+}
+
+export function springAt(frame: number, fps: number, startSeconds: number, config = SMOOTH, durationInFrames?: number) {
+  return spring({ frame: frame - startSeconds * fps, fps, config, durationInFrames });
+}
+
+/**
+ * A monotone cubic through keyframes (Fritsch and Butland slopes). Speed carries through intermediate keys instead
+ * of easing to a stop at each one, two equal keys still make a hold, it never overshoots, and it eases at both ends.
+ */
+export function smoothPath(t: number, times: number[], values: number[]): number {
+  const last = times.length - 1;
+  if (t <= times[0]!) return values[0]!;
+  if (t >= times[last]!) return values[last]!;
+
+  const width = (i: number) => times[i + 1]! - times[i]!;
+  const secant = (i: number) => (values[i + 1]! - values[i]!) / width(i);
+  const slope = (i: number) => {
+    if (i === 0 || i === last) return 0;
+    const [before, after] = [secant(i - 1), secant(i)];
+    if (before * after <= 0) return 0;
+    const [h0, h1] = [width(i - 1), width(i)];
+    return (3 * (h0 + h1)) / ((2 * h1 + h0) / before + (h1 + 2 * h0) / after);
+  };
+
+  let i = 0;
+  while (t > times[i + 1]!) i++;
+  const h = width(i);
+  const s = (t - times[i]!) / h;
+  const [p0, p1, m0, m1] = [values[i]!, values[i + 1]!, slope(i) * h, slope(i + 1) * h];
+  return (
+    (2 * s ** 3 - 3 * s ** 2 + 1) * p0 +
+    (s ** 3 - 2 * s ** 2 + s) * m0 +
+    (-2 * s ** 3 + 3 * s ** 2) * p1 +
+    (s ** 3 - s ** 2) * m1
+  );
+}
+
+/** A camera keyframe: the focus point the camera centres and the zoom, at a time in seconds. */
+export type CameraKey = [seconds: number, focusX: number, focusY: number, zoom: number];
+
+export interface ReadingWindow {
+  label: string;
+  /** When the text has fully settled. */
+  from: number;
+  /** When its exit starts. */
+  to: number;
+}
+
+/**
+ * Throws when the camera moves while text is being read. A zoom or pan that creeps through a hold rescales the text
+ * every frame, which viewers see as wobble, so every hold is two equal keys. Call it beside the CAMERA array: it runs
+ * when the composition loads, so the render fails before it costs an hour.
+ */
+export function assertStillWhileReading(camera: CameraKey[], windows: ReadingWindow[], fps = 60): void {
+  const times = camera.map(([time]) => time);
+  const track = (index: 1 | 2 | 3, at: number) =>
+    smoothPath(
+      at,
+      times,
+      camera.map((key) => key[index]),
+    );
+  for (const { label, from, to } of windows) {
+    const start: [number, number, number] = [track(1, from), track(2, from), track(3, from)];
+    for (let frame = 0; frame <= Math.round((to - from) * fps); frame++) {
+      const at = from + frame / fps;
+      const now: [number, number, number] = [track(1, at), track(2, at), track(3, at)];
+      const moved = ["focus x", "focus y", "zoom"].filter((_, i) => Math.abs(now[i]! - start[i]!) > 0.01);
+      if (moved.length > 0) {
+        throw new Error(
+          `Camera moves (${moved.join(", ")}) at ${at.toFixed(2)}s while "${label}" is being read ` +
+            `(${from.toFixed(2)}s to ${to.toFixed(2)}s). Hold it with two equal keys around that window.`,
+        );
+      }
+    }
+  }
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export const FRAME: Box = { x: 0, y: 0, width: 1920, height: 1080 };
+/**
+ * SMPTE ST 2046-1 safe action area: 93% of the frame, 3.5% in from each edge. A window border resting between it and
+ * the frame edge reads as a mistake: keep it inside or bleed it clearly off. node scripts/edge-scan.mjs checks renders.
+ */
+export const ACTION_SAFE: Box = { x: 67, y: 38, width: 1786, height: 1004 };
+/**
+ * Action safe minus the caption column (Captions sits at left 110 with width 560). Frame the product here while a
+ * caption is up.
+ */
+export const CAPTION_SAFE: Box = { x: 700, y: 38, width: 1153, height: 1004 };
+
+/**
+ * The camera focus and zoom that fit `box` (world coordinates, measured) inside `safe` (screen area) with `margin`
+ * pixels to spare on every side. Use it for every push-in instead of choosing a zoom by eye: a zoom chosen by eye is
+ * how tables, columns and long lines end up cropped at the frame edge. Returns [focusX, focusY, zoom] for a CAMERA key.
+ */
+export function fitCamera(box: Box, safe: Box = ACTION_SAFE, margin = 24, maxZoom = 2): [number, number, number] {
+  const zoom = Math.min(maxZoom, (safe.width - 2 * margin) / box.width, (safe.height - 2 * margin) / box.height);
+  const safeCenterX = safe.x + safe.width / 2;
+  const safeCenterY = safe.y + safe.height / 2;
+  return [
+    box.x + box.width / 2 - (safeCenterX - 960) / zoom,
+    box.y + box.height / 2 - (safeCenterY - 540) / zoom,
+    zoom,
+  ];
+}

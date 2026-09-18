@@ -1,0 +1,170 @@
+# Techniques and pitfalls: Remotion reels from real product components
+
+Everything here was learned building a real reel. Each item says what goes wrong and what to do instead.
+
+## Contents
+
+1. Making components renderable
+2. Styling and assets 2b. Rendering what the product really renders
+3. Frame determinism
+4. Measuring instead of guessing
+5. Animating a component you must not edit
+6. Libraries that fight frame-by-frame rendering
+7. Camera, layers and framing
+8. Verification 8b. Fonts and motion blur
+9. Environment and hand-off
+
+## 1. Making components renderable
+
+- **Split the view from its data.** A component that fetches on mount (browser APIs, network, storage) cannot be
+  rendered per frame. Move its markup unchanged into a display-only `XView({ state })` and leave the fetching in the
+  original component, which now renders `<XView state={state} />`. Diff the moved markup against the original to prove
+  it is verbatim, then run the product's typecheck, tests and build.
+- **Header or slot props** for parts that talk to the platform: the view takes `header: ReactNode` and the app passes
+  its interactive buttons in. The reel passes the same components where they are safe to render.
+- **Export pieces of third-party-driven components.** A command palette built on a library (kbar, cmdk) renders through
+  the library's store. Export its dialog, row, section heading and class-name constants, keep the library version
+  composing them and let the reel compose the same pieces driven by the frame.
+- **Stub platform imports** the displayed code imports but never calls during a render (an extension API, a native
+  bridge) with a webpack alias to a stub module. Keep the typecheck on the real types and alias only in the bundler.
+- **Share context libraries.** If a component calls a hook from a library whose provider the reel mounts, alias that
+  library to ONE copy (the product's) or the hook will not find the provider. Remotion already dedupes React.
+- **Never invent data.** Use the product's bundled fallback data, a real catalog file, fixtures or a recorded API
+  response. Flag anything placeholder in the README so it is replaced before publishing.
+
+## 2. Styling and assets
+
+- **Utility CSS (UnoCSS, Tailwind):** generate the stylesheet with the tool's CLI over both the reel's and the product's
+  component sources, before `studio` and `render`. Bundler plugins can fail inside Remotion's config loader (seen with
+  `@unocss/webpack`: CommonJS and ES module interop errors). Import the product's own config so tokens match.
+- **Fonts and icons from the product's public folder** via `Config.setPublicDir`, loaded with `@remotion/fonts`. Never
+  fetch fonts at render time: CI and restricted networks break, and the render stops being reproducible.
+- **Dark mode** usually keys on a `.dark` class on an ancestor: wrap each rendered view in `className="dark"` instead of
+  touching the document root.
+- **`position: fixed` inside the stage** resolves against the nearest transformed ancestor, which is the whole camera
+  layer. Give the page container `contain: paint` so fixed children stay inside it.
+- **Negative z-index backgrounds** inside a component need a stacking context on the reel's wrapper
+  (`isolation: isolate`), or they disappear behind the wrapper's background.
+- **User agent:** components that pick Cmd or Ctrl from `navigator.userAgent` follow the headless browser's UA, which on
+  a Mac says Mac. Set `Config.setChromiumUserAgent` to the audience's platform. Studio in a desktop browser still uses
+  that browser's UA. Only renders follow the config.
+
+## 2b. Rendering what the product really renders
+
+Reels of CLIs and library-driven UI keep getting this wrong in the same way: reading a library's theme or defaults and
+drawing what the file says, instead of what the product's call path selects.
+
+- **Start at the product's call site and follow the calls.** Example from a Go CLI built on huh v2.0.3 (a terminal forms
+  library): the CLI's own prompt helper calls `huh.NewMultiSelect(...).Run()`, `Run` calls `huh.Run`, and `huh.Run`
+  builds the form `WithShowHelp(false)`: so no help line, whatever the field's own help would say. What the call path
+  sets wins over the library's defaults.
+- **Environment choices are only made if the code asks for them.** Dark or light background, terminal width and colour
+  profile are usually detected on request. Find the line that sets the value. If nothing on the path sets it, the zero
+  value holds: that huh version picks its dark theme variant only after a background colour message, which only its
+  spinner requests, so a multi-select renders the light variant even on a dark terminal.
+- **Probe through the product, not around it.** A probe program calls the product's own function (or the same entry
+  point with the same arguments as the call site), with stdin and stdout on a real pseudo terminal if detection depends
+  on them. Calling `ThemeCharm(true)` yourself forces the branch the product never takes and "proves" a bug that does
+  not exist.
+- **Write the chain down.** The truthfulness table gets a row per rendering claim: the element, the call chain as
+  `file:line` hops and what it selects. "Shown as it really is" without that chain is a claim, not a finding.
+
+## 3. Frame determinism
+
+Remotion renders frames in parallel tabs and out of order. Every visual value must be a pure function of the frame.
+
+- **Kill CSS transitions and keyframe animations globally** (`reel.css` in the kit). Product utility classes such as
+  `transition-all` or `animate-pulse` otherwise freeze mid-flight. Re-create any wanted motion from the frame.
+- **No state carried between frames**, no `Math.random`, no `Date.now`, no `new Date()` (a greeting based on the time of
+  day must be passed in).
+- **Hover cannot be triggered** in a render. Emulate it by writing the hover styles from the frame (for example a border
+  colour mixed by a progress value).
+- **Async effects in rendered components** (a permission check on mount) can resolve after capture. Prefer states that
+  settle synchronously, and check the first frames of that component on a contact sheet.
+
+## 4. Measuring instead of guessing
+
+- Heights and positions of real UI depend on data. Measure them in a `useLayoutEffect` (runs before capture) and write
+  styles directly: `offsetHeight`, and `boxWithin(element, container)` in the kit for positions that ignore transforms.
+- To animate between two states (loading to loaded), render BOTH as real DOM (one hidden if needed), measure both, and
+  interpolate a shared panel's height. One panel background with crossfading contents avoids a dark flash, which a
+  second opaque panel on top causes.
+- When a value really must be a constant, measure it once with a throwaway composition that prints the measurement as
+  text into a still (console output from renders is not reliably shown), then delete the harness.
+- Cursor targets and overlay positions: read them off a rendered still and correct, never trust the first guess.
+
+## 5. Animating a component you must not edit
+
+- `useReveal(ref, [{ selector, at, delay }])` in the kit fades, lifts and unblurs parts of a rendered component by CSS
+  selector, writing inline styles from the frame. Delays can follow a grid (column index plus row index) instead of
+  document order.
+- Highlights (border beam, selection ring) are overlays positioned over measured elements, not changes to the component.
+
+## 6. Libraries that fight frame-by-frame rendering
+
+- Libraries that throttle, debounce or animate in real time (search results throttled by 100ms, Web Animations API
+  height animations, virtualised lists measuring on scroll) lag or jitter per frame. Port the logic you need (for kbar:
+  Fuse options plus its section and priority ordering) into a pure function of the input.
+- **Prove the port.** Render a throwaway still that runs the real library (waiting for its throttle with `delayRender`)
+  next to the port for a list of inputs, printing SAME or DIFF per input. Keep the verified inputs in a comment. This
+  also reveals story problems: a query that ranks the wrong result first.
+- Emulate scrolling of a capped list by translating the list and computing the scroll from measured rows, matching the
+  library's own rule (for a virtualiser: scroll only when the active row leaves the bottom edge).
+
+## 7. Camera, layers and framing
+
+- **Layers, bottom to top:** stage backdrop, title card, camera layer (product frame, popovers, cursor, all in world
+  coordinates), screen-space captions, end card, keycaps.
+- **Camera as focus point plus zoom** per keyframe: `translate(960 - fx * zoom, 540 - fy * zoom) scale(zoom)`. Drive all
+  three with `smoothPath` so speed carries through keys. Put equal neighbouring keys where the camera should hold, and a
+  small pull back before a push-in.
+- **Depth of field:** blur and dim the product layer slightly while the camera is pushed in on a popover that lives in a
+  separate layer.
+- **Captions need clear space.** While a caption is up, frame the product with `fitCamera(box, CAPTION_SAFE)` so they
+  never overlap, not even over a blurred product. The same goes for the end card: fade the product out before it rises.
+  Keycaps go beside what they drive, outside its on-screen bounds.
+- **Compute push-ins, never choose them.** `fitCamera(measuredBox, safeArea, margin)` returns the focus and zoom that
+  fit a measured element inside the safe area (`ACTION_SAFE` by default). A zoom picked by eye is how tables and long
+  lines get cropped. When a push-in bleeds the rest of the window off the frame, the frame edge must fall in empty
+  space: if it would cut a row, measure the whole block that row belongs to and fit that instead.
+- **Hide what you pass.** Beats that change the page (a new tab) should happen after the camera has pulled back, or the
+  frame shows an empty zoomed area.
+- **Frame for readability.** Zoom so the smallest text that matters is readable at 1080p (UI text at 12px needs about
+  1.5 to 1.9x), and check the tallest state still fits the frame.
+
+## 8. Verification
+
+- Typecheck the reel and the product after every structural change.
+- Render the full video (JPEG frames render fast), then pull frames at cue points with `node scripts/contact-sheet.mjs`:
+  just before a move, mid-move, on arrival, mid-hold and mid-handoff. Read the sheets. Look for: empty or near-empty
+  frames, content cropped by the frame edge, text rising over the product, overlapping captions or keycaps,
+  mid-transition mismatches (a highlight and an active row disagreeing), text that is too small, a state swap that
+  flashes.
+- Confirm small effects (a beam around a 32px icon) with a full-resolution crop: a half-scale sheet hides them.
+- After a timing change, re-check the frames around every cue that moved, not only the one you meant to change.
+- An unchanged-looking result deserves suspicion: confirm the change landed with a frame that must differ.
+- Run the gates, all exiting 0: `node scripts/check-video.mjs` (resolution, length, fades, no empty stage),
+  `node scripts/edge-scan.mjs` (borders inside the action-safe margin, content off the edge to crop and judge) and
+  `node scripts/easing-inventory.mjs src --storyboard storyboard.md` (storyboard easings match the code). A problem is
+  fixed or shown not to be one, never accepted.
+- Finish with `/product-reel:review` on the timeline and the sheets.
+
+## 8b. Fonts and motion blur
+
+- **Fonts** come from the product (its public folder), from a licensed package (`@fontsource/*`) or, if the product only
+  loads them from a CDN, from that same family installed as a package. Never copy files from the system font folder or
+  out of another application: their licence does not cover redistribution in a video project.
+- **Motion blur**: `@remotion/motion-blur` CameraMotionBlur stacks translucent copies in the browser. On a real reel it
+  banded dark gradients (column jitter nearly doubled) and rendered about 6x slower. Instead register
+  `MotionBlurComposition` (kit) and run `scripts/render-motion-blur.mjs`, which renders 4 samples per frame over a 180°
+  shutter and averages them in ffmpeg at 16 bits. Remotion's bundled ffmpeg lacks `tmix`, so this needs a system ffmpeg.
+  Keep a draft render script without blur for iteration.
+
+## 9. Environment and hand-off
+
+- The reel is its own package next to the product, with pinned Remotion versions (all `remotion` and `@remotion/*`
+  packages on the exact same version).
+- Hand the user commands that run from the session's root (`npm --prefix <reel-dir> run render`), verified in their own
+  interactive shell, not only in yours.
+- Document in the reel README: beats, pacing choices with sources, placeholder data to replace, render time.
+- Offer motion blur only for the final render: it multiplies render time.
