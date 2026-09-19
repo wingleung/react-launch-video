@@ -44,8 +44,8 @@ jobs:
       - name: Formatting
         run: npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}"
 
-      - name: Kit typecheck
-        run: node scripts/kit-typecheck.mjs
+      - name: Kit typecheck and camera
+        run: node scripts/kit-check.mjs
 
       - name: Storyboard easings match the kit
         run: |

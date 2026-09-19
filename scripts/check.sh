@@ -28,8 +28,8 @@ fi
 step "formatting (prettier)"
 npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}" || fail=1
 
-step "kit typecheck"
-node scripts/kit-typecheck.mjs || fail=1
+step "kit typecheck and camera"
+node scripts/kit-check.mjs || fail=1
 
 step "storyboard easings match the kit"
 node plugin/skills/create/scripts/easing-inventory.mjs plugin/skills/create/assets/kit \

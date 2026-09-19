@@ -35,7 +35,8 @@ Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
 - `references/techniques.md`: how to render real components frame by frame and every pitfall hit doing it. Read the
   section you need when you reach that step.
 - `assets/kit/`: copy-in source. `motion.ts` (easings, `tween`, `smoothPath` camera curve), `reveal.ts` (`useReveal`,
-  `boxWithin`), `reel.css`, `timeline.ts` and `Reel.tsx` skeletons, `remotion.config.ts` and `scene/` components:
+  `boxWithin`), `reel.css`, `timeline.ts`, `camera.ts` and `Reel.tsx` skeletons, `remotion.config.ts` and `scene/`
+  components:
   `Stage` (drifting glow backdrop), `Lockup` and `Titles` (title and end card), `Captions`, `Keys` (keycaps), `Cursor`,
   `Ring` (border beam and selection ring).
 - `node scripts/doctor.mjs`: checks Node and ffmpeg (with the filters the gates use) and prints install hints for this
@@ -159,8 +160,9 @@ Keep one `CUE` object of cue points in seconds, each beat anchored on the one be
   keys come from `fitCamera(measuredBox, safeArea)`, which fits inside `ACTION_SAFE` by default. Add a small pull back
   before push-ins, and hold the camera perfectly still while text is read (two equal keys): a zoom that keeps creeping
   through a hold rescales the text every frame and reads as wobble. List every reading window in
-  `assertStillWhileReading(CAMERA, ...)` beside the camera array, one per caption plus the title and end card: it throws
-  when the camera moves inside one, so the render fails in seconds instead of after an hour. Pull back fully before the
+  `READING` in `assets/kit/camera.ts`, one per caption plus the title and end card. The `assertStillWhileReading` call
+  at the foot of that file throws when the camera moves inside one, so the render fails in seconds instead of after an
+  hour. Pull back fully before the
   page under it changes.
 - **Measure, don't guess**: heights, positions and cursor targets come from the DOM (`offsetHeight`, `boxWithin`) or a
   rendered still.
