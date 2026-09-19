@@ -1,7 +1,7 @@
 {
   "name": "product-reel",
   "displayName": "Product Reel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Cinematic product reels of React apps and CLIs in Remotion, rendered from the product's real components, with sourced pacing, scripted quality gates and a review counterpart.",
   "author": { "name": "Wing Leung" },
   "homepage": "https://github.com/wingleung/product-reel",
