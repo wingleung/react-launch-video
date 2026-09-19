@@ -158,9 +158,20 @@ main("easing-inventory", () => {
   for (const [file, text] of texts) {
     const rel = relative(args.src, file);
     const lines = text.split(LINE_BREAK);
+    // The nearest declaration before the call owns it: `const enter = tween(...)` is owned by `enter`, and a call
+    // inside a component with no closer declaration is owned by the component. Citing that name instead of a line
+    // number means an edit somewhere else in the file no longer invalidates the storyboard.
+    const ownerOf = (index) => {
+      const declarations = [
+        ...text.slice(0, index).matchAll(/(?:function\s+(\w+)|(?:const|let)\s+(\w+)\s*(?::[^=]+)?=)/g),
+      ];
+      const last = declarations[declarations.length - 1];
+      return last ? (last[1] ?? last[2]) : undefined;
+    };
     const record = (index, helper, easing, tokens) => {
       const line = lineNumber(text, index);
-      entries.push({ file: rel, line, helper, easing, tokens, code: sliceChars(lines[line - 1].trim(), 90) });
+      const owner = ownerOf(index);
+      entries.push({ file: rel, line, owner, helper, easing, tokens, code: sliceChars(lines[line - 1].trim(), 90) });
     };
 
     for (const match of text.matchAll(HELPERS)) {
@@ -228,15 +239,18 @@ main("easing-inventory", () => {
   const rows = readFileSync(args.storyboard, "utf8")
     .split(LINE_BREAK)
     .filter((row) => row.replace(/^\s+/, "").startsWith("|"));
-  const cite = /([\w./-]+\.tsx?):(\d+)(?:\s*-\s*(\d+))?/g;
+  const cite = /([\w./-]+\.tsx?)(?::(\d+)(?:\s*-\s*(\d+))?|#(\w+))/g;
   const failures = [];
   const covered = new Set();
   for (const row of rows) {
-    for (const [, file, start, end] of row.matchAll(cite)) {
+    for (const [, file, start, end, symbol] of row.matchAll(cite)) {
       const low = Number(start);
       const high = Number(end ?? start);
-      const cited = listed.filter((entry) => entry.file.endsWith(file) && low <= entry.line && entry.line <= high);
-      if (!cited.length) failures.push(`cites ${file}:${start}${end ? `-${end}` : ""} but no motion call is there`);
+      const cited = symbol
+        ? listed.filter((entry) => entry.file.endsWith(file) && entry.owner === symbol)
+        : listed.filter((entry) => entry.file.endsWith(file) && low <= entry.line && entry.line <= high);
+      const shown = symbol ? `${file}#${symbol}` : `${file}:${start}${end ? `-${end}` : ""}`;
+      if (!cited.length) failures.push(`cites ${shown} but no motion call is there`);
       for (const entry of cited) {
         covered.add([entry.file, entry.line].join(SEPARATOR));
         if (!entry.tokens.some((token) => norm(row).includes(norm(token)))) {

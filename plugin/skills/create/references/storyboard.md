@@ -29,8 +29,10 @@ Total length: sum it here and keep it inside the agreed range before building sc
 Every animated element, not only the big moves. If it changes over time, it has a row, and the row cites the code (
 `File.tsx:line` or `File.tsx:first-last`) and names the easing that code really applies, by constant name or numbers.
 Helper defaults count: the kit's `tween` eases out with `easeOut` when no easing is passed, `springAt` uses `SMOOTH` and
-a bare `interpolate` is linear. Generate the list with `node scripts/easing-inventory.mjs src`, and before the final
-render check the table with `--storyboard`. Delete kit components the reel does not use.
+a bare `interpolate` is linear. Prefer `File.tsx#symbol`, naming the declaration that owns the call, so
+`const enter = tween(...)` is cited as `Reel.tsx#enter`: a line number is invalidated by any edit above it and a name
+is not. Line and range citations still work. Generate the list with `node scripts/easing-inventory.mjs src`, and before
+the final render check the table with `--storyboard`. Delete kit components the reel does not use.
 
 | Element                  | Property                  | Easing                                                              | Duration     | Code                       |
 | ------------------------ | ------------------------- | ------------------------------------------------------------------- | ------------ | -------------------------- |
@@ -66,6 +68,10 @@ At most one push-in and one highlight per beat. Leave a cell "none" deliberately
 | Timers, throttles, debounces                     | e.g. search results                    | logic ported to a pure function and verified against the library |
 | Async effects                                    | e.g. permission checks on mount        | a state that settles synchronously, checked on the first frames  |
 | Network fonts or data                            | e.g. a font stylesheet link            | files from the product's public folder                           |
+| `Suspense` boundaries                            | e.g. a lazy child or a `use()` promise | resolved data passed as props, so no frame captures the fallback |
+| Observers (Intersection, Resize)                 | e.g. a reveal on scroll into view      | the revealed state passed in, since frames render out of order   |
+| `matchMedia` theming                             | e.g. `prefers-color-scheme`            | the theme forced by the reel, not read from the headless browser |
+| Real-time animation libraries                    | e.g. Framer Motion, view transitions   | the value driven by the frame, or the component frozen           |
 
 Write "checked, none" for a risk that does not apply, so a reviewer can tell checked from forgotten.
 

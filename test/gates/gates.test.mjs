@@ -1,7 +1,7 @@
 // What the gate scripts print, pinned. These ran for months with no tests, and two defects survived that way: the
 // bottom edge was never scanned, and nothing would have caught a JSON timestamp losing its ".0".
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -42,6 +42,7 @@ before(() => {
     "yuv420p",
     join(clips, "border.mp4"),
   );
+  ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=6", "-c:a", "aac", join(clips, "tone.m4a"));
   // bright, then two seconds of nothing, then bright again: a handoff that empties the stage
   ffmpeg(
     "-f",
@@ -93,6 +94,27 @@ describe("check-video", () => {
     assert.match(stdout, /^FAIL {2}opens from black$/m);
   });
 
+  test("gates a vertical cut against its own frame size", () => {
+    const portrait = join(clips, "portrait.mp4");
+    ffmpeg("-t", "2", "-i", demo, "-vf", "crop=864:1080:528:0", "-pix_fmt", "yuv420p", portrait);
+    const sized = gate(join(create, "check-video.mjs"), [
+      "--width",
+      "864",
+      "--height",
+      "1080",
+      "--min",
+      "1",
+      "--max",
+      "10",
+      portrait,
+    ]);
+    assert.match(sized.stdout, /^ok {4}resolution 864x1080$/m);
+    // and the same file fails the default 16:9 gate, which is the bug this option fixes
+    const unsized = gate(join(create, "check-video.mjs"), ["--min", "1", "--max", "10", portrait]);
+    assert.equal(unsized.status, 1);
+    assert.match(unsized.stdout, /^FAIL {2}resolution 1920x1080$/m);
+  });
+
   test("formats the duration bounds the way %g does", () => {
     const { stdout } = gate(join(create, "check-video.mjs"), ["--min", "17.5", "--max", "1234567", demo]);
     assert.match(stdout, /duration 17\.5 to 1\.23457e\+06s \(is 21\.37s\)/);
@@ -124,6 +146,19 @@ describe("edge-scan", () => {
     assert.match(stdout, /"to": 3\.0,/);
   });
 
+  test("stops reporting a range that has been looked at and allowed", () => {
+    const border = join(clips, "border.mp4");
+    assert.equal(gate(join(create, "edge-scan.mjs"), [border]).status, 1);
+    const all = "left:0-3.1,right:0-3.1,top:0-3.1,bottom:0-3.1";
+    const allowed = gate(join(create, "edge-scan.mjs"), ["--accept", all, border]);
+    assert.equal(allowed.status, 0);
+    assert.equal(allowed.stdout.match(/ALLOWED/g).length, 4);
+    // accepting one edge must not excuse the others
+    assert.equal(gate(join(create, "edge-scan.mjs"), ["--accept", "left:0-3.1", border]).status, 1);
+    // nor a range that does not cover the finding
+    assert.equal(gate(join(create, "edge-scan.mjs"), ["--accept", "top:9-10", border]).status, 1);
+  });
+
   test("prints a whole-number sampling interval as a float", () => {
     const { stdout } = gate(join(create, "edge-scan.mjs"), ["--every", "1.0", demo]);
     assert.match(stdout, /sampled every 1\.0s/); // the interval prints as a float, so "1.0" and never "1"
@@ -141,6 +176,39 @@ describe("easing-inventory", () => {
     assert.match(stdout, /storyboard check passed: 22 motion calls/);
   });
 
+  test("accepts a citation by symbol, so an edit elsewhere does not invalidate the storyboard", () => {
+    const src = join(clips, "src");
+    mkdirSync(src, { recursive: true });
+    writeFileSync(
+      join(src, "motion.ts"),
+      'import { Easing, interpolate } from "remotion";\n' +
+        "export const emphasizedIn = Easing.bezier(0.05, 0.7, 0.1, 1);\n" +
+        "export function tween(frame: number, range: number[], to: number[], easing = emphasizedIn) {\n" +
+        "  return interpolate(frame, range, to, { easing });\n}\n",
+    );
+    writeFileSync(
+      join(src, "Panel.tsx"),
+      'import { emphasizedIn, tween } from "./motion";\n' +
+        "export const Panel = ({ frame }: { frame: number }) => {\n" +
+        "  const slide = tween(frame, [0, 30], [0, 1], emphasizedIn);\n  return slide;\n};\n",
+    );
+    const board = join(clips, "board.md");
+    const row = (cite) =>
+      `| Beat | Code | Easing |\n| --- | --- | --- |\n| Slide | \`${cite}\` | emphasizedIn \`0.05, 0.7, 0.1, 1\` |\n`;
+
+    writeFileSync(board, row("Panel.tsx#slide"));
+    assert.equal(gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]).status, 0);
+
+    // the line form still works, so existing storyboards keep passing
+    writeFileSync(board, row("Panel.tsx:3"));
+    assert.equal(gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]).status, 0);
+
+    writeFileSync(board, row("Panel.tsx#nosuch"));
+    const missing = gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]);
+    assert.equal(missing.status, 1);
+    assert.match(missing.stdout, /cites Panel\.tsx#nosuch but no motion call is there/);
+  });
+
   test("fails a reel whose motion is not in its storyboard", () => {
     const { stdout, status } = gate(join(create, "easing-inventory.mjs"), [
       join(root, "evals/fixtures/flawed-reel/src"),
@@ -150,6 +218,31 @@ describe("easing-inventory", () => {
     assert.equal(status, 1);
     assert.match(stdout, /storyboard check FAILED \(4\)/);
     assert.match(stdout, /is cited by no storyboard row/);
+  });
+});
+
+describe("add-music", () => {
+  test("adds a track without re-encoding a single video frame", () => {
+    const silent = join(clips, "silent.mp4");
+    const scored = join(clips, "scored.mp4");
+    ffmpeg("-t", "4", "-i", demo, "-c:v", "copy", silent);
+    const { status } = gate(join(create, "add-music.mjs"), [
+      silent,
+      join(clips, "tone.m4a"),
+      scored,
+      "--fade-out",
+      "1",
+    ]);
+    assert.equal(status, 0);
+    const videoHash = (file) =>
+      execFileSync("ffmpeg", ["-loglevel", "error", "-i", file, "-map", "0:v", "-f", "md5", "-"], { encoding: "utf8" });
+    assert.equal(videoHash(scored), videoHash(silent), "the video stream was re-encoded");
+    const audio = execFileSync(
+      "ffprobe",
+      ["-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "csv=p=0", scored],
+      { encoding: "utf8" },
+    ).trim();
+    assert.equal(audio, "aac");
   });
 });
 

@@ -18,6 +18,8 @@ const SPEC = {
   options: [
     { flag: "--min", dest: "min", metavar: "MIN", type: "float", default: 15 },
     { flag: "--max", dest: "max", metavar: "MAX", type: "float", default: 30 },
+    { flag: "--width", dest: "width", metavar: "WIDTH", type: "int", default: 1920 },
+    { flag: "--height", dest: "height", metavar: "HEIGHT", type: "int", default: 1080 },
   ],
 };
 
@@ -80,7 +82,7 @@ main("check-video", () => {
   const found = empty.map(([from, to]) => ` (FOUND ${fixed(from, 2)}s to ${fixed(to, 2)}s)`).join("");
 
   const gates = [
-    ["resolution 1920x1080", width === 1920 && height === 1080],
+    [`resolution ${args.width}x${args.height}`, width === args.width && height === args.height],
     [
       `duration ${g(args.min)} to ${g(args.max)}s (is ${fixed(duration, 2)}s)`,
       args.min <= duration && duration <= args.max,

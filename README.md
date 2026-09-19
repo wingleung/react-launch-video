@@ -90,6 +90,7 @@ These are tools rather than gates, and pass or fail nothing:
 | `contact-sheet.mjs`      | builds the frame sheets and crops the review is done on        |
 | `doctor.mjs`             | checks this machine has Node and ffmpeg with the right filters |
 | `render-motion-blur.mjs` | renders the final with band-free motion blur                   |
+| `add-music.mjs`          | adds a music track without re-encoding the video               |
 
 The kit adds one more: `assertStillWhileReading` runs when the composition loads and throws when the camera moves
 while text is being read, so that render fails in seconds instead of after an hour.

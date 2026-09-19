@@ -1,4 +1,4 @@
-import { assertStillWhileReading } from "./motion";
+import { assertReadingTime, assertStillWhileReading } from "./motion";
 import type { CameraKey, ReadingWindow } from "./motion";
 import { CUE } from "./timeline";
 
@@ -16,12 +16,19 @@ export const CAMERA: CameraKey[] = [
 ];
 
 // Every window where text is being read, from fully settled to the start of its exit. Add one per caption.
+//
+// Give each window the `text` it shows and `assertReadingTime` checks the hold against reading time as well. The
+// timings below are placeholders: once you know the real copy, set the cues in timeline.ts from it rather than the
+// other way round, because a title hold of 1.0s is already too short for a title of more than about ten characters.
+//   { label: "title", from: CUE.titleWords + 0.9, to: CUE.titleExit, text: "Relay Issue Search" },
 export const READING: ReadingWindow[] = [
   { label: "title", from: CUE.titleWords + 0.9, to: CUE.titleExit },
-  // ...one per caption: { label: "01 ...", from: captionFrom + 0.96, to: captionTo },
+  // ...one per caption: { label: "01 ...", from: captionFrom + 0.96, to: captionTo, text: "01 Issue popup" },
   { label: "end card", from: CUE.endCard + 0.9, to: CUE.fadeOut },
 ];
 
-// Runs when the composition loads, so a camera that drifts through a hold fails in seconds rather than after a render.
-// This file holds no JSX on purpose: the kit's own check script imports it and runs this assertion in CI.
+// Both run when the composition loads, so a camera that drifts under text, or a caption held for less time than it
+// takes to read, fails in seconds rather than after a render. This file holds no JSX on purpose: the kit's own check
+// script imports it and runs these assertions in CI.
 assertStillWhileReading(CAMERA, READING);
+assertReadingTime(READING);

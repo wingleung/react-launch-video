@@ -25,6 +25,10 @@ CLI, whose terminal session is recreated from the CLI's own source. For anything
 mobile or desktop apps) say so before starting and stop: the method depends on rendering the real product, and redrawing
 it by hand is exactly what the method avoids.
 
+"React web app" is not the whole question, because what has to render is a component called as a function in a browser
+with props you supply. React Server Components cannot be. Read `references/frameworks.md` before step 1b: it says which
+rendering models, styling systems and font setups work, which need setup, and which to refuse.
+
 Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
 
 ## What is in this skill
@@ -43,13 +47,17 @@ Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
   OS. Run it before step 4.
 - `node scripts/contact-sheet.mjs`: tiles six frames of a render into a review sheet, or crops one at full resolution.
 - `node scripts/check-video.mjs`: hard gates on a render (resolution, duration range, fade from and to black, no
-  near-empty stage mid-reel, which is what a queued handoff looks like). Exits non-zero when a gate fails.
+  near-empty stage mid-reel, which is what a queued handoff looks like). Exits non-zero when a gate fails. Pass
+  `--width` and `--height` for a cut that is not 16:9.
 - `node scripts/edge-scan.mjs`: finds borders resting inside the action-safe margin (fails) and content running off the
-  frame edge (ranges to crop and judge).
+  frame edge (ranges to crop and judge). Once a range has been cropped and judged deliberate, list it in
+  `--accept "top:7.8-13.0"` so later renders stop reporting it.
 - `node scripts/easing-inventory.mjs`: lists every motion call with the easing the code really applies and checks the
   storyboard's easing table against it.
 - `scripts/render-motion-blur.mjs` with `assets/kit/MotionBlur.tsx`: optional band-free motion blur for the final
   render.
+- `node scripts/add-music.mjs`: puts a track on a finished reel by copying the video stream, never re-encoding it.
+  Taking a reel through an editor to add music re-encodes it, and these gradients band when that happens.
 
 ## Workflow
 
@@ -83,7 +91,8 @@ iframes.
 
 React Server Components cannot be rendered by a client bundler at all. If the product has an `app/` tree with `async`
 components, or a `use server` module in the path, say so here and agree with the user what to do, which is usually to
-build the reel from its client components only.
+build the reel from its client components only. `references/frameworks.md` has the full table, including the `next/*`
+components, the styling systems that need a plugin and the `next/font` substitution.
 
 ### 2. Storyboard with timings
 
@@ -103,7 +112,13 @@ margin. The numbers and their sources are in `references/pacing.md`. When the us
 follow, do not only change speed: change what is shown (for a long list, glide section by section with pauses instead of
 stepping row by row).
 
-The storyboard also fixes four things that are expensive to retrofit:
+The storyboard also fixes five things that are expensive to retrofit:
+
+- **Legibility at the zoom you chose.** For each framing, write down the smallest UI text that has to be readable and
+  what it becomes on screen: source px times the camera zoom. Under 18px at 1080p it cannot be read, and the fix is
+  never a bigger zoom on the same shot, because that crops something else. It is showing less: a narrower crop, a
+  larger source element, or a caption carrying the words instead. Decide it here. Found after three drafts it costs a
+  restructure, and `/product-reel:review` is the last line of defence rather than the first.
 
 - **An easing for every animated element**, not only the big moves: the title words, the product entrance, each camera
   key, captions in and out, keycaps, the cursor's fade and click, highlights, the ambient drift and the fade to black.
@@ -126,6 +141,12 @@ The storyboard also fixes four things that are expensive to retrofit:
   function, not a library function with arguments you chose. `references/techniques.md` section 2b has the method.
 - **The story, not just the screens**: if the feature changes something (a setting that filters a page), show the before
   and the after.
+- **Tempo, if there will be music.** Decide the BPM with the user before any timing, write the hit points as beat
+  numbers, and build the cues from `beatsAt(bpm)` in `motion.ts` rather than from seconds. Retiming a reel that was
+  written in seconds to land on a beat means moving every reading-time hold and camera window by hand, and pace is
+  usually the thing a user asks to change most. Leave a little air at a shared boundary: an exit and the next camera
+  move on the exact same beat is legal but reads as a collision. Add the track at the end with
+  `node scripts/add-music.mjs`, never by re-exporting the video through an editor.
 
 ### Restraint: the effect budget
 
@@ -191,8 +212,9 @@ Keep one `CUE` object of cue points in seconds, each beat anchored on the one be
   through a hold rescales the text every frame and reads as wobble. List every reading window in
   `READING` in `assets/kit/camera.ts`, one per caption plus the title and end card. The `assertStillWhileReading` call
   at the foot of that file throws when the camera moves inside one, so the render fails in seconds instead of after an
-  hour. Pull back fully before the
-  page under it changes.
+  hour. Give each window the `text` it shows and `assertReadingTime` checks the hold against reading time in the same
+  place, which is cheaper than measuring it off a contact sheet later. Pull back fully before the page under it
+  changes.
 - **Measure, don't guess**: heights, positions and cursor targets come from the DOM (`offsetHeight`, `boxWithin`) or a
   rendered still.
 - **Spend only the effect budget from the storyboard** (see Restraint above).
@@ -212,7 +234,7 @@ Rendering is the only proof. After each change:
 4. Run the gates on the render and the source. All three must exit 0:
    - `node scripts/check-video.mjs outputs/reel.mp4` (resolution, length, fades, no near-empty stage in a handoff)
    - `node scripts/edge-scan.mjs outputs/reel.mp4` (borders inside the action-safe margin fail, then crop every CROSSES
-     range it lists and look for a sliced line)
+     range it lists and look for a sliced line, and move the ones you judge deliberate into `--accept`)
    - `node scripts/easing-inventory.mjs src --storyboard storyboard.md` (the easing table matches the code)
 5. Write what each sheet, crop and gate showed in the storyboard's frame review log, with a verdict per problem. A
    problem has two possible verdicts: **fixed** (name the change and the render that shows it) or **not a problem**

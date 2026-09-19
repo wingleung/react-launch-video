@@ -70,6 +70,11 @@ export interface ReadingWindow {
   from: number;
   /** When its exit starts. */
   to: number;
+  /**
+   * Every character the block shows, lines joined by single spaces, chapter numbers and keycap labels included.
+   * Supply it and `assertReadingTime` checks the hold against it.
+   */
+  text?: string;
 }
 
 /**
@@ -77,6 +82,40 @@ export interface ReadingWindow {
  * every frame, which viewers see as wobble, so every hold is two equal keys. Call it beside the CAMERA array: it runs
  * when the composition loads, so the render fails before it costs an hour.
  */
+/** Seconds of beat `n` at `bpm`. Anchor cues on beats when the reel is cut to music, so every hit lands with it. */
+export function beatsAt(bpm: number): (n: number) => number {
+  return (n) => (n * 60) / bpm;
+}
+
+const CHARS_PER_SECOND = 17;
+const SETTLE = 0.5;
+const MINIMUM = 0.8;
+
+/** The hold a block of text needs: its characters at reading speed plus a settle margin. See references/pacing.md. */
+export function readingTime(text: string): number {
+  return Math.max(MINIMUM, [...text].length / CHARS_PER_SECOND + SETTLE);
+}
+
+/**
+ * Throws when any window carrying `text` holds it for less than its reading time plus `margin`. Runs at composition
+ * load, so a caption that is a few frames short fails in seconds rather than surviving to a review that has to measure
+ * it by hand. Windows with no `text` are skipped.
+ */
+export function assertReadingTime(windows: ReadingWindow[], margin = 0.2): void {
+  for (const { label, from, to, text } of windows) {
+    if (text === undefined) continue;
+    const needed = readingTime(text) + margin;
+    const held = to - from;
+    if (held < needed) {
+      throw new Error(
+        `"${label}" holds ${held.toFixed(2)}s but needs ${needed.toFixed(2)}s ` +
+          `(${[...text].length} characters at ${CHARS_PER_SECOND}/s, plus ${SETTLE}s to settle and ${margin}s of ` +
+          `margin). Hold it longer, or show less text.`,
+      );
+    }
+  }
+}
+
 export function assertStillWhileReading(camera: CameraKey[], windows: ReadingWindow[], fps = 60): void {
   const times = camera.map(([time]) => time);
   const track = (index: 1 | 2 | 3, at: number) =>
@@ -87,7 +126,9 @@ export function assertStillWhileReading(camera: CameraKey[], windows: ReadingWin
     );
   for (const { label, from, to } of windows) {
     const start: [number, number, number] = [track(1, from), track(2, from), track(3, from)];
-    for (let frame = 0; frame <= Math.round((to - from) * fps); frame++) {
+    // The last frame is excluded: `to` is where the exit starts, so a camera move beginning exactly there is the
+    // next beat rather than movement under text, and frame rounding otherwise reports it as a one-frame overlap.
+    for (let frame = 0; frame < Math.round((to - from) * fps); frame++) {
       const at = from + frame / fps;
       const now: [number, number, number] = [track(1, at), track(2, at), track(3, at)];
       const moved = ["focus x", "focus y", "zoom"].filter((_, i) => Math.abs(now[i]! - start[i]!) > 0.01);
@@ -101,6 +142,11 @@ export function assertStillWhileReading(camera: CameraKey[], windows: ReadingWin
   }
 }
 
+export interface Size {
+  width: number;
+  height: number;
+}
+
 export interface Box {
   x: number;
   y: number;
@@ -109,9 +155,18 @@ export interface Box {
 }
 
 export const FRAME: Box = { x: 0, y: 0, width: 1920, height: 1080 };
+
+/** The safe action box for any frame size. `ACTION_SAFE` is exactly this for the default 1920x1080 frame. */
+export function safeArea(frame: Size = FRAME, inset = 0.035): Box {
+  const x = Math.round(frame.width * inset);
+  const y = Math.round(frame.height * inset);
+  return { x, y, width: frame.width - 2 * x, height: frame.height - 2 * y };
+}
+
 /**
  * SMPTE ST 2046-1 safe action area: 93% of the frame, 3.5% in from each edge. A window border resting between it and
  * the frame edge reads as a mistake: keep it inside or bleed it clearly off. node scripts/edge-scan.mjs checks renders.
+ * For any frame other than 1920x1080, call `safeArea(frame)` instead.
  */
 export const ACTION_SAFE: Box = { x: 67, y: 38, width: 1786, height: 1004 };
 /**
@@ -125,13 +180,19 @@ export const CAPTION_SAFE: Box = { x: 700, y: 38, width: 1153, height: 1004 };
  * pixels to spare on every side. Use it for every push-in instead of choosing a zoom by eye: a zoom chosen by eye is
  * how tables, columns and long lines end up cropped at the frame edge. Returns [focusX, focusY, zoom] for a CAMERA key.
  */
-export function fitCamera(box: Box, safe: Box = ACTION_SAFE, margin = 24, maxZoom = 2): [number, number, number] {
+export function fitCamera(
+  box: Box,
+  safe: Box = ACTION_SAFE,
+  margin = 24,
+  maxZoom = 2,
+  frame: Size = FRAME,
+): [number, number, number] {
   const zoom = Math.min(maxZoom, (safe.width - 2 * margin) / box.width, (safe.height - 2 * margin) / box.height);
   const safeCenterX = safe.x + safe.width / 2;
   const safeCenterY = safe.y + safe.height / 2;
   return [
-    box.x + box.width / 2 - (safeCenterX - 960) / zoom,
-    box.y + box.height / 2 - (safeCenterY - 540) / zoom,
+    box.x + box.width / 2 - (safeCenterX - frame.width / 2) / zoom,
+    box.y + box.height / 2 - (safeCenterY - frame.height / 2) / zoom,
     zoom,
   ];
 }

@@ -55,10 +55,40 @@ for (const name of readdirSync(join(dir, "src")).filter((file) => file.endsWith(
 writeFileSync(
   join(dir, "assert-camera.mjs"),
   [
+    'import assert from "node:assert/strict";',
     "try {",
     '  await import("./src/camera.ts");',
+    '  const kit = await import("./src/motion.ts");',
+    "",
+    "  // safeArea generalises the constant rather than replacing it, so the two must agree on the default frame",
+    "  assert.deepEqual(kit.safeArea(), kit.ACTION_SAFE);",
+    "  assert.deepEqual(kit.safeArea({ width: 1080, height: 1350 }), { x: 38, y: 47, width: 1004, height: 1256 });",
+    "",
+    "  // a vertical frame must change the zoom that fits a wide box",
+    "  const box = { x: 400, y: 200, width: 1200, height: 700 };",
+    "  const portrait = { width: 1080, height: 1350 };",
+    "  const wideZoom = kit.fitCamera(box)[2];",
+    "  const tallZoom = kit.fitCamera(box, kit.safeArea(portrait), 24, 2, portrait)[2];",
+    "  assert.ok(tallZoom < wideZoom, `expected a vertical frame to zoom out further, got ${tallZoom} and ${wideZoom}`);",
+    "",
+    "  // and the frame size must move the focus whenever the safe area is off centre, which is what it is for",
+    "  const offCentre = kit.CAPTION_SAFE;",
+    "  assert.notEqual(",
+    "    kit.fitCamera(box, offCentre, 24, 2, portrait)[0],",
+    "    kit.fitCamera(box, offCentre)[0],",
+    "  );",
+    "",
+    '  assert.equal(kit.readingTime("Short"), 0.8);',
+    '  assert.equal(Math.round(kit.readingTime("Command palette Search by name") * 100) / 100, 2.26);',
+    "  assert.equal(kit.beatsAt(94)(4), (4 * 60) / 94);",
+    "",
+    "  // the reading-time guard has to fire, and only when the hold is genuinely short",
+    '  const short = [{ label: "caption", from: 0, to: 1, text: "Command palette Search by name" }];',
+    "  assert.throws(() => kit.assertReadingTime(short), /holds 1\\.00s but needs 2\\.46s/);",
+    '  kit.assertReadingTime([{ label: "caption", from: 0, to: 3, text: "Command palette Search by name" }]);',
+    '  kit.assertReadingTime([{ label: "no text", from: 0, to: 0.1 }]);',
     "} catch (error) {",
-    "  console.error(`kit camera: ${error.message}`);",
+    "  console.error(`kit: ${error.message}`);",
     "  process.exit(1);",
     "}",
     "",
@@ -69,4 +99,4 @@ try {
 } catch {
   process.exit(1);
 }
-console.log("kit camera holds still through every reading window");
+console.log("kit camera holds still, reading times hold up, sizing generalises");

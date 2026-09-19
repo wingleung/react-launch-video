@@ -23,6 +23,13 @@ const SPEC = {
   options: [
     { flag: "--every", dest: "every", metavar: "EVERY", type: "float", default: 0.2, help: "seconds between samples" },
     { flag: "--json", dest: "json", store: true, default: false },
+    {
+      flag: "--accept",
+      dest: "accept",
+      metavar: "RANGES",
+      default: "",
+      help: 'ranges already looked at and allowed, e.g. "top:7.8-13.0,right:17.6-18.2"',
+    },
   ],
 };
 
@@ -30,9 +37,28 @@ const EDGE = 28; // Sobel magnitude that counts as an edge pixel: soft backdrop 
 const LINE = 0.1; // a run of edge pixels this long (fraction of the edge length) is a border, text never runs that long
 const CROSS = 12; // edge pixels on the outermost two lines that mean something crosses the edge
 const HOLD = 0.6; // a border passing through the margin during a camera move is fine, one resting there is not
+const SLACK = 0.05; // an accepted range is matched loosely, so a sample landing a frame either side still counts
+
+/** Ranges a human has already cropped and judged, so the next render stops reporting them. */
+function parseAccepted(text) {
+  return text
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const found = /^(left|right|top|bottom):(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/.exec(part);
+      if (!found) throw new Error(`cannot read --accept range "${part}", expected edge:from-to like top:7.8-13.0`);
+      return { edge: found[1], from: Number(found[2]), to: Number(found[3]) };
+    });
+}
 
 main("edge-scan", () => {
   const args = parse("edge-scan.mjs", SPEC, process.argv.slice(2));
+  const accepted = parseAccepted(args.accept);
+  const isAccepted = (finding) =>
+    accepted.some(
+      (range) => range.edge === finding.edge && finding.from >= range.from - SLACK && finding.to <= range.to + SLACK,
+    );
   const { width, height, duration } = probeGeometry(args.video);
   const safeX = roundHalfEven(width * 0.035);
   const safeY = roundHalfEven(height * 0.035);
@@ -156,6 +182,8 @@ main("edge-scan", () => {
     }
   }
 
+  for (const finding of findings) if (isAccepted(finding)) finding.accepted = true;
+
   if (args.json) {
     console.log(asJson({ x: safeX, y: safeY }, findings));
   } else {
@@ -164,7 +192,9 @@ main("edge-scan", () => {
     for (const finding of [...findings].sort((a, b) => a.from - b.from)) {
       const span = `${fixed(finding.from, 2).padStart(6)}s to ${fixed(finding.to, 2).padStart(6)}s`;
       const edge = finding.edge.padEnd(6);
-      if (finding.state === "tight") {
+      if (finding.accepted) {
+        console.log(`  ALLOWED  ${edge} ${span}  looked at already, listed in --accept`);
+      } else if (finding.state === "tight") {
         console.log(`  TIGHT    ${edge} ${span}  a border sits ${finding.closest_px}px from the edge`);
       } else {
         console.log(`  CROSSES  ${edge} ${span}  content runs off the edge: crop it and check nothing is sliced`);
@@ -172,7 +202,7 @@ main("edge-scan", () => {
     }
     if (!findings.length) console.log("  nothing near the edges");
   }
-  return findings.some((finding) => finding.state === "tight") ? 1 : 0;
+  return findings.some((finding) => finding.state === "tight" && !finding.accepted) ? 1 : 0;
 });
 
 // A timestamp stays a float in the JSON that graders parse, so a whole number keeps its `.0`.
@@ -184,7 +214,8 @@ function asJson(safe, findings) {
       `      "state": ${JSON.stringify(finding.state)},`,
       `      "from": ${floatLiteral(finding.from)},`,
       `      "to": ${floatLiteral(finding.to)},`,
-      `      "closest_px": ${finding.closest_px}`,
+      `      "closest_px": ${finding.closest_px}${finding.accepted ? "," : ""}`,
+      ...(finding.accepted ? ['      "accepted": true'] : []),
       "    }",
     ].join("\n"),
   );

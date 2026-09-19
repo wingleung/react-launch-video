@@ -14,12 +14,16 @@ export function MotionBlurComposition({
   fps,
   durationInFrames,
   samples = 4,
+  width = 1920,
+  height = 1080,
 }: {
   id: string;
   component: React.ComponentType;
   fps: number;
   durationInFrames: number;
   samples?: number;
+  width?: number;
+  height?: number;
 }) {
   function ShutterSamples() {
     const frame = useCurrentFrame();
@@ -38,8 +42,8 @@ export function MotionBlurComposition({
       component={ShutterSamples}
       fps={fps * samples}
       durationInFrames={durationInFrames * samples}
-      width={1920}
-      height={1080}
+      width={width}
+      height={height}
     />
   );
 }

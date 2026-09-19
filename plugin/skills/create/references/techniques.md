@@ -194,7 +194,9 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
 
 - **Fonts** come from the product (its public folder), from a licensed package (`@fontsource/*`) or, if the product only
   loads them from a CDN, from that same family installed as a package. Never copy files from the system font folder or
-  out of another application: their licence does not cover redistribution in a video project.
+  out of another application: their licence does not cover redistribution in a video project. `next/font` has no file
+  to copy and no package that works outside the Next compiler, so install the same family from Fontsource at the same
+  weights and axes and record the substitution. `references/frameworks.md` has the table.
 - **Motion blur**: `@remotion/motion-blur` CameraMotionBlur stacks translucent copies in the browser. On a real reel it
   banded dark gradients (column jitter nearly doubled) and rendered about 6x slower. Instead register
   `MotionBlurComposition` (kit) and run `scripts/render-motion-blur.mjs`, which renders 4 samples per frame over a 180°

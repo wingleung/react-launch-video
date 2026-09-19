@@ -60,11 +60,10 @@ export function parse(prog, spec, argv) {
       }
       const raw = inlineValue !== undefined ? inlineValue : argv[(index += 1)];
       if (raw === undefined) die(prog, spec, `argument ${flag}: expected one argument`);
-      if (option.type === "float") {
+      if (option.type === "float" || option.type === "int") {
         const parsed = Number(raw);
-        if (raw.trim() === "" || Number.isNaN(parsed)) {
-          die(prog, spec, `argument ${flag}: invalid float value: '${raw}'`);
-        }
+        const bad = raw.trim() === "" || Number.isNaN(parsed) || (option.type === "int" && !Number.isInteger(parsed));
+        if (bad) die(prog, spec, `argument ${flag}: invalid ${option.type} value: '${raw}'`);
         values[option.dest] = parsed;
       } else {
         values[option.dest] = raw;
