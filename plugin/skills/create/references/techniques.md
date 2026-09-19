@@ -4,7 +4,7 @@ Everything here was learned building a real reel. Each item says what goes wrong
 
 ## Contents
 
-1. Making components renderable
+1. Making components renderable 1b. Getting a real app to bundle
 2. Styling and assets 2b. Rendering what the product really renders
 3. Frame determinism
 4. Measuring instead of guessing
@@ -31,6 +31,47 @@ Everything here was learned building a real reel. Each item says what goes wrong
   library to ONE copy (the product's) or the hook will not find the provider. Remotion already dedupes React.
 - **Never invent data.** Use the product's bundled fallback data, a real catalog file, fixtures or a recorded API
   response. Flag anything placeholder in the README so it is replaced before publishing.
+
+## 1b. Getting a real app to bundle
+
+Remotion bundles with webpack, not with the product's own build tool, so a product that builds perfectly on its own can
+still fail to bundle here. Work through this before splitting anything: a split is cheap to redo and an integration wall
+found after the storyboard is not.
+
+- **A Vite product does not get Vite.** `import.meta.glob` has no webpack equivalent and needs a small pre-loader that
+  expands it into real imports, `import.meta.env` needs a `DefinePlugin`, and any import the product's plugins handle
+  (yaml, and anything else non-standard) needs its own loader. Root-relative `url()` in CSS resolves only once
+  `resolve.roots` points at the product's public folder.
+- **Root-relative URLs built at runtime return 404.** `Config.setPublicDir` is necessary and not sufficient: Remotion
+  serves that folder under `/public/`, not at `/`. Any path the product assembles while running, an image path inside
+  its data or a CSS custom property a theme loader sets, has to go through `staticFile`.
+- **In a monorepo, resolve from the app.** Point `resolve.modules` at the app's own `node_modules`, alias React to one
+  copy so hooks find their provider, and point the TypeScript types at the product's `@types/react`. Put the reel
+  package outside the workspace globs too, or the user's task runner and CI pick up a Remotion package nobody meant to
+  ship.
+- **Build-time CSS extraction has to cover the reel as well.** The utility CSS rule in section 2 is not only about
+  Tailwind and UnoCSS. Anything that extracts from content globs (Panda) or through a bundler plugin (vanilla-extract,
+  Sass modules) has never been told the reel's own composition is content. The failure is silent: the render succeeds
+  and the product looks unstyled or half styled. Add the reel's sources to the tool's globs, and add the plugin to
+  `remotion.config.ts` where one is needed.
+- **Portals leave the camera.** Dialogs, popovers, tooltips, selects and dropdowns from Radix, Headless UI, shadcn and
+  MUI portal to `document.body` by default, which is outside the camera transform. The overlay draws unzoomed over the
+  captions, and `fitCamera` frames empty space because the measured box no longer says where the thing appears. Pass
+  the library's `container` prop so it mounts inside the product frame. Same class as `position: fixed` in section 2,
+  one construct further out.
+- **Overlays can mount a commit late.** Some libraries mount their popup one or more commits after `open` turns true,
+  which is after Remotion captured the frame, so the first stills show no dialog at all. Gate a `delayRender` on the
+  DOM node appearing, never on a timer.
+- **Stateful components need remounting per frame.** Remotion renders frames out of order across parallel tabs, so a
+  component that remembers what it last showed, reads `defaultValues` once or tracks focus renders differently
+  depending on which frames a tab happened to draw. `key={frame}` on the subtree fixes it by remounting every frame.
+  Know the side effect before you reach for it: a library that restores focus on mount now does so every frame, which
+  can scroll a list under the camera.
+- **An iframe will not render.** A preview that talks to its child through `postMessage` and a settle delay does not
+  resolve inside a frame capture. Alias the iframe component to a stub that renders the same document directly.
+- **Focus rings appear that a mouse user never sees.** Headless Chrome has had no pointer input, so anything focused
+  programmatically matches `:focus-visible` and draws a keyboard ring. Override it narrowly in the reel's CSS rather
+  than globally, so a deliberate keyboard-focus beat can still show one.
 
 ## 2. Styling and assets
 

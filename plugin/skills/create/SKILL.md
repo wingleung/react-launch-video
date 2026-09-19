@@ -65,6 +65,26 @@ Before designing anything, find what already exists, because the reel should sho
 Figma is rarely needed: the components, tokens and fonts already exist in code, and rendering them is exact and cannot
 drift. Anything you must invent (sample data, a placeholder page behind the product) gets flagged in the README.
 
+### 1b. Prove one component renders, before designing anything
+
+Before the storyboard, and before touching a single product file, run `node scripts/doctor.mjs`, then stand up a bare
+Remotion package next to the product and render one still of its most important component, imported unchanged, with
+hand-written props. Do not split anything yet, and do not style the reel: this package is the one step 4 builds on, so
+the work is not thrown away.
+
+Read the still. A command that exits 0 is not a pass: a component that renders a loading skeleton, an unstyled block,
+the wrong theme or an overlay drawn outside the frame has failed this gate as surely as one that threw.
+
+If it does not render, stop and tell the user which build tool and framework you found, what failed and what it would
+take to get past it. The whole method depends on the product's components running inside a plain webpack bundle, and
+every later step costs more to undo. `references/techniques.md` section 1b covers the usual causes: build-tool-only
+imports, public paths, monorepo resolution, silent CSS extraction, portals, late-mounting overlays, per-frame state and
+iframes.
+
+React Server Components cannot be rendered by a client bundler at all. If the product has an `app/` tree with `async`
+components, or a `use server` module in the path, say so here and agree with the user what to do, which is usually to
+build the reel from its client components only.
+
 ### 2. Storyboard with timings
 
 Fill in `references/storyboard.md` and show it to the user before building scenes. Structure:
@@ -132,16 +152,25 @@ collide or rush. Decide up front, in the storyboard, which you spend:
 
 ### 3. Make the components renderable
 
+**Before you touch a product file.** Run `git status`. If the tree is not clean, show the user what is uncommitted and
+ask before editing any of those files. If it is not a git repo at all, say so and get explicit agreement first. Then
+take a baseline: run the product's typecheck, tests and build now, and record the result. A check you only run
+afterwards cannot tell your split apart from what was already broken.
+
 Split each component into a display-only view that takes its state as a prop, leaving data fetching in the original.
 Stub platform APIs with a bundler alias, share context libraries as one copy and export the pieces of library-driven
-components. Prove the split changed nothing: diff the moved markup and run the product's typecheck, tests and build.
-Details: `references/techniques.md` sections 1 and 2.
+components. Prove the split changed nothing: diff the moved markup, then run the typecheck, tests and build again and
+compare against the baseline. Details: `references/techniques.md` sections 1, 1b and 2.
+
+If the product has no tests, or they are slow enough that you will not run them on each pass, say so in the report
+rather than quietly dropping the guarantee. When the reel is done, list every product file you changed and offer to
+revert the split: the user asked for a video, not a refactor.
 
 ### 4. Scaffold the reel
 
-Run `node scripts/doctor.mjs` first and fix what it reports. Remotion is free for individuals, non-profits and companies
-with up to 3 employees. A larger for-profit company needs a Remotion Company License, so say so once if the user works
-for one. Then create a separate package next to the product. Copy `assets/kit/` into its `src/` (move
+Take the package from step 1b, which already renders one real component, and make it the reel. Remotion is free for
+individuals, non-profits and companies with up to 3 employees. A larger for-profit company needs a Remotion Company
+License, so say so once if the user works for one. Copy `assets/kit/` into the package's `src/` (move
 `remotion.config.ts` to the package root), then adapt:
 
 - exact-pinned `remotion` and `@remotion/*` versions, `@remotion/fonts` for the product's own font files

@@ -38,8 +38,9 @@ What happens next:
 3. **It runs the gates** and keeps iterating until they pass, reporting which gate still fails if it cannot.
 4. **You get** `reel.mp4` (1920x1080), `storyboard.md` and the frames it reviewed.
 
-The two fixture cases in `evals/` take **20 to 30 minutes** each. Budget **30 to 60 minutes** and several renders
-for a first reel of a product it has not seen, most of it unattended.
+The two fixture cases in `evals/` take **20 to 30 minutes** each. A real product takes longer, and the time goes into
+getting it to render rather than into the motion: two reels of a Vite monorepo app took **3 to 4 hours** end to end.
+Most of that runs unattended, but stay for step 3, which is the one that edits your components.
 Ask for motion blur at the end ("render the final with motion blur"), it multiplies render time so it is not used during
 iteration.
 
