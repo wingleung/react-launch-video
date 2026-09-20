@@ -325,6 +325,107 @@ describe("reading-time", () => {
   });
 });
 
+describe("claims", () => {
+  // A kit small enough to have no dependencies at all, so the gate itself is under test rather than Remotion.
+  let kit;
+
+  before(() => {
+    kit = join(clips, "claims-kit");
+    mkdirSync(kit, { recursive: true });
+    writeFileSync(
+      join(kit, "timeline.ts"),
+      "export const FPS = 60;\n" +
+        "export const CUE = { start: 0, endCard: 2 } as const;\n" +
+        "export const DURATION_SECONDS = 4;\n",
+    );
+    writeFileSync(
+      join(kit, "curves.ts"),
+      "const ramp = (seconds: number) => Math.min(1, Math.max(0, seconds / 2));\n" +
+        'export const SIGNALS: Record<string, { unit: "%" | "px"; at: (seconds: number) => number }> = {\n' +
+        '  "product opacity": { unit: "%", at: ramp },\n' +
+        '  "product blur": { unit: "px", at: (seconds: number) => 10 * ramp(seconds) },\n' +
+        "};\n",
+    );
+  });
+
+  /** Write one comment into the fixture kit and run the gate over it. */
+  function claim(comment) {
+    writeFileSync(join(kit, "Demo.ts"), `// ${comment}\nexport const demo = 1;\n`);
+    return gate(join(create, "claims.mjs"), [kit]);
+  }
+
+  test("re-derives a claim from the curves", () => {
+    const { stdout, status } = claim("[measured: product opacity at endCard is 100%]");
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /ok {2}.*product opacity at endCard is 100% {2}\[100\.00%\]/);
+  });
+
+  test("fails a claim the curves no longer support, and says by how much", () => {
+    const { stdout, status } = claim("[measured: product opacity at endCard is 15%]");
+    assert.equal(status, 1);
+    assert.match(stdout, /off by 85\.00, outside the 0\.50 this claim allows/);
+  });
+
+  test("checks the extreme over a window and the moment it happens", () => {
+    const { stdout, status } = claim("[measured: min product blur over start..endCard is 0px]");
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /at 0\.000s/);
+  });
+
+  test("finds where a signal crosses a threshold", () => {
+    const { stdout, status } = claim("[measured: product opacity crosses 50% after start at 1.017s]");
+    assert.equal(status, 0, stdout);
+  });
+
+  test("rejects a signal the curves do not export, and lists the ones they do", () => {
+    const { stdout, status } = claim("[measured: title opacity at endCard is 100%]");
+    assert.equal(status, 1);
+    assert.match(stdout, /"title opacity" is not a signal \(curves\.ts has product opacity, product blur\)/);
+  });
+
+  test("rejects a claim in the wrong unit rather than comparing the numbers", () => {
+    const { stdout, status } = claim("[measured: product blur at endCard is 100%]");
+    assert.equal(status, 1);
+    assert.match(stdout, /"product blur" is measured in px, not %/);
+  });
+
+  test("reads a claim inside backticks as an example of the form, not as a claim", () => {
+    const { stdout, status } = claim("write one as `[measured: product opacity at endCard is 15%]`");
+    assert.equal(status, 0, stdout); // the wrong number in it is an example too, so neither half of the gate fires
+    assert.match(stdout, /0 claims/);
+  });
+
+  test("fails a figure written beside a signal with no claim behind it", () => {
+    const { stdout, status } = claim("the product opacity is 15% here, which nobody has ever checked");
+    assert.equal(status, 1);
+    assert.match(stdout, /"15%" sits beside a signal's name with no claim and no source/);
+  });
+
+  test("lets a tagged threshold and a cited figure through", () => {
+    assert.equal(claim("product opacity must stay under 10% [rule]").status, 0);
+    assert.equal(claim("product blur over 20px reads as fog [convention]").status, 0);
+    assert.equal(claim("product blur peaks at 20px ([source](https://example.com/blur))").status, 0);
+  });
+
+  test("does not excuse the rest of a block because one figure in it is claimed", () => {
+    const { stdout, status } = claim(
+      "[measured: product opacity at endCard is 100%] and the product blur is 3px there",
+    );
+    assert.equal(status, 1);
+    assert.match(stdout, /"3px" sits beside a signal's name/);
+  });
+
+  test("ignores a figure in prose that is not about brightness or blur", () => {
+    assert.equal(claim("the product renders at 880px wide so its own text is larger").status, 0);
+  });
+
+  test("prints every signal at every cue, which is where a claim's number comes from", () => {
+    const { stdout, status } = gate(join(create, "claims.mjs"), [kit, "--values", "cues"]);
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /product opacity {2}0\.0% {8}100\.0%/);
+  });
+});
+
 describe("doctor", () => {
   test("finds the filters the gates need", () => {
     const { stdout, status } = gate(join(create, "doctor.mjs"), []);

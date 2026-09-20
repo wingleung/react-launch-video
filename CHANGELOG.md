@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.3.0
+
+Every number the kit and the references state about the reel's timing is now re-derived from the code on every run.
+
+- **A new gate, `scripts/claims.mjs`.** Six wrong numbers shipped in kit comments over two evaluation rounds, each one
+  written as a justification for a timing choice and never looked at again once the timing moved, so each read as
+  documentation while being a defect report. A measurement is now written as a claim,
+  `[measured: product blur at endCard is 14.0px]`, and the gate imports the reel's own curves and re-derives it. It
+  also fails prose that puts a percentage or a pixel figure beside a signal with no claim behind it, which is the
+  shape all six had.
+- **`assets/kit/curves.ts`** holds every opacity and blur curve as a plain function of seconds, and `Reel.tsx`,
+  `Titles.tsx` and `Lockup.tsx` call it instead of keeping their own copies. A number checked against a second copy of
+  the timing proves nothing about the reel that ships.
+- **The product's exit blur no longer rides its fade.** It runs on its own ramp that finishes as the end card starts,
+  reaching 14px where it used to reach 5px, so the product is unreadable before anything on the card is readable.
+  Rule 1 asked for "blurred", which 5px satisfied on paper while still showing legible window shapes under the
+  wordmark, so the threshold is now 12px and measured.
+- **Two stale comments corrected**, both found by the new gate rather than by reading: the product is at 50% when the
+  end card starts, not 15%, and the end card starts on its own cue rather than where the product has "faded out".
+- `pacing.md` marks a threshold it sets with **[rule]**, the way it already marks unsourced practice [convention].
+- `claims.mjs` needs Node 22.18 or later, since it imports the kit's TypeScript rather than reimplementing it.
+
 ## 1.2.0
 
 An evaluation round found three holes and the gate that was letting them through.

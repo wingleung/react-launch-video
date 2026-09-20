@@ -30,23 +30,23 @@ Every animated element, not only the big moves. If it changes over time, it has 
 `File.tsx:line` or `File.tsx:first-last`) and names the easing that code really applies, by constant name or numbers.
 Helper defaults count: the kit's `tween` eases out with `easeOut` when no easing is passed, `springAt` uses `SMOOTH` and
 a bare `interpolate` is linear. Prefer `File.tsx#symbol`, naming the declaration that owns the call, so
-`const enter = tween(...)` is cited as `Reel.tsx#enter`: a line number is invalidated by any edit above it and a name
+`const productEnter = (s) => tween(...)` is cited as `curves.ts#productEnter`: a line number is invalidated by any edit above it and a name
 is not. Line and range citations still work. Generate the list with `node scripts/easing-inventory.mjs src`, and before
 the final render check the table with `--storyboard`. Delete kit components the reel does not use.
 
-| Element                  | Property                  | Easing                                                                | Duration               | Code                                                                                    |
-| ------------------------ | ------------------------- | --------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
-| Title words              | opacity, y, blur          | emphasizedIn `0.05, 0.7, 0.1, 1`, 90ms stagger                        | 0.9s                   | `Lockup.tsx#p`                                                                          |
-| Title exit               | scale, y, blur / opacity  | emphasizedOut `0.3, 0, 0.8, 0.15` / easeOut                           | 0.7s / 0.45s           | `Titles.tsx#exit` `Titles.tsx#gone`                                                     |
-| Product entrance / exit  | y, rotateX, scale, blur   | emphasizedIn / emphasizedOut, opacity out easeInOut, blur out easeOut | 1.0s / 0.8s, blur 0.4s | `Reel.tsx#enter` `Reel.tsx#arrived` `Reel.tsx#exit` `Reel.tsx#gone` `Reel.tsx#dissolve` |
-| Camera                   | focus, zoom               | `smoothPath` monotone cubic through keys                              | per key                | `Reel.tsx#track`                                                                        |
-| Product parts build      | opacity, y                | spring SMOOTH `damping 200`, 0.55s                                    | 0.55s                  | `reveal.ts:32`                                                                          |
-| Captions in / out, scrim | opacity, y, blur          | emphasizedIn 0.8s, 80ms stagger / emphasizedOut 0.4s, scrim easeOut   |                        | `Captions.tsx#enter` `Captions.tsx#leave` `Captions.tsx#current`                        |
-| Keycaps                  | y, opacity / press, leave | spring SNAPPY `damping 22, stiffness 260, mass 0.7` / easeOut         |                        | `Keys.tsx#enter` `Keys.tsx#leave` `Keys.tsx#down`                                       |
-| Cursor                   | x / y / click / fade      | easeInOut / settleY `0.3, 0.9, 0.3, 1` / linear / easeOut             |                        | `Cursor.tsx#previous` `Cursor.tsx#press`                                                |
-| Highlights               | angle                     | easeInOut lap                                                         |                        | `Ring.tsx#angle`                                                                        |
-| Ambient glow drift       | backdrop glow position    | sine                                                                  | continuous             | `scene/Stage.tsx`                                                                       |
-| Fade from and to black   | opacity                   | easeInOut `0.65, 0, 0.35, 1`                                          | 0.8s / 0.6s            | `Reel.tsx#fade`                                                                         |
+| Element                  | Property                  | Easing                                                                | Duration               | Code                                                                                                                              |
+| ------------------------ | ------------------------- | --------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Title words              | opacity, y, blur          | emphasizedIn `0.05, 0.7, 0.1, 1`, 90ms stagger                        | 0.9s                   | `curves.ts#rise`                                                                                                                  |
+| Title exit               | scale, y, blur / opacity  | emphasizedOut `0.3, 0, 0.8, 0.15` / easeOut                           | 0.7s / 0.45s           | `curves.ts#titleRecede` `curves.ts#titleGone`                                                                                     |
+| Product entrance / exit  | y, rotateX, scale, blur   | emphasizedIn / emphasizedOut, opacity out easeInOut, blur out easeOut | 1.0s / 0.8s, blur 0.4s | `curves.ts#productEnter` `curves.ts#productArrived` `curves.ts#productRecede` `curves.ts#productGone` `curves.ts#productDissolve` |
+| Camera                   | focus, zoom               | `smoothPath` monotone cubic through keys                              | per key                | `Reel.tsx#track`                                                                                                                  |
+| Product parts build      | opacity, y                | spring SMOOTH `damping 200`, 0.55s                                    | 0.55s                  | `reveal.ts:32`                                                                                                                    |
+| Captions in / out, scrim | opacity, y, blur          | emphasizedIn 0.8s, 80ms stagger / emphasizedOut 0.4s, scrim easeOut   |                        | `Captions.tsx#enter` `Captions.tsx#leave` `Captions.tsx#current`                                                                  |
+| Keycaps                  | y, opacity / press, leave | spring SNAPPY `damping 22, stiffness 260, mass 0.7` / easeOut         |                        | `Keys.tsx#enter` `Keys.tsx#leave` `Keys.tsx#down`                                                                                 |
+| Cursor                   | x / y / click / fade      | easeInOut / settleY `0.3, 0.9, 0.3, 1` / linear / easeOut             |                        | `Cursor.tsx#previous` `Cursor.tsx#press`                                                                                          |
+| Highlights               | angle                     | easeInOut lap                                                         |                        | `Ring.tsx#angle`                                                                                                                  |
+| Ambient glow drift       | backdrop glow position    | sine                                                                  | continuous             | `scene/Stage.tsx`                                                                                                                 |
+| Fade from and to black   | opacity                   | easeInOut `0.65, 0, 0.35, 1`                                          | 0.8s / 0.6s            | `curves.ts#reelFade`                                                                                                              |
 
 The line numbers above are the kit's. Yours move as you edit, so regenerate before the final check.
 
@@ -91,8 +91,8 @@ Write "checked, none" for a risk that does not apply, so a reviewer can tell che
 For each boundary between beats: which move ends, which starts and by how much they overlap (aim for 30 to 50%). Flag
 any gap where nothing is on screen. Overlap the motion, never the legibility: for every handoff that brings in text (the
 end card, a caption, a title) name the frame where the text passes 50% opacity and the product's opacity under it at
-that frame, which must be below 10%. Faint over faint is a dissolve and is fine. Check the midpoint of each handoff on a
-contact sheet.
+that frame, which must be below 10% or blurred past 12px. Faint over faint is a dissolve and is fine. [rule], set by
+references/pacing.md rule 1. Check the midpoint of each handoff on a contact sheet.
 
 ## Camera
 

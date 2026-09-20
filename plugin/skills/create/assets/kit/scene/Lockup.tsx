@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { emphasizedIn, tween } from "../motion";
+import { rise } from "../curves";
 
 export interface LockupWord {
   text: string;
@@ -11,13 +11,12 @@ export interface LockupWord {
 }
 
 const WORD_STAGGER = 0.09;
-/** A word is readable once fully settled: its start plus REVEAL. Count holds from the last word's settle. */
-export const REVEAL = 0.9;
 
+/** The curve lives in curves.ts so a script can evaluate it. Settling takes REVEAL: count holds from there. */
 export function useRise(start: number, distance: number) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const p = tween(frame, fps, [start, start + REVEAL], [0, 1], emphasizedIn);
+  const p = rise(frame / fps, start);
   return {
     opacity: p,
     transform: `translateY(${(1 - p) * distance}px)`,

@@ -3,11 +3,15 @@ export const FPS = 60;
 // Anchor each beat on the one before, so retiming a beat shifts everything after it. Overlap handoffs: the product
 // starts rising 0.05s into the title's exit.
 const TITLE_EXIT = 2.45;
-// The product rises 0.05s into the title's exit, while the title is still around 47%, so the two genuinely cross.
-// The lead is the whole game here and it is narrow on both sides. Sampled every quarter-frame across the handoff:
-// at 0.15s the title has already fallen to 9.7% with the product still at 0, leaving the brightest thing on screen
-// under a tenth, and at 0s the product is bright under text that is still readable. 0.05s is the measured middle:
-// the faintest moment is 40.3%, and the product never passes 10% while the title is above 50%.
+// The product rises 0.05s into the title's exit, so the two genuinely cross rather than queue.
+// [measured: title opacity at productIn is 46.7%]
+//
+// The lead is the whole game here and it is narrow on both sides, and both failures are quiet. Wait 0.15s and the
+// title is alone on an almost empty stage, [measured: title opacity at titleExit + 0.15 is 9.7%]. Wait none at all
+// and a bright product rises under text that is still being read. At 0.05s neither happens: the stage never empties,
+// [measured: min brightest over titleExit..productIn + 1.0 is 40.3%], and the product is still at nothing for as
+// long as the title is readable, [measured: max product opacity over titleExit..productIn is 0%] with
+// [measured: title opacity crosses 50% after titleExit at 2.500s].
 const PRODUCT = TITLE_EXIT + 0.05;
 const at = (seconds: number) => PRODUCT + seconds;
 
@@ -29,8 +33,9 @@ export const CUE = {
   lastAction: LAST_ACTION,
   // Outro: pull back as the product recedes, end card comes forward, holds, then everything fades to black.
   outro: OUTRO,
-  // The logo starts here with the product at 50% and still leaving, so no frame is empty, and the product's blur ramp
-  // ends on this cue, so from here on it is unreadable however bright it still is.
+  // The logo starts here with the product still substantial and still leaving, so no frame is empty:
+  // [measured: product opacity at endCard is 50.0%] and [measured: min brightest over outro..fadeOut is 38.4%].
+  // The product's blur ramp ends on this cue too, so from here on it is unreadable however bright it still is.
   endCard: OUTRO + 0.5,
   fadeOut: OUTRO + 3.8,
 } as const;

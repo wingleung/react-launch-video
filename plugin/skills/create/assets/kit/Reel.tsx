@@ -1,8 +1,8 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { CAMERA } from "./camera";
-import { easeInOut, easeOut, emphasizedIn, emphasizedOut, smoothPath, tween } from "./motion";
+import { productAlpha, productBlur, productEnter, productRecede, reelFade } from "./curves";
+import { smoothPath } from "./motion";
 import { Stage } from "./scene/Stage";
-import { CUE } from "./timeline";
 
 // The product's accent colours from its design tokens, at low alpha. Neutral placeholders until you set them.
 const GLOW: [string, string] = ["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.05)"];
@@ -23,22 +23,11 @@ export function Reel() {
   const cameraX = 960 - focusX * zoom;
   const cameraY = 540 - focusY * zoom;
 
-  // The move takes a second, the fade-in does not. Opacity arrives faster than the transform for the same reason it
-  // leaves faster at the outro: a product that brightens as slowly as it travels leaves the stage dark behind it.
-  const enter = tween(frame, fps, [CUE.productIn, CUE.productIn + 1.0], [0, 1], emphasizedIn);
-  const arrived = tween(frame, fps, [CUE.productIn, CUE.productIn + 0.4], [0, 1], emphasizedIn);
-  const exit = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], emphasizedOut);
-  // The product's departure and the end card's arrival cannot both satisfy the handoff rule by timing alone: the
-  // product has to be under 10% before the card is readable, which guarantees a dim moment between them. Blur is what
-  // resolves it, not timing. So the blur runs on its own ramp, finishing as the end card starts rather than riding the
-  // fade: by the time anything on the card is readable the product is unreadable at any opacity, while still bright
-  // enough to keep the frame alive. Tying it to the fade left it at 5px there, which is still legible shapes. The
-  // measured numbers live in references/pacing.md rule 1 and are deliberately not repeated here.
-  const gone = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], easeInOut);
-  const dissolve = tween(frame, fps, [CUE.outro + 0.1, CUE.endCard], [0, 1], easeOut);
-  const fade =
-    tween(frame, fps, [0, 0.8], [0, 1], easeInOut) *
-    (1 - tween(frame, fps, [CUE.fadeOut, CUE.fadeOut + 0.6], [0, 1], easeInOut));
+  // Opacity and blur are their own curves in curves.ts, deliberately faster than the moves below: that split is what
+  // keeps the stage lit through both handoffs, and curves.ts carries the reasoning and the measurements.
+  const enter = productEnter(seconds);
+  const recede = productRecede(seconds);
+  const fade = reelFade(seconds);
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
@@ -64,11 +53,11 @@ export function Reel() {
             style={{
               position: "absolute",
               inset: 0,
-              opacity: arrived * (1 - gone),
+              opacity: productAlpha(seconds),
               transform:
-                `perspective(2400px) translateY(${(1 - enter) * 140 + exit * 40}px) ` +
-                `rotateX(${(1 - enter) * 22}deg) scale(${0.94 + 0.06 * enter - 0.08 * exit})`,
-              filter: `blur(${(1 - arrived) * 14 + dissolve * 14}px)`,
+                `perspective(2400px) translateY(${(1 - enter) * 140 + recede * 40}px) ` +
+                `rotateX(${(1 - enter) * 22}deg) scale(${0.94 + 0.06 * enter - 0.08 * recede})`,
+              filter: `blur(${productBlur(seconds)}px)`,
             }}
           >
             {/* The product frame (browser, terminal, device) with the real components inside. */}

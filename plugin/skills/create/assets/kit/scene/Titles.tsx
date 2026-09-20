@@ -1,5 +1,5 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { easeOut, emphasizedOut, tween } from "../motion";
+import { titleAlpha, titleBlur, titleGone, titleRecede } from "../curves";
 
 /**
  * Opens the reel, then recedes (smaller, blurred) as the product rises in front of it. Start the product's entrance
@@ -13,8 +13,9 @@ import { easeOut, emphasizedOut, tween } from "../motion";
 export function TitleCard({ exitAt, children }: { exitAt: number; children: React.ReactNode }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const exit = tween(frame, fps, [exitAt, exitAt + 0.7], [0, 1], emphasizedOut);
-  const gone = tween(frame, fps, [exitAt, exitAt + 0.45], [0, 1], easeOut);
+  const seconds = frame / fps;
+  const recede = titleRecede(seconds, exitAt);
+  const gone = titleGone(seconds, exitAt);
   if (gone >= 1) return null;
 
   return (
@@ -22,9 +23,9 @@ export function TitleCard({ exitAt, children }: { exitAt: number; children: Reac
       style={{
         alignItems: "center",
         justifyContent: "center",
-        opacity: 1 - gone,
-        transform: `translateY(${-40 * exit}px) scale(${1 - 0.1 * exit})`,
-        filter: gone > 0 ? `blur(${8 * gone}px)` : undefined,
+        opacity: titleAlpha(seconds, exitAt),
+        transform: `translateY(${-40 * recede}px) scale(${1 - 0.1 * recede})`,
+        filter: gone > 0 ? `blur(${titleBlur(seconds, exitAt)}px)` : undefined,
       }}
     >
       {children}
@@ -33,8 +34,9 @@ export function TitleCard({ exitAt, children }: { exitAt: number; children: Reac
 }
 
 /**
- * Comes forward as the product recedes. Start it once the product has faded out where the lockup sits (the kit's Reel
- * fades it by CUE.outro + 0.55), never over it, and hold for the subline's reading time before the fade to black.
+ * Comes forward as the product recedes. Start it on CUE.endCard, where the product is still leaving but already
+ * blurred past reading, and hold for the subline's reading time before the fade to black. references/pacing.md rule 1
+ * has why that is the cue and what the two of them measure there.
  */
 export function EndCard({ at, children }: { at: number; children: React.ReactNode }) {
   const frame = useCurrentFrame();

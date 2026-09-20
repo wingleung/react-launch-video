@@ -1,4 +1,5 @@
-// Just enough of argparse to keep the usage, help and error text these scripts already print.
+// Just enough of argparse to keep the usage, help and error text these scripts already print. An option with
+// `append` collects every occurrence into a list, the way argparse's action="append" does.
 // Not supported, because nothing here uses it: abbreviated flags ("--ever 0.5").
 
 const INDENT = 2;
@@ -41,7 +42,7 @@ function die(prog, spec, message) {
 /** Parse argv the way argparse would, or exit 0 on --help and 2 on a usage error. */
 export function parse(prog, spec, argv) {
   const values = {};
-  for (const option of spec.options) values[option.dest] = option.default;
+  for (const option of spec.options) values[option.dest] = option.append ? [] : option.default;
   const positionals = [];
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -65,6 +66,8 @@ export function parse(prog, spec, argv) {
         const bad = raw.trim() === "" || Number.isNaN(parsed) || (option.type === "int" && !Number.isInteger(parsed));
         if (bad) die(prog, spec, `argument ${flag}: invalid ${option.type} value: '${raw}'`);
         values[option.dest] = parsed;
+      } else if (option.append) {
+        values[option.dest].push(raw);
       } else {
         values[option.dest] = raw;
       }

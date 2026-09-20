@@ -38,8 +38,25 @@ writeFileSync(
   }),
 );
 execFileSync("npm", ["install", "--silent", "--no-audit", "--no-fund"], { cwd: dir, stdio: "inherit" });
-execFileSync("npx", ["tsc", "-p", "."], { cwd: dir, stdio: "inherit" });
+// tsc prints its own errors, so a stack trace from execFileSync on top of them is pure noise.
+try {
+  execFileSync("npx", ["tsc", "-p", "."], { cwd: dir, stdio: "inherit" });
+} catch {
+  process.exit(1);
+}
 console.log("kit typecheck passed");
+
+// Before the rewrite below, so the claim gate sees the kit exactly as a reel ships it, extensionless imports and all.
+const references = "plugin/skills/create/references";
+const docs = readdirSync(references)
+  .filter((name) => name.endsWith(".md"))
+  .flatMap((name) => ["--doc", join(references, name)]);
+try {
+  const args = [join(dir, "src"), "--as", "plugin/skills/create/assets/kit", ...docs];
+  execFileSync("node", ["plugin/skills/create/scripts/claims.mjs", ...args], { stdio: "inherit" });
+} catch {
+  process.exit(1);
+}
 
 // A bundler resolves `./motion` for Remotion, Node does not, so spell the extensions out in this throwaway copy.
 // camera.ts reaches only .ts files, which is why it carries no JSX.

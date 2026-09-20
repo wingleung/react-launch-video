@@ -41,12 +41,17 @@ export function runLenient(command, args, timeoutMs = 30000) {
   return `${result.stdout ?? ""}${result.stderr ?? ""}`;
 }
 
-/** Run a script body, reporting a failure as one line rather than a stack trace. */
+/** Run a script body, sync or async, reporting a failure as one line rather than a stack trace. */
 export function main(name, body) {
-  try {
-    process.exitCode = body() ?? 0;
-  } catch (error) {
+  const fail = (error) => {
     console.error(`${name}: ${error.message}`);
     process.exitCode = 1;
+  };
+  try {
+    const result = body();
+    if (result && typeof result.then === "function") result.then((code) => (process.exitCode = code ?? 0), fail);
+    else process.exitCode = result ?? 0;
+  } catch (error) {
+    fail(error);
   }
 }
