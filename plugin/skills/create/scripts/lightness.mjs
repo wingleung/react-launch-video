@@ -11,9 +11,17 @@
 // wordmark. Neither shows up in any other gate: check-video sees a lit frame and the blur rule is satisfied either
 // way.
 //
-// It finds the product's own background as the most repeated non-stage luma in a frame, which is what a large flat
-// UI surface is. Measured on three reels whose products differed only in palette, that recovered 0.06, 0.56 and 1.00
-// against declared values of 0.05, 0.56 and 1.00.
+// It reads the product's surface as the 75th percentile of the frame's non-stage pixels. The percentile is the point
+// here, twice over. It has to ignore the product's text and chrome, which are a minority of its area, and it has to
+// lean towards the brighter surface when a product has more than one, because LIGHTNESS ends up governing how much
+// PEAK brightness survives the blur and a peak comes from the brightest large thing rather than from an average.
+//
+// An earlier version took the most repeated non-stage luma instead, on the reasoning that a flat UI background is
+// the single most repeated value. That is true and it broke on the first product that had no flat background: a
+// near-white gradient spread its pixels thin enough that the densest single value was the stage's own glow, and the
+// gate read a white product as 0.06 and told the user to make it darker. Measured across five reels differing only
+// in palette (flat dark, flat mid-grey, flat white, a white gradient, and a white panel with a dark sidebar) the
+// percentile lands within 0.03 of the truth on all five where the mode was wrong by 0.84 on one of them.
 //
 // Needs ffmpeg and ffprobe on the PATH. No dependencies. Exits 1 when the two disagree by more than the tolerance.
 import { readFileSync } from "node:fs";
@@ -35,11 +43,12 @@ const SPEC = {
 
 // Below this a pixel is the stage rather than the product. The kit's own backdrop sits at about 6.
 const STAGE = 12;
-// A UI surface is a large flat area. Anything smaller than this is a button or a bar, not the background.
-const SURFACE = 0.02;
+// Enough of the frame has to be product for a percentile of it to mean anything.
+const SURFACE = 0.05;
+const QUANTILE = 0.75;
 const FRAMES = 9;
 
-/** The most repeated luma that is not the stage, and what fraction of the frame it covers. */
+/** The product's surface luma, as a high percentile of everything that is not the stage. */
 function surface(pixels) {
   const histogram = new Uint32Array(256);
   let counted = 0;
@@ -49,9 +58,12 @@ function surface(pixels) {
     counted++;
   }
   if (!counted) return null;
-  let best = STAGE;
-  for (let value = STAGE; value < 256; value++) if (histogram[value] > histogram[best]) best = value;
-  return { luma: best, share: histogram[best] / pixels.length };
+  let seen = 0;
+  for (let value = STAGE; value < 256; value++) {
+    seen += histogram[value];
+    if (seen >= counted * QUANTILE) return { luma: value, share: counted / pixels.length };
+  }
+  return { luma: 255, share: counted / pixels.length };
 }
 
 /** One frame of raw 8-bit grey, seeking before the input so ffmpeg does not decode everything up to it. */
@@ -103,8 +115,10 @@ main("lightness", () => {
 
   if (!found.length) {
     // Every frame was stage, so either the product never appears or it is darker than the backdrop it sits on.
-    console.log(`warn  no flat surface covering ${SURFACE * 100}% of the frame was found, so nothing can be compared`);
-    console.log(`      this reads as a product with no large background of its own, or one darker than the stage`);
+    console.log(
+      `warn  less than ${SURFACE * 100}% of the frame is product, so there is nothing to take a reading from`,
+    );
+    console.log(`      this reads as a product that never fills the stage, or one darker than the backdrop it sits on`);
     return declared <= 0.1 ? 0 : 1;
   }
 
@@ -115,7 +129,8 @@ main("lightness", () => {
 
   for (const one of found) {
     console.log(
-      `      ${fixed(one.at, 2)}s  surface at luma ${one.luma} over ${fixed(one.share * 100, 1)}% of the frame`,
+      `      ${fixed(one.at, 2)}s  surface reads luma ${one.luma}, from the ${fixed(one.share * 100, 1)}%` +
+        ` of the frame that is product`,
     );
   }
   console.log(

@@ -574,6 +574,57 @@ describe("lightness", () => {
     assert.match(stdout, /can empty the stage/);
   });
 
+  // A product with no flat background at all. The first version of this gate took the most repeated luma and read
+  // a near-white gradient as 0.06, because the stage's own glow was denser than any one band of the gradient, so
+  // it told the author of a white product to make it darker. The assertion is that shape, not an exact number.
+  test("reads a pale gradient as pale, not as the stage behind it", () => {
+    const out = join(clips, "gradient.mp4");
+    ffmpeg(
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=0x05060a:s=1920x1080:r=60:d=20",
+      "-f",
+      "lavfi",
+      // a surface that ramps down its height, so no single luma is the background
+      "-i",
+      "color=c=black:s=1200x460:r=60:d=20,geq=lum=170+60*Y/H:cb=128:cr=128",
+      "-filter_complex",
+      "[0:v][1:v]overlay=x=360:y=210",
+      "-pix_fmt",
+      "yuv420p",
+      out,
+    );
+    const read = gate(join(create, "lightness.mjs"), [out, "--declared", "0.85"]);
+    assert.equal(read.status, 0, read.stdout);
+    const [, shown] = /the render shows (\d\.\d\d)/.exec(read.stdout) ?? [];
+    assert.ok(Number(shown) >= 0.75, `a pale gradient should not read dark, read ${shown}`);
+
+    const wrong = gate(join(create, "lightness.mjs"), [out, "--declared", "0"]);
+    assert.equal(wrong.status, 1);
+    assert.match(wrong.stdout, /paler than the kit was told/);
+  });
+
+  // Two surfaces and no single background. LIGHTNESS governs how much PEAK brightness survives the blur, and a peak
+  // comes from the brightest large thing, so the pale panel is the right answer rather than an average of the two.
+  test("follows the brighter surface when a product has two", () => {
+    const out = join(clips, "split.mp4");
+    ffmpeg(
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=0x05060a:s=1920x1080:r=60:d=20",
+      "-vf",
+      "drawbox=x=360:y=210:w=1200:h=460:color=0xffffff:t=fill," +
+        "drawbox=x=360:y=210:w=400:h=460:color=0x12151c:t=fill",
+      "-pix_fmt",
+      "yuv420p",
+      out,
+    );
+    const { stdout, status } = gate(join(create, "lightness.mjs"), [out, "--declared", "1"]);
+    assert.equal(status, 0, stdout);
+  });
+
   test("reads the declared value out of the kit's own curves.ts", () => {
     const src = join(clips, "lightness-src");
     mkdirSync(src, { recursive: true });

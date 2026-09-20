@@ -38,11 +38,18 @@ frame shows.
   before. Set on the test products it took the slab behind the wordmark from 35% of peak brightness to 12% on a
   mid-grey product and from 23% to 3% on a light one, and all three palettes then land within 5.6 to 5.8:1 of
   wordmark contrast. `kit-check` pins the default and the direction of both derived values.
-- **A new gate, `scripts/lightness.mjs`**, so `LIGHTNESS` is enforced rather than advisory. It finds the product's
-  own background in the render as the most repeated non-stage luma, which is what a large flat UI surface is, and
-  fails when that disagrees with what `curves.ts` declares. On three reels differing only in palette it recovered
-  0.06, 0.56 and 1.00 against declared values of 0.05, 0.56 and 1.00. It names the direction and the remedy, because
-  the two ends go wrong in opposite ways.
+- **A new gate, `scripts/lightness.mjs`**, so `LIGHTNESS` is enforced rather than advisory. It reads the product's
+  surface as a high percentile of the frame's non-stage pixels and fails when that disagrees with what `curves.ts`
+  declares, naming the direction and the remedy, because the two ends go wrong in opposite ways. Across five reels
+  differing only in palette, flat dark, flat mid-grey, flat white, a white gradient and a white panel with a dark
+  sidebar, it lands within 0.03 of the truth on all five.
+- The percentile is deliberate on both counts: it has to ignore the product's text, which is a minority of its area,
+  and it has to follow the brighter surface when a product has two, because `LIGHTNESS` governs how much **peak**
+  brightness survives the blur and a peak comes from the brightest large thing rather than from an average. The
+  first version took the most repeated luma instead, on the reasoning that a flat UI background is the most repeated
+  value. That is true right up until a product has no flat background: a near-white gradient spread its pixels thin
+  enough that the densest single value was the stage's own glow, and the gate read a white product as 0.06 and told
+  its author to make it darker.
 - **The opposite risk appears as the product gets paler, and the lightness gate is what now reports it.** At the frame where the end card's
   wordmark is half risen, the blurred product behind it sits at 7% of the reel's peak brightness when the product is
   dark, 23% when it is light and 35% when it is mid-grey. All three pass the 12px rule, so the card always lands on
