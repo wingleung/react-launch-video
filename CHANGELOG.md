@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0
+
+An evaluation round found three holes and the gate that was letting them through.
+
+- **The empty-stage gate now scales with depth.** It found both holes in the test reel and discarded both for being a
+  frame or two short of a flat six-frame rule, including a near-black frame held five frames.
+- **Both kit handoffs are retimed, and measured.** The title handoff left the brightest thing on screen at 9.7%. The
+  outro cannot be fixed by timing at all: blur is what makes a leaving product unreadable, not opacity, and rule 1 in
+  `pacing.md` now says so with the numbers.
+- **Three comments in the kit asserted things that were not true.** Each was written as a justification.
+- **`easing-inventory` no longer fights the storyboard template**, which asks for file references in tables it was
+  reading as easing citations. It reads the easing table only, and the kit's storyboard now cites symbols.
+- **`edge-scan` scales its threshold down for low-contrast content**, so a dark theme's own borders are not invisible
+  to it. It never scales up, so bright content is unaffected.
+- **Nine pieces of friction from a real build run** are now in the skill: a measurement step of its own, what to do
+  when captions and reading time and a requested length collide, why a wide product needs a narrower viewport rather
+  than a bigger zoom, and `position: fixed` escaping the camera.
+- `Cursor` takes any number of clicks, and `render-motion-blur` no longer leaves a 40MB file among the deliverables.
+
 ## 1.1.0
 
 Everything here came from two runs on real products plus an audit, not from the test fixtures.

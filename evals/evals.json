@@ -21,7 +21,7 @@
         "Rendered frames were reviewed and the review is written down: stills or contact sheets are saved in outputs/ together with a log of what they showed and what changed",
         "On frames extracted in the middle of each caption and each push-in, captions and keycaps do not overlap product content (blurred product content counts) or each other and no text line, row or control is sliced at the frame edge (window chrome bleeding cleanly off the frame is allowed)",
         "Fonts come from the product, the repo, a licensed package or the product's own CDN font family, not files copied from the system font folder or another application",
-        "Window chrome and keyboard labels target Linux and Windows users (no macOS traffic lights, no ⌘ glyphs)",
+        "Window chrome and keyboard labels target Linux and Windows users (no macOS traffic lights, no \u2318 glyphs)",
         "The storyboard's easing inventory matches the code: each easing it names is the one the code applies to that element (helper defaults included, for example a tween with no easing argument is not linear) and no animated element in the code is missing from it",
         "No window or card border rests within 3.5% of the frame edge (67px left or right, 38px top or bottom) for 0.6s or more: borders stay inside that margin or bleed clearly off the frame (`edge-scan.mjs <reel> --json` lists no TIGHT range, confirmed on frames)",
         "In every handoff that brings in text (title, captions, end card) the text never appears over product content that is still visible, sharp or blurred, checked on frames at the midpoint of each handoff",
@@ -54,7 +54,7 @@
         "Rendered frames were reviewed and the review is written down: stills or contact sheets are saved in outputs/ together with a log of what they showed and what changed",
         "On frames extracted in the middle of each caption and each push-in, captions and keycaps do not overlap product content (blurred product content counts) or each other and no text line, row or control is sliced at the frame edge (window chrome bleeding cleanly off the frame is allowed)",
         "Fonts come from the product, the repo, a licensed package or the product's own CDN font family, not files copied from the system font folder or another application",
-        "Window chrome and keyboard labels target Linux and Windows users (no macOS traffic lights, no ⌘ glyphs)",
+        "Window chrome and keyboard labels target Linux and Windows users (no macOS traffic lights, no \u2318 glyphs)",
         "The storyboard's easing inventory matches the code: each easing it names is the one the code applies to that element (helper defaults included, for example a tween with no easing argument is not linear) and no animated element in the code is missing from it",
         "No window or card border rests within 3.5% of the frame edge (67px left or right, 38px top or bottom) for 0.6s or more: borders stay inside that margin or bleed clearly off the frame (`edge-scan.mjs <reel> --json` lists no TIGHT range, confirmed on frames)",
         "In every handoff that brings in text (title, captions, end card) the text never appears over product content that is still visible, sharp or blurred, checked on frames at the midpoint of each handoff",
@@ -91,8 +91,9 @@
         "Flags the dashboard's right border at about x 1910 (left 320 plus width 1590), about 10px from the frame edge and inside the action-safe margin",
         "Flags the end card text drawn over the dashboard, which is still fully visible when the end card appears",
         "Flags the README's accepted known issue (a table row cut by the frame edge during the push-in) as a problem to fix before the final render, not an acceptable caveat",
-        "Flags the 'Press ⌘K to search' hint as unverified against the real product (nothing in the project backs it up) and as a macOS glyph",
-        "Findings are severity ranked with file and line or cue references and each has a concrete fix"
+        "Flags the 'Press \u2318K to search' hint as unverified against the real product (nothing in the project backs it up) and as a macOS glyph",
+        "Findings are severity ranked with file and line or cue references and each has a concrete fix",
+        "Finds that the camera transform in StatusReel.tsx sets no transform-origin, so the browser default of 50% 50% shifts the frame by 960*(1-zoom): at the zoom-1.8 push-in the frame centre shows source x=1127 instead of the targeted 700, and the panel top is pushed to y=-180. Naming the missing transform-origin is what counts, not merely noticing the framing looks wrong"
       ]
     }
   ]

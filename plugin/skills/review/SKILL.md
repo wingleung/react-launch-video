@@ -37,6 +37,10 @@ hold for being slow if the text on screen needs it.
 5. If there is no render, review code and timeline only, and list what could not be verified. Work out edge distances
    and overlaps from the layout numbers (a window's left plus width against the 1920 frame) where you can.
 
+When the project's product could not render inside Remotion in the first place (a server-rendered framework, a
+styling system that needs a bundler plugin, a font that only exists inside a compiler), say so: the create skill's
+`references/frameworks.md` has the table, and a reel built around an unrenderable product is a finding, not a detail.
+
 For every piece of on-screen text, compute its required hold with `node ${CLAUDE_SKILL_DIR}/scripts/reading-time.mjs`
 instead of estimating.
 
