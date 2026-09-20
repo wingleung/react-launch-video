@@ -3,8 +3,10 @@
 Researched September 2026. Linear, Vercel, Framer, Apple and Stripe do not publish timings for their own launch videos,
 so the numbers below come from design-system motion tokens, animation docs, subtitle rules and reading-speed research.
 Anything marked **[convention]** is common practice with no source behind it: treat it as a starting point, not a rule.
-Anything marked **[rule]** is a threshold this file sets. Anything written as a `[measured: ...]` claim is re-derived
-from the kit's own curves by `scripts/claims.mjs` on every run, so it is true here or the build fails.
+Anything marked **[rule]** is a threshold this file sets. Anything marked **[rendered]** was read off real frames and
+cannot be re-derived from a curve, so it dates from the render that produced it. Anything written as a
+`[measured: ...]` claim is re-derived from the kit's own curves by `scripts/claims.mjs` on every run, so it is true
+here or the build fails.
 All frame counts assume 60fps.
 
 ## Durations per segment
@@ -65,24 +67,31 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
    artifacts, but keep it under 20px (Emil Kowalski).
 
    Overlap the motion, not the legibility: at the first frame arriving text passes 50% opacity, the product under it
-   is **either** below 10% **or** blurred past 12px, and neither side is ever alone on an empty stage. [rule]
+   is **either** below 10% **or** blurred past 12px, and neither side is ever alone on an empty stage. Blur satisfies
+   the first half of that and works against the second, so it never counts as evidence for both. [rule]
 
    Those two halves fight each other, and which way you resolve it depends on the handoff. The kit's title handoff has
    a middle. Wait 0.15s and the title is alone on a stage with [measured: title opacity at titleExit + 0.15 is 9.7%]
    left on it, wait none at all and a bright product rises under text that is still being read, and at the 0.05s the
-   kit uses neither happens: [measured: min brightest over titleExit..productIn + 1.0 is 40.3%].
+   kit uses neither happens: [measured: min brightest over titleExit..productIn + 1.0 is 26.1%].
 
    The outro has no such middle. Search the whole timing space and there is none, because the product must fall under
-   the opacity threshold before the card is readable, which guarantees a dim frame between them. Blur is what resolves
-   it rather than timing: the product leaves over 0.8s so it is still substantial when the end card starts,
-   [measured: product opacity at endCard is 50.0%], while its blur runs on its own faster ramp that finishes on that
-   same cue, [measured: product blur at endCard is 14.0px]. A blurred product is not readable at any opacity, which is
-   the point the opacity threshold was always standing in for.
+   the opacity threshold before the card is readable, which guarantees a dim frame between them. Blur is what makes
+   the product unreadable while it is still substantial, [measured: product opacity at endCard is 79.2%] with
+   [measured: product blur at endCard is 14.0px], and a blurred product is not readable at any opacity, which is the
+   point the opacity threshold was always standing in for.
 
-   The blur threshold is measured, not chosen. An earlier kit tied the blur to the fade, so it had barely begun when
-   the card arrived, and a barely blurred product still shows legible window shapes and text blocks under the wordmark.
-   Ramp the blur separately from the opacity so it is finished before the card arrives rather than stretching the fade,
-   which only trades a readable product for a dark frame.
+   **Blur does not keep the stage lit, though, and assuming it did is what shipped the worst frame in the kit.**
+   Defocus spreads a highlight, so it takes peak brightness with it, and a product screenshot is mostly thin text on a
+   dark panel. Rendered, peak luma fell from 243 to 76 in three frames as the blur crossed 8px and bottomed at 11% of
+   the reel's median: the product went unreadable and dark together and left a 0.33s hole that no retiming closed.
+   [rendered], September 2026. The curves said 96% lit throughout, because opacity survives blur and light does not.
+
+   So the outro needs all three. Blur for unreadability, a bloom that puts back the light the blur takes so the
+   receding product still reads as something rather than as nothing, and a genuine overlap, the end card starting
+   0.4s into the outro while the product is still substantial rather than after it has gone. The result is
+   [measured: min brightest over outro..fadeOut is 34.9%]. Do not verify any of this from the curves alone: run
+   `check-video.mjs` on a real render, which measures pixels instead of predicting them.
 
    An emphasized accelerate exit still shows 85% opacity at its midpoint, so fade the product's opacity on a faster
    curve than its recede. Measured while building the kit: sequencing the two moves so they never overlap looks safer

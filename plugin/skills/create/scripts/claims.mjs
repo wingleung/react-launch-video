@@ -19,7 +19,10 @@
 //
 // The second half is the lint. Prose that puts a percentage or a pixel figure beside a signal's name without a claim
 // fails too, because that is the shape all six defects had. Tag the block [convention] for practice with no source,
-// [rule] for a threshold the document itself sets, or cite one, when the figure is not a measurement of this reel.
+// [rule] for a threshold the document itself sets, [rendered] for something measured off real frames that no curve
+// can re-derive (peak luma under blur, banding, a colour), or cite one, when the figure is not a measurement of
+// this reel. [rendered] is the honest escape hatch and also the weakest: it dates from the render that produced it,
+// so say which reel, and prefer a claim whenever the number is a property of the curves.
 //
 // Needs the reel's own node_modules and a Node that can import TypeScript (22.18 or later), because it imports the
 // curves rather than reimplementing them. A second copy of the timing would drift exactly where this has to be right.
@@ -289,10 +292,11 @@ main("claims", async () => {
         Object.keys(kit.signals).flatMap((name) => [name, name.replace(/ (opacity|blur)$/, "")]),
       );
       const about = [...subjects].some((subject) => prose.includes(subject.toLowerCase())) && MEASURE.test(prose);
-      // A figure is accounted for when it sits inside a claim, when the block is tagged [convention] as practice or
-      // [rule] as a threshold this document sets, or when the block cites a source. One claim does not excuse the
-      // rest of its block: that loophole is how a right number ends up vouching for a wrong one two lines below.
-      if (!about || /\[convention\]|\[rule\]|\]\(http/.test(block.text)) continue;
+      // A figure is accounted for when it sits inside a claim, when the block is tagged [convention] as practice,
+      // [rule] as a threshold this document sets or [rendered] as read off real frames, or when the block cites a
+      // source. One claim does not excuse the rest of its block: that loophole is how a right number ends up
+      // vouching for a wrong one two lines below.
+      if (!about || /\[convention\]|\[rule\]|\[rendered\]|\]\(http/.test(block.text)) continue;
       const spans = written.map((claim) => [claim.index, claim.index + claim[0].length]);
       for (const figure of block.text.matchAll(FIGURE)) {
         if (spans.some(([from, to]) => figure.index >= from && figure.index < to)) continue;

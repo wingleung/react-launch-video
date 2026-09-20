@@ -407,6 +407,12 @@ describe("claims", () => {
     assert.equal(claim("product blur peaks at 20px ([source](https://example.com/blur))").status, 0);
   });
 
+  // Peak luma under blur is the case this exists for: it is a real measurement and no curve can re-derive it.
+  test("lets a figure read off a render through when it says so", () => {
+    assert.equal(claim("product opacity bottomed at 11% of the median [rendered]").status, 0);
+    assert.equal(claim("product opacity bottomed at 11% of the median").status, 1);
+  });
+
   test("does not excuse the rest of a block because one figure in it is claimed", () => {
     const { stdout, status } = claim(
       "[measured: product opacity at endCard is 100%] and the product blur is 3px there",

@@ -41,6 +41,15 @@ export const productGone = (seconds: number) =>
 /** The exit blur, on its own faster ramp that finishes as the end card starts. See references/pacing.md rule 1. */
 export const productDissolve = (seconds: number) =>
   tween(f(seconds), FPS, [CUE.outro + 0.1, CUE.endCard], [0, 1], easeOut);
+/**
+ * Defocus spreads a highlight over a wider area, so it takes the peak brightness down with it. On a product made of
+ * thin text on a dark panel that is most of the light in the frame, and the collapse is brutal: peak luma fell from
+ * 243 to 76 in three frames as the blur crossed 8px, and bottomed at 11% of the reel's median. [rendered] on the
+ * kit's own outro, September 2026. Blur alone therefore cannot both hide the product and keep the stage lit,
+ * whatever the timing, which is what an earlier version of rule 1 got wrong. This puts the light back as the blur
+ * takes it away, the way a real defocused highlight blooms rather than simply dimming.
+ */
+export const productBloom = (seconds: number) => 1 + productDissolve(seconds) * 1.2;
 
 export const reelFade = (seconds: number) =>
   tween(f(seconds), FPS, [0, 0.8], [0, 1], easeInOut) *
@@ -60,9 +69,58 @@ export const productBlur = (seconds: number) => (1 - productArrived(seconds)) * 
 /** The kit's end card: logo and headline both rise on CUE.endCard, later words only later still. */
 export const endCardOpacity = (seconds: number) => reelFade(seconds) * rise(seconds, CUE.endCard);
 
-/** The brightest thing on the stage. A handoff that lets this fall away leaves the viewer looking at nothing. */
+/**
+ * How much of its peak brightness a blurred thing keeps. Blur spreads a highlight, so what it costs depends on the
+ * blur radius against the width of the strokes being spread: a 112px wordmark barely notices 4px, while 2px text in
+ * a product screenshot is gone by 8px. The curve below is in units of blur per stroke width for that reason.
+ *
+ * Calibrated against one rendered reel by sampling the brightest pixel per frame and dividing out the opacity the
+ * curve asked for. Both ends come from real frames, and they are far apart: display text at 0.36 kept 97%, product
+ * UI text at 4.0 kept 30% and at 7.0 kept 21%. [rendered], September 2026.
+ *
+ * It is a model of one reel, not a law, so treat it as a smoke alarm rather than a proof. The authority on whether a
+ * frame is empty is `check-video.mjs` on a real render, which measures pixels instead of predicting them. This
+ * exists so that a number written in a comment is not actively wrong.
+ */
+const KEEPS: [number, number][] = [
+  [0, 1],
+  [0.4, 0.97],
+  [1, 0.8],
+  [2, 0.55],
+  [3, 0.4],
+  [4, 0.3],
+  [5, 0.26],
+  [7, 0.21],
+  [10, 0.2],
+];
+/** Typical stroke widths on a 1920x1080 stage: a display lockup, and text inside the product's own UI. */
+export const STROKE = { display: 12, ui: 2 };
+export const survivesBlur = (blur: number, stroke: number) => {
+  const ratio = blur / stroke;
+  if (ratio <= 0) return 1;
+  for (let i = 1; i < KEEPS.length; i++) {
+    const [x0, y0] = KEEPS[i - 1]!;
+    const [x1, y1] = KEEPS[i]!;
+    if (ratio <= x1) return y0 + ((y1 - y0) * (ratio - x0)) / (x1 - x0);
+  }
+  return KEEPS[KEEPS.length - 1]![1];
+};
+
+/**
+ * The brightest thing on the stage, as a fraction of what a fully lit frame would be. A handoff that lets this fall
+ * away leaves the viewer looking at nothing.
+ *
+ * Opacity alone used to stand in for this, and it certified as 96% lit an outro frame that rendered at 11% of the
+ * reel's median, because a blurred layer keeps all of its opacity while losing almost all of its light. [rendered],
+ * September 2026. Blur and bloom are folded in here so the number means roughly what it says. Roughly: see
+ * survivesBlur on why this is a smoke alarm and why check-video on a real render is the proof.
+ */
 export const brightest = (seconds: number) =>
-  Math.max(titleOpacity(seconds), productOpacity(seconds), endCardOpacity(seconds));
+  Math.max(
+    titleOpacity(seconds) * survivesBlur(titleBlur(seconds), STROKE.display),
+    Math.min(1, productOpacity(seconds) * survivesBlur(productBlur(seconds), STROKE.ui) * productBloom(seconds)),
+    endCardOpacity(seconds),
+  );
 
 /**
  * The signals a `[measured: ...]` claim may name, with the unit the claim writes after its number. Add a row here

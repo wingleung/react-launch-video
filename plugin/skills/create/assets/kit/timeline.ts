@@ -9,7 +9,7 @@ const TITLE_EXIT = 2.45;
 // The lead is the whole game here and it is narrow on both sides, and both failures are quiet. Wait 0.15s and the
 // title is alone on an almost empty stage, [measured: title opacity at titleExit + 0.15 is 9.7%]. Wait none at all
 // and a bright product rises under text that is still being read. At 0.05s neither happens: the stage never empties,
-// [measured: min brightest over titleExit..productIn + 1.0 is 40.3%], and the product is still at nothing for as
+// [measured: min brightest over titleExit..productIn + 1.0 is 26.1%], and the product is still at nothing for as
 // long as the title is readable, [measured: max product opacity over titleExit..productIn is 0%] with
 // [measured: title opacity crosses 50% after titleExit at 2.500s].
 const PRODUCT = TITLE_EXIT + 0.05;
@@ -33,10 +33,16 @@ export const CUE = {
   lastAction: LAST_ACTION,
   // Outro: pull back as the product recedes, end card comes forward, holds, then everything fades to black.
   outro: OUTRO,
-  // The logo starts here with the product still substantial and still leaving, so no frame is empty:
-  // [measured: product opacity at endCard is 50.0%] and [measured: min brightest over outro..fadeOut is 38.4%].
-  // The product's blur ramp ends on this cue too, so from here on it is unreadable however bright it still is.
-  endCard: OUTRO + 0.5,
+  // The logo starts while the product is still substantial and still leaving, so the two cross rather than queue:
+  // [measured: product opacity at endCard is 79.2%]. The product's blur ramp ends on this cue too, so from here on
+  // it is unreadable however bright it still is, [measured: product blur at endCard is 14.0px].
+  //
+  // The lead was 0.5s until a render showed what the curves could not. Blur takes a frame's light with it, so the
+  // product went unreadable and dark together and left a 0.33s hole no amount of retiming closed. The card now comes
+  // 0.1s earlier and the product blooms as it blurs, which keeps the stage lit through the handoff:
+  // [measured: min brightest over outro..fadeOut is 34.9%]. On the render rather than the curve, the darkest frame
+  // of the outro went from 11% of the reel's median to 33%. [rendered], September 2026.
+  endCard: OUTRO + 0.4,
   fadeOut: OUTRO + 3.8,
 } as const;
 

@@ -116,4 +116,4 @@ try {
 } catch {
   process.exit(1);
 }
-console.log("kit camera holds still, reading times hold up, sizing generalises");
+console.log("kit camera holds still, reading times hold up, sizing generalises, blur falloff is calibrated");

@@ -1,6 +1,6 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { CAMERA } from "./camera";
-import { productAlpha, productBlur, productEnter, productRecede, reelFade } from "./curves";
+import { productAlpha, productBloom, productBlur, productEnter, productRecede, reelFade } from "./curves";
 import { smoothPath } from "./motion";
 import { Stage } from "./scene/Stage";
 
@@ -57,7 +57,8 @@ export function Reel() {
               transform:
                 `perspective(2400px) translateY(${(1 - enter) * 140 + recede * 40}px) ` +
                 `rotateX(${(1 - enter) * 22}deg) scale(${0.94 + 0.06 * enter - 0.08 * recede})`,
-              filter: `blur(${productBlur(seconds)}px)`,
+              // The bloom is not decoration: without it the blur takes the frame's light with it. See curves.ts.
+              filter: `blur(${productBlur(seconds)}px) brightness(${productBloom(seconds)})`,
             }}
           >
             {/* The product frame (browser, terminal, device) with the real components inside. */}
