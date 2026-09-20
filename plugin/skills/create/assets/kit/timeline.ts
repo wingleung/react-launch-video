@@ -1,12 +1,14 @@
 export const FPS = 60;
 
 // Anchor each beat on the one before, so retiming a beat shifts everything after it. Overlap handoffs: the product
-// starts rising 0.15s into the title's exit.
+// starts rising 0.05s into the title's exit.
 const TITLE_EXIT = 2.45;
-// The product rises 0.15s into the title's exit. By then the title is under 10% (Titles.tsx fades it over 0.45s), so
-// the two cross as a dissolve: nothing readable sits over anything readable, and no frame is empty. Starting later
-// looks tidier on paper and opens a visible gap, measured at 0.17s.
-const PRODUCT = TITLE_EXIT + 0.15;
+// The product rises 0.05s into the title's exit, while the title is still around 47%, so the two genuinely cross.
+// The lead is the whole game here and it is narrow on both sides. Sampled every quarter-frame across the handoff:
+// at 0.15s the title has already fallen to 9.7% with the product still at 0, leaving the brightest thing on screen
+// under a tenth, and at 0s the product is bright under text that is still readable. 0.05s is the measured middle:
+// the faintest moment is 40.3%, and the product never passes 10% while the title is above 50%.
+const PRODUCT = TITLE_EXIT + 0.05;
 const at = (seconds: number) => PRODUCT + seconds;
 
 const LAST_ACTION = at(12);

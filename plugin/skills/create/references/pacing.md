@@ -54,13 +54,25 @@ Never ease-in something that is arriving: it delays the moment the viewer is wat
 
 1. **Overlap handoffs.** Start the next move while the previous one is still finishing, 30 to 50% overlap. Title to
    product: the title scales to about 0.9, blurs 4 to 8px and fades over 0.5 to 0.7s, and the product starts rising
-   0.15s in and takes 0.8 to 1.0s. [convention], following the overlapping action principle
+   0.05s in and takes 0.8 to 1.0s. [convention], following the overlapping action principle
    ([StudioBinder](https://www.studiobinder.com/blog/what-are-the-12-principles-of-animation/)). Blur hides crossfade
    artifacts, but keep it under 20px (Emil Kowalski). Overlap the motion, not the legibility: at the first frame
-   arriving text passes 50% opacity, the product under it is below 10%, and neither side is ever alone on an empty
-   stage. An emphasized accelerate exit still shows 85% opacity at its midpoint, so fade the product's opacity on a
-   faster curve than its recede. Measured while building the kit: sequencing the two moves so they never overlap looks
-   safer and opens a 0.17s hole at each handoff, which reads worse than the dissolve. [convention]
+   arriving text passes 50% opacity, the product under it is **either** below 10% **or** blurred past about 5px, and
+   neither side is ever alone on an empty stage.
+
+   Those two halves fight each other, and which way you resolve it depends on the handoff. Sampled every quarter frame
+   across the kit's own title handoff, a 0.15s lead leaves the brightest thing on screen at 9.7%, while no lead at all
+   puts a bright product under readable text. 0.05s is the measured middle: faintest 40.3%, and nothing readable
+   overlapping. The outro has no such middle. Search the whole timing space and there is none, because the product must
+   fall below 10% before the card is readable, which guarantees a dim frame between them. Blur is what resolves it
+   rather than timing: the product leaves over 0.8s so it is still at 45% when the card passes 50%, and its blur rides
+   the fade rather than the slower recede, reaching 5.5px by then. A blurred product is not readable at any opacity,
+   which is the point the 10% figure was always standing in for.
+
+   An emphasized accelerate exit still shows 85% opacity at its midpoint, so fade the product's opacity on a faster
+   curve than its recede. Measured while building the kit: sequencing the two moves so they never overlap looks safer
+   and opens a 0.17s hole at each handoff, which reads worse than the dissolve. [convention]
+
 2. **No stop-go camera.** A multi-keyframe path eased at every key stops at every key. Ease only where the camera should
    really stop, and carry speed through the rest, like After Effects roving keyframes
    ([Adobe](https://helpx.adobe.com/after-effects/using/keyframe-interpolation.html)). `smoothPath` in the kit does
@@ -94,4 +106,7 @@ Never ease-in something that is arriving: it delays the moment the viewer is wat
     overscanned, so this is a composition rule rather than a delivery one: a window border resting a few pixels from the
     edge reads as a mistake. Either frame it inside or bleed it well off, and never slice a line of text. Measured on
     real renders: borders at 5 to 16px from the edge and rows sliced during a push-in were the edge problems reviewers
-    caught, and `node scripts/edge-scan.mjs` finds both.
+    caught, and `node scripts/edge-scan.mjs` finds both **when the border has contrast to find**. It thresholds on
+    Sobel magnitude, so a dark theme's own borders (a `#232833` line on `#0b0d12` peaks around 8 to 12) can sit below
+    it. The threshold now scales down for low-contrast strips, but on a dark UI check the margins by eye on a
+    full-resolution crop rather than treating a clean scan as proof.

@@ -33,7 +33,12 @@ const SPEC = {
   ],
 };
 
-const EDGE = 28; // Sobel magnitude that counts as an edge pixel: soft backdrop gradients stay under it
+const EDGE = 28; // Sobel magnitude that counts as an edge pixel on normal-contrast content
+// A dark theme's borders are genuinely faint: a #232833 line on #0b0d12 peaks at a Sobel magnitude around 8 to 12,
+// so a fixed 28 cannot see them and a real border 25px from the frame edge went unreported for four seconds. Scale
+// the threshold to the strongest edge the frame actually contains, and never upwards: bright content keeps 28 and
+// its false-positive behaviour is unchanged.
+const FAINT = 0.35;
 const LINE = 0.1; // a run of edge pixels this long (fraction of the edge length) is a border, text never runs that long
 const CROSS = 12; // edge pixels on the outermost two lines that mean something crosses the edge
 const HOLD = 0.6; // a border passing through the margin during a camera move is fine, one resting there is not
@@ -84,12 +89,12 @@ main("edge-scan", () => {
   ];
 
   // One pass over a line, counting edge pixels and the longest unbroken run of them.
-  const scanLine = (strip, spec, index) => {
+  const scanLine = (strip, spec, index, edge) => {
     let sum = 0;
     let longest = 0;
     let run = 0;
     const take = (value) => {
-      if (value > EDGE) {
+      if (value > edge) {
         sum += 1;
         run += 1;
         if (run > longest) longest = run;
@@ -126,17 +131,20 @@ main("edge-scan", () => {
       "gray",
       "-",
     ]);
+    let strongest = 0;
+    for (const value of raw) if (value > strongest) strongest = value;
+    const edge = Math.min(EDGE, Math.max(8, FAINT * strongest));
     const rows = [];
     for (let n = 0; n < Math.floor(raw.length / frameBytes); n += 1) {
       const strip = raw.subarray(n * frameBytes, (n + 1) * frameBytes);
       let state = "ok";
       let distance = -1;
-      if (scanLine(strip, spec, 0).sum + scanLine(strip, spec, 1).sum >= CROSS) {
+      if (scanLine(strip, spec, 0, edge).sum + scanLine(strip, spec, 1, edge).sum >= CROSS) {
         state = "crosses";
         distance = 0;
       } else {
         for (let index = 0; index < spec.depth; index += 1) {
-          if (scanLine(strip, spec, index).longest >= LINE * spec.length) {
+          if (scanLine(strip, spec, index, edge).longest >= LINE * spec.length) {
             if (index < (isSide ? safeX : safeY)) {
               state = "tight";
               distance = index;

@@ -3,9 +3,12 @@ import { easeOut, emphasizedOut, tween } from "../motion";
 
 /**
  * Opens the reel, then recedes (smaller, blurred) as the product rises in front of it. Start the product's entrance
- * about 0.15s after `exitAt` so the two moves overlap instead of queueing. The title's opacity leaves faster than its
- * recede, so it is gone before the rising product covers part of it: a half-covered headline behind a window reads as
- * a mistake, not as depth.
+ * 0.05s after `exitAt`, which `timeline.ts` records the measurement for: the two have to overlap while both are still
+ * substantial, or the stage goes dark between them.
+ *
+ * The blur is driven by the same progress as the opacity, not by the slower recede. Tied to the recede it is barely
+ * begun while the headline is still visible, so a crisp ghost of the title sits over the arriving product, which
+ * reads as a mistake rather than as depth.
  */
 export function TitleCard({ exitAt, children }: { exitAt: number; children: React.ReactNode }) {
   const frame = useCurrentFrame();
@@ -21,7 +24,7 @@ export function TitleCard({ exitAt, children }: { exitAt: number; children: Reac
         justifyContent: "center",
         opacity: 1 - gone,
         transform: `translateY(${-40 * exit}px) scale(${1 - 0.1 * exit})`,
-        filter: exit > 0 ? `blur(${8 * exit}px)` : undefined,
+        filter: gone > 0 ? `blur(${8 * gone}px)` : undefined,
       }}
     >
       {children}

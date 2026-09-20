@@ -23,12 +23,17 @@ export function Reel() {
   const cameraX = 960 - focusX * zoom;
   const cameraY = 540 - focusY * zoom;
 
+  // The move takes a second, the fade-in does not. Opacity arrives faster than the transform for the same reason it
+  // leaves faster at the outro: a product that brightens as slowly as it travels leaves the stage dark behind it.
   const enter = tween(frame, fps, [CUE.productIn, CUE.productIn + 1.0], [0, 1], emphasizedIn);
+  const arrived = tween(frame, fps, [CUE.productIn, CUE.productIn + 0.4], [0, 1], emphasizedIn);
   const exit = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], emphasizedOut);
-  // Opacity leaves faster than the recede (emphasizedOut still shows 85% at the midpoint), so the end card rises on
-  // clear background. It still overlaps: the product is at 15% when the end card starts and under 3% by the time its
-  // first words land, so no frame is empty.
-  const gone = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.7], [0, 1], easeInOut);
+  // The product's departure and the end card's arrival cannot both satisfy the handoff rule by timing alone: the
+  // product has to be under 10% before the card is readable, which guarantees a dim moment between them. Measured at
+  // the old 0.6s departure, the frame fell to 15% and a render put its brightest pixel at 36 of 255. Blur is what
+  // resolves it, not timing. The product now leaves over 0.8s, so it is still at 33% when the card passes 50%, and
+  // its blur rides the fade rather than the slower recede, so by then it carries 6.7px and is not readable.
+  const gone = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], easeInOut);
   const fade =
     tween(frame, fps, [0, 0.8], [0, 1], easeInOut) *
     (1 - tween(frame, fps, [CUE.fadeOut, CUE.fadeOut + 0.6], [0, 1], easeInOut));
@@ -57,11 +62,11 @@ export function Reel() {
             style={{
               position: "absolute",
               inset: 0,
-              opacity: enter * (1 - gone),
+              opacity: arrived * (1 - gone),
               transform:
                 `perspective(2400px) translateY(${(1 - enter) * 140 + exit * 40}px) ` +
                 `rotateX(${(1 - enter) * 22}deg) scale(${0.94 + 0.06 * enter - 0.08 * exit})`,
-              filter: `blur(${(1 - enter) * 14 + exit * 10}px)`,
+              filter: `blur(${(1 - arrived) * 14 + gone * 10}px)`,
             }}
           >
             {/* The product frame (browser, terminal, device) with the real components inside. */}

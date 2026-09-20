@@ -61,13 +61,20 @@ function emptyStretches(video, fps) {
   const edge = Math.trunc(1.5 * fps); // the fades from and to black are allowed to be dark
   const threshold = Math.min(60, 0.45 * median);
   const dark = values.map((value, index) => index >= edge && index < values.length - edge && value < threshold);
+  // How long a dip must last before it counts depends on how dark it is. A frame lit to a fifth of the reel's median
+  // is a hole as soon as you can see it, while a shallow dip has to persist to read as one. A single run length for
+  // both is what let a five-frame drop to 14% of median pass as acceptable.
+  const deep = Math.min(40, 0.2 * median);
+  const held = Math.max(3, roundHalfEven(0.1 * fps));
+  const glimpse = Math.max(2, roundHalfEven(0.033 * fps));
   const stretches = [];
   let start = null;
   dark.concat(false).forEach((isDark, index) => {
     if (isDark && start === null) {
       start = index;
     } else if (!isDark && start !== null) {
-      if (index - start >= Math.max(3, roundHalfEven(0.1 * fps))) stretches.push([start / fps, index / fps]);
+      const darkest = Math.min(...values.slice(start, index));
+      if (index - start >= (darkest < deep ? glimpse : held)) stretches.push([start / fps, index / fps]);
       start = null;
     }
   });

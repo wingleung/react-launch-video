@@ -34,19 +34,19 @@ a bare `interpolate` is linear. Prefer `File.tsx#symbol`, naming the declaration
 is not. Line and range citations still work. Generate the list with `node scripts/easing-inventory.mjs src`, and before
 the final render check the table with `--storyboard`. Delete kit components the reel does not use.
 
-| Element                  | Property                  | Easing                                                              | Duration     | Code                       |
-| ------------------------ | ------------------------- | ------------------------------------------------------------------- | ------------ | -------------------------- |
-| Title words              | opacity, y, blur          | emphasizedIn `0.05, 0.7, 0.1, 1`, 90ms stagger                      | 0.9s         | `scene/Lockup.tsx:20`      |
-| Title exit               | scale, y, blur / opacity  | emphasizedOut `0.3, 0, 0.8, 0.15` / easeOut                         | 0.7s / 0.45s | `scene/Titles.tsx:13-14`   |
-| Product entrance / exit  | y, rotateX, scale, blur   | emphasizedIn / emphasizedOut, opacity out easeInOut                 | 1.0s / 0.8s  | `Reel.tsx:26-31`           |
-| Camera                   | focus, zoom               | `smoothPath` monotone cubic through keys                            | per key      | `Reel.tsx:17`              |
-| Product parts build      | opacity, y                | spring SMOOTH `damping 200`, 0.55s                                  | 0.55s        | `reveal.ts:32`             |
-| Captions in / out, scrim | opacity, y, blur          | emphasizedIn 0.8s, 80ms stagger / emphasizedOut 0.4s, scrim easeOut |              | `scene/Captions.tsx:22-89` |
-| Keycaps                  | y, opacity / press, leave | spring SNAPPY `damping 22, stiffness 260, mass 0.7` / easeOut       |              | `scene/Keys.tsx:56-62`     |
-| Cursor                   | x / y / click / fade      | easeInOut / settleY `0.3, 0.9, 0.3, 1` / linear / easeOut           |              | `scene/Cursor.tsx:38-67`   |
-| Highlights               | angle                     | easeInOut lap                                                       |              | `scene/Ring.tsx:56`        |
-| Ambient glow drift       | backdrop glow position    | sine                                                                | continuous   | `scene/Stage.tsx`          |
-| Fade from and to black   | opacity                   | easeInOut `0.65, 0, 0.35, 1`                                        | 0.8s / 0.6s  | `Reel.tsx:33-34`           |
+| Element                  | Property                  | Easing                                                              | Duration     | Code                                                                |
+| ------------------------ | ------------------------- | ------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
+| Title words              | opacity, y, blur          | emphasizedIn `0.05, 0.7, 0.1, 1`, 90ms stagger                      | 0.9s         | `Lockup.tsx#p`                                                      |
+| Title exit               | scale, y, blur / opacity  | emphasizedOut `0.3, 0, 0.8, 0.15` / easeOut                         | 0.7s / 0.45s | `Titles.tsx#exit` `Titles.tsx#gone`                                 |
+| Product entrance / exit  | y, rotateX, scale, blur   | emphasizedIn / emphasizedOut, opacity out easeInOut                 | 1.0s / 0.8s  | `Reel.tsx#enter` `Reel.tsx#arrived` `Reel.tsx#exit` `Reel.tsx#gone` |
+| Camera                   | focus, zoom               | `smoothPath` monotone cubic through keys                            | per key      | `Reel.tsx#track`                                                    |
+| Product parts build      | opacity, y                | spring SMOOTH `damping 200`, 0.55s                                  | 0.55s        | `reveal.ts:32`                                                      |
+| Captions in / out, scrim | opacity, y, blur          | emphasizedIn 0.8s, 80ms stagger / emphasizedOut 0.4s, scrim easeOut |              | `Captions.tsx#enter` `Captions.tsx#leave` `Captions.tsx#current`    |
+| Keycaps                  | y, opacity / press, leave | spring SNAPPY `damping 22, stiffness 260, mass 0.7` / easeOut       |              | `Keys.tsx#enter` `Keys.tsx#leave` `Keys.tsx#down`                   |
+| Cursor                   | x / y / click / fade      | easeInOut / settleY `0.3, 0.9, 0.3, 1` / linear / easeOut           |              | `Cursor.tsx#previous` `Cursor.tsx#press`                            |
+| Highlights               | angle                     | easeInOut lap                                                       |              | `Ring.tsx#angle`                                                    |
+| Ambient glow drift       | backdrop glow position    | sine                                                                | continuous   | `scene/Stage.tsx`                                                   |
+| Fade from and to black   | opacity                   | easeInOut `0.65, 0, 0.35, 1`                                        | 0.8s / 0.6s  | `Reel.tsx#fade`                                                     |
 
 The line numbers above are the kit's. Yours move as you edit, so regenerate before the final check.
 

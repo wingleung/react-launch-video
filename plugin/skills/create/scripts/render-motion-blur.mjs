@@ -6,7 +6,9 @@
 //
 // Needs an ffmpeg with the tmix filter on the PATH: the ffmpeg bundled with Remotion does not have it.
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const [id, output] = process.argv.slice(2);
 const option = (name, fallback) => {
@@ -33,7 +35,10 @@ if (filters.error || !/\btmix\b/.test(filters.stdout ?? "")) {
   process.exit(1);
 }
 
-const intermediate = `${output}.samples.mp4`;
+// The samples render is 35 to 40MB and used to be written beside the output, which is the folder the user asked
+// for deliverables in. A crash then left it there among them.
+const scratch = mkdtempSync(join(tmpdir(), "motion-blur-"));
+const intermediate = join(scratch, "samples.mp4");
 run("npx", ["remotion", "render", id, intermediate, "--crf=4"], { shell: process.platform === "win32" });
 run("ffmpeg", [
   "-y",
@@ -62,5 +67,5 @@ run("ffmpeg", [
   "+faststart",
   output,
 ]);
-rmSync(intermediate);
+rmSync(scratch, { recursive: true, force: true });
 console.log(`Rendered ${output} with ${samples}-sample motion blur`);

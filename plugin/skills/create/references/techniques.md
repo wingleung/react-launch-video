@@ -207,6 +207,10 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
 
 - The reel is its own package next to the product, with pinned Remotion versions (all `remotion` and `@remotion/*`
   packages on the exact same version).
+- `npm --prefix <dir>` runs the script with the package as its working directory, so a `render` script written as
+  `remotion render Reel outputs/reel.mp4` writes to `<reel-dir>/outputs/`, not to the root the user is standing in.
+  Write the script's output path as `../outputs/reel.mp4` and run the documented command once for real to see where
+  the file lands.
 - Hand the user commands that run from the session's root (`npm --prefix <reel-dir> run render`), verified in their own
   interactive shell, not only in yours.
 - Document in the reel README: beats, pacing choices with sources, placeholder data to replace, render time.

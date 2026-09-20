@@ -236,9 +236,23 @@ main("easing-inventory", () => {
 
   if (args.storyboard === undefined) return 0;
 
-  const rows = readFileSync(args.storyboard, "utf8")
-    .split(LINE_BREAK)
-    .filter((row) => row.replace(/^\s+/, "").startsWith("|"));
+  // Only the easing table's rows are citations. The storyboard template also asks for a determinism table and a
+  // truthfulness table, and those legitimately carry `File.tsx:12` references in their own columns, which this used
+  // to read as easing citations and fail as uncited. Tables are contiguous runs of pipe rows, and the easing one is
+  // the one whose header names Easing. A storyboard with no such header falls back to every row, as before.
+  const lines = readFileSync(args.storyboard, "utf8").split(LINE_BREAK);
+  const tables = [];
+  let block = [];
+  for (const line of lines) {
+    if (line.replace(/^\s+/, "").startsWith("|")) block.push(line);
+    else if (block.length) {
+      tables.push(block);
+      block = [];
+    }
+  }
+  if (block.length) tables.push(block);
+  const easingTables = tables.filter((table) => /\beasing\b/i.test(table[0]));
+  const rows = (easingTables.length ? easingTables : tables).flat();
   const cite = /([\w./-]+\.tsx?)(?::(\d+)(?:\s*-\s*(\d+))?|#(\w+))/g;
   const failures = [];
   const covered = new Set();

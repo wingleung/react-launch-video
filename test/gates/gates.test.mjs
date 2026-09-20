@@ -115,6 +115,34 @@ describe("check-video", () => {
     assert.match(unsized.stdout, /^FAIL {2}resolution 1920x1080$/m);
   });
 
+  test("catches a short dip when it is deep, which a flat run length let through", () => {
+    const blink = join(clips, "blink.mp4");
+    const size = "s=1920x1080:r=60";
+    // bright, five frames of near black, bright again: too short for the old six-frame rule, dark enough to see
+    ffmpeg(
+      "-f",
+      "lavfi",
+      "-i",
+      `color=c=white:${size}:d=2`,
+      "-f",
+      "lavfi",
+      "-i",
+      `color=c=0x0a0a0a:${size}:d=0.083`,
+      "-f",
+      "lavfi",
+      "-i",
+      `color=c=white:${size}:d=2`,
+      "-filter_complex",
+      "[0][1][2]concat=n=3:v=1",
+      "-pix_fmt",
+      "yuv420p",
+      blink,
+    );
+    const { stdout, status } = gate(join(create, "check-video.mjs"), ["--min", "1", "--max", "10", blink]);
+    assert.equal(status, 1);
+    assert.match(stdout, /^FAIL {2}no near-empty stage mid-reel \(FOUND 2\.00s to 2\.08s\)$/m);
+  });
+
   test("formats the duration bounds the way %g does", () => {
     const { stdout } = gate(join(create, "check-video.mjs"), ["--min", "17.5", "--max", "1234567", demo]);
     assert.match(stdout, /duration 17\.5 to 1\.23457e\+06s \(is 21\.37s\)/);
@@ -173,7 +201,7 @@ describe("easing-inventory", () => {
       join(root, "plugin/skills/create/references/storyboard.md"),
     ]);
     assert.equal(status, 0);
-    assert.match(stdout, /storyboard check passed: 22 motion calls/);
+    assert.match(stdout, /storyboard check passed: 23 motion calls/);
   });
 
   test("accepts a citation by symbol, so an edit elsewhere does not invalidate the storyboard", () => {
