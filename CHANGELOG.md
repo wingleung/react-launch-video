@@ -28,6 +28,11 @@ frame shows.
 - **`doctor.mjs` reports the Node version the claim gate needs.** It checked 18, which renders but cannot import the
   kit's TypeScript; type stripping landed in 22.18. A user on 20 used to meet that requirement as an import error an
   hour into a reel.
+- **Tested against a light-themed product too**, since the falloff was calibrated on a dark one. A light product
+  blurs to a bright slab that keeps its own light: the same outro rendered at 53% of the reel's median against the
+  dark product's 33%, and the bloom changed nothing either way. So the bloom is for dark products and inert on light
+  ones, and `brightest` reads a light product about 18 points low, which is the safe direction. Both are recorded in
+  the code rather than left for the next person to rediscover.
 - The claim lint gains a **[rendered]** tag for figures read off real frames that no curve can re-derive. That class
   of number is most of this release and there was no honest way to write one down.
 

@@ -93,6 +93,11 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
    [measured: min brightest over outro..fadeOut is 34.9%]. Do not verify any of this from the curves alone: run
    `check-video.mjs` on a real render, which measures pixels instead of predicting them.
 
+   All of that is about a dark product, which is the hard case. A light one blurs to a bright slab that keeps its own
+   light, and the same outro rendered at 53% of the reel's median rather than 33%, with the bloom making no difference
+   either way. So the bloom is for dark products and merely inert on light ones, and `brightest` reads a light product
+   low, which is the safe direction to be wrong in. [rendered], September 2026.
+
    An emphasized accelerate exit still shows 85% opacity at its midpoint, so fade the product's opacity on a faster
    curve than its recede. Measured while building the kit: sequencing the two moves so they never overlap looks safer
    and opens a 0.17s hole at each handoff, which reads worse than the dissolve. [convention]

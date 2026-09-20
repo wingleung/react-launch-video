@@ -48,6 +48,11 @@ export const productDissolve = (seconds: number) =>
  * kit's own outro, September 2026. Blur alone therefore cannot both hide the product and keep the stage lit,
  * whatever the timing, which is what an earlier version of rule 1 got wrong. This puts the light back as the blur
  * takes it away, the way a real defocused highlight blooms rather than simply dimming.
+ *
+ * 1.2 is for a dark product, which is the case that needs it. A light product blurs to a bright slab and keeps its
+ * own light: rendered, the same outro measured 53% of the reel's median with this bloom and 53% with none at all, so
+ * on a light product this is inert rather than wrong. Leave it, or take it to 0 and confirm with check-video.
+ * [rendered], September 2026.
  */
 export const productBloom = (seconds: number) => 1 + productDissolve(seconds) * 1.2;
 
@@ -81,6 +86,11 @@ export const endCardOpacity = (seconds: number) => reelFade(seconds) * rise(seco
  * It is a model of one reel, not a law, so treat it as a smoke alarm rather than a proof. The authority on whether a
  * frame is empty is `check-video.mjs` on a real render, which measures pixels instead of predicting them. This
  * exists so that a number written in a comment is not actively wrong.
+ *
+ * Both ends were measured on a dark product, so it reads a light one low: the same outro rendered 33% of the reel's
+ * median with a dark panel and 53% with a light one, against the one figure of 35% this predicts for both. Wrong in
+ * the safe direction, which is the direction to keep it, since the failure it replaced was the optimistic one.
+ * [rendered], September 2026.
  */
 const KEEPS: [number, number][] = [
   [0, 1],
