@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "The reel package's own manifest. Copy this directory to your reel package root, then copy the kit into src/.",
+    "These versions are the ones the kit is tested against on every commit by scripts/kit-check.mjs in the",
+    "product-reel repo, so they are pins rather than suggestions. Keep remotion and every @remotion/* package on",
+    "the same exact version or the bundler and the renderer disagree in ways that surface as a blank frame rather",
+    "than an error. Add @remotion/fonts when the product ships its own font files. The product's own dependencies",
+    "are NOT copied here: the reel imports them from the product through the alias in remotion.config.ts."
+  ],
+  "name": "reel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Reel outputs/reel.mp4",
+    "still": "remotion still src/index.ts Reel outputs/still.png",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "remotion": "4.0.525",
+    "@remotion/cli": "4.0.525",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.1",
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}

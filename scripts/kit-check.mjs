@@ -9,34 +9,16 @@ import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+const kit = "plugin/skills/create/assets/kit";
+const scaffold = "plugin/skills/create/assets/scaffold";
+
 const dir = mkdtempSync(join(tmpdir(), "kit-check-"));
-cpSync("plugin/skills/create/assets/kit", join(dir, "src"), { recursive: true });
-writeFileSync(
-  join(dir, "package.json"),
-  JSON.stringify({
-    name: "kit-check",
-    private: true,
-    type: "module",
-    dependencies: { remotion: "4.0.525", "@remotion/cli": "4.0.525", react: "19.2.0", "react-dom": "19.2.0" },
-    devDependencies: { "@types/node": "22.19.1", "@types/react": "19.2.2", typescript: "5.9.3" },
-  }),
-);
-writeFileSync(
-  join(dir, "tsconfig.json"),
-  JSON.stringify({
-    compilerOptions: {
-      target: "ES2022",
-      module: "ESNext",
-      moduleResolution: "Bundler",
-      jsx: "react-jsx",
-      strict: true,
-      noUncheckedIndexedAccess: true,
-      skipLibCheck: true,
-      noEmit: true,
-    },
-    include: ["src"],
-  }),
-);
+// A reel package is the scaffold at the root with the kit as its src/, which is exactly what the skill tells a user
+// to assemble. Building it the same way here means the pins and the tsconfig under test are the ones that ship,
+// rather than a second copy of them that can drift.
+cpSync(scaffold, dir, { recursive: true });
+cpSync(kit, join(dir, "src"), { recursive: true });
+
 execFileSync("npm", ["install", "--silent", "--no-audit", "--no-fund"], { cwd: dir, stdio: "inherit" });
 // tsc prints its own errors, so a stack trace from execFileSync on top of them is pure noise.
 try {
@@ -52,7 +34,7 @@ const docs = readdirSync(references)
   .filter((name) => name.endsWith(".md"))
   .flatMap((name) => ["--doc", join(references, name)]);
 try {
-  const args = [join(dir, "src"), "--as", "plugin/skills/create/assets/kit", ...docs];
+  const args = [join(dir, "src"), "--as", kit, ...docs];
   execFileSync("node", ["plugin/skills/create/scripts/claims.mjs", ...args], { stdio: "inherit" });
 } catch {
   process.exit(1);

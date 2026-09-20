@@ -31,17 +31,17 @@ hold for being slow if the text on screen needs it.
    before a move, mid-move, on arrival and mid-hold, plus every handoff between beats. Crop small effects at full
    resolution. Look at the sheets, do not infer them from the code.
 4. **Gate scripts** from `${CLAUDE_SKILL_DIR}/../create/scripts/`:
-   `node easing-inventory.mjs <src> --storyboard <storyboard>` whenever there is source and a storyboard (it lists every
-   motion call with the easing the code applies, even without a storyboard), and on a render `check-video.mjs` and
-   `edge-scan.mjs`. Crop every CROSSES range edge-scan lists and look for sliced text.
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/easing-inventory.mjs <src> --storyboard <storyboard>` whenever there is source and a storyboard (it lists every
+   motion call with the easing the code applies, even without a storyboard), and on a render `${CLAUDE_SKILL_DIR}/../create/scripts/check-video.mjs` and
+   `${CLAUDE_SKILL_DIR}/../create/scripts/edge-scan.mjs`. Crop every CROSSES range edge-scan lists and look for sliced text.
 
-   On a render with its source, `node lightness.mjs <reel> --src <src>` checks that the product's lightness is what
+   On a render with its source, `node ${CLAUDE_SKILL_DIR}/../create/scripts/lightness.mjs <reel> --src <src>` checks that the product's lightness is what
    the kit's `curves.ts` was told, since the outro's fade and bloom are tuned from it and the default suits a dark
    product. A pale product left at the default reads as an end card sitting on a visible slab.
 
    Two more run on source alone and answer questions that are otherwise guesswork from a finished reel:
-   `node fonts.mjs <src> --storyboard <storyboard>` says where every font comes from, which no frame can show you (a
-   reel rendered in the fallback looks entirely plausible), and `node claims.mjs <src> --doc <storyboard>` re-derives
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/fonts.mjs <src> --storyboard <storyboard>` says where every font comes from, which no frame can show you (a
+   reel rendered in the fallback looks entirely plausible), and `node ${CLAUDE_SKILL_DIR}/../create/scripts/claims.mjs <src> --doc <storyboard>` re-derives
    every timing number the source and the storyboard assert. A number in a comment that the code no longer supports is
    a defect report, not documentation, so report it as one.
 

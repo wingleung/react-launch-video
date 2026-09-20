@@ -44,30 +44,30 @@ Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
   components:
   `Stage` (drifting glow backdrop), `Lockup` and `Titles` (title and end card), `Captions`, `Keys` (keycaps), `Cursor`,
   `Ring` (border beam and selection ring).
-- `node scripts/doctor.mjs`: checks Node and ffmpeg (with the filters the gates use) and prints install hints for this
+- `node ${CLAUDE_SKILL_DIR}/scripts/doctor.mjs`: checks Node and ffmpeg (with the filters the gates use) and prints install hints for this
   OS. Run it before step 4.
-- `node scripts/contact-sheet.mjs`: tiles six frames of a render into a review sheet, or crops one at full resolution.
-- `node scripts/check-video.mjs`: hard gates on a render (resolution, duration range, fade from and to black, no
+- `node ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: tiles six frames of a render into a review sheet, or crops one at full resolution.
+- `node ${CLAUDE_SKILL_DIR}/scripts/check-video.mjs`: hard gates on a render (resolution, duration range, fade from and to black, no
   near-empty stage mid-reel, which is what a queued handoff looks like). Exits non-zero when a gate fails. Pass
   `--width` and `--height` for a cut that is not 16:9.
-- `node scripts/edge-scan.mjs`: finds borders resting inside the action-safe margin (fails) and content running off the
+- `node ${CLAUDE_SKILL_DIR}/scripts/edge-scan.mjs`: finds borders resting inside the action-safe margin (fails) and content running off the
   frame edge (ranges to crop and judge). Once a range has been cropped and judged deliberate, list it in
   `--accept "top:7.8-13.0"` so later renders stop reporting it.
-- `node scripts/easing-inventory.mjs`: lists every motion call with the easing the code really applies and checks the
+- `node ${CLAUDE_SKILL_DIR}/scripts/easing-inventory.mjs`: lists every motion call with the easing the code really applies and checks the
   storyboard's easing table against it.
-- `node scripts/claims.mjs`: re-derives every number a comment or a doc claims about the reel's timing from
+- `node ${CLAUDE_SKILL_DIR}/scripts/claims.mjs`: re-derives every number a comment or a doc claims about the reel's timing from
   `curves.ts`, and fails prose that puts a percentage or a pixel figure beside a signal without one. Write a
   measurement as `[measured: product blur at endCard is 14.0px]` and it stays true or the gate says so. Run
   `--values cues` to print every signal at every cue, which is where the number in a claim comes from.
-- `node scripts/fonts.mjs`: lists every font the reel loads with where it comes from, and fails a font taken from a
+- `node ${CLAUDE_SKILL_DIR}/scripts/fonts.mjs`: lists every font the reel loads with where it comes from, and fails a font taken from a
   machine's font folder, one fetched over the network at render time, or a family named in a stack that nothing
   loads. That last one renders in the fallback and looks plausible, so nobody catches it by eye.
-- `node scripts/lightness.mjs`: checks the `LIGHTNESS` in `curves.ts` against the product that actually rendered, by
+- `node ${CLAUDE_SKILL_DIR}/scripts/lightness.mjs`: checks the `LIGHTNESS` in `curves.ts` against the product that actually rendered, by
   finding the product's own background in the frame. Catches the shipped default left on a pale product, which needs
   no action to happen and which no other gate sees.
-- `scripts/render-motion-blur.mjs` with `assets/kit/MotionBlur.tsx`: optional band-free motion blur for the final
+- `${CLAUDE_SKILL_DIR}/scripts/render-motion-blur.mjs` with `assets/kit/MotionBlur.tsx`: optional band-free motion blur for the final
   render.
-- `node scripts/add-music.mjs`: puts a track on a finished reel by copying the video stream, never re-encoding it.
+- `node ${CLAUDE_SKILL_DIR}/scripts/add-music.mjs`: puts a track on a finished reel by copying the video stream, never re-encoding it.
   Taking a reel through an editor to add music re-encodes it, and these gradients band when that happens.
 
 ## Workflow
@@ -86,10 +86,25 @@ drift. Anything you must invent (sample data, a placeholder page behind the prod
 
 ### 1b. Prove one component renders, before designing anything
 
-Before the storyboard, and before touching a single product file, run `node scripts/doctor.mjs`, then stand up a bare
-Remotion package next to the product and render one still of its most important component, imported unchanged, with
-hand-written props. Do not split anything yet, and do not style the reel: this package is the one step 4 builds on, so
-the work is not thrown away.
+Before the storyboard, and before touching a single product file, run `node ${CLAUDE_SKILL_DIR}/scripts/doctor.mjs`.
+
+**Tell the user, before installing anything, that Remotion is free for individuals, non-profits and companies with up
+to 3 employees, and that a larger for-profit company needs a Remotion Company License.** Say it plainly rather than
+guessing whether it applies to them: the next command puts a commercially licensed dependency in their repo.
+
+Then stand up the reel package. It is a copy, not something to write from scratch:
+
+```
+mkdir -p reel && cp -R ${CLAUDE_SKILL_DIR}/assets/scaffold/. reel/
+mkdir -p reel/src && cp -R ${CLAUDE_SKILL_DIR}/assets/kit/. reel/src/
+cd reel && npm install && npm run still
+```
+
+The scaffold is the package root (`package.json` with pinned versions and the `studio`, `render` and `still` scripts,
+`tsconfig.json`, `remotion.config.ts`) and the kit is its `src/`. That renders the kit's own empty stage, which proves
+the toolchain before the product is involved. Now point it at the product: import its most important component
+unchanged into `src/Reel.tsx` with hand-written props and run `npm run still` again. Do not split anything yet, and do
+not style the reel: this package is the one step 4 builds on, so the work is not thrown away.
 
 Read the still. A command that exits 0 is not a pass: a component that renders a loading skeleton, an unstyled block,
 the wrong theme or an overlay drawn outside the frame has failed this gate as surely as one that threw.
@@ -119,7 +134,10 @@ case, not a rule.
 
 ### 2. Storyboard with timings
 
-Fill in `references/storyboard.md` and show it to the user before building scenes. Structure:
+Copy `${CLAUDE_SKILL_DIR}/references/storyboard.md` to `storyboard.md` at the reel package root and fill that in,
+then show it to the user before building scenes. It belongs next to `package.json`, because every gate is passed
+`--storyboard storyboard.md` from that directory, and step 7 copies the finished one into `outputs/` beside the reel.
+Never edit the template in the skill directory: it is shared with every other project on this machine. Structure:
 
 1. Fade up from black into a **title card**: logo plus headline, words rising out of a blur, held for reading time.
 2. The product **enters while the title recedes** behind it (overlap, not a queue).
@@ -161,7 +179,7 @@ The storyboard also fixes five things that are expensive to retrofit:
   and steady laps are linear, springs give their config. A verb like "rises" is not an easing. Each row cites the code
   it describes (`scene/Captions.tsx:22-23`) and names the easing that code applies, including helper defaults (the kit's
   `tween` eases out when no easing is passed, so an unlabelled fade is not linear).
-  `node scripts/easing-inventory.mjs src --storyboard storyboard.md` checks both and lists what the table missed.
+  `node ${CLAUDE_SKILL_DIR}/scripts/easing-inventory.mjs src --storyboard storyboard.md` checks both and lists what the table missed.
 - **Determinism risks**: what in this product could make frames differ between renders and how each is neutralised (CSS
   transitions or keyframe classes on its components, clocks and dates, randomness, timers and throttles, async effects,
   fonts or data fetched over the network). Say "checked, none" rather than leaving a risk out.
@@ -180,7 +198,7 @@ The storyboard also fixes five things that are expensive to retrofit:
   written in seconds to land on a beat means moving every reading-time hold and camera window by hand, and pace is
   usually the thing a user asks to change most. Leave a little air at a shared boundary: an exit and the next camera
   move on the exact same beat is legal but reads as a collision. Add the track at the end with
-  `node scripts/add-music.mjs`, never by re-exporting the video through an editor.
+  `node ${CLAUDE_SKILL_DIR}/scripts/add-music.mjs`, never by re-exporting the video through an editor.
 
 ### Restraint: the effect budget
 
@@ -223,13 +241,13 @@ revert the split: the user asked for a video, not a refactor.
 
 ### 4. Scaffold the reel
 
-Take the package from step 1b, which already renders one real component, and make it the reel. Remotion is free for
-individuals, non-profits and companies with up to 3 employees. A larger for-profit company needs a Remotion Company
-License, so say so once if the user works for one. Copy the parts of `assets/kit/` you will actually use into the
-package's `src/` (move `remotion.config.ts` to the package root). Copying all of it and deleting later is worse: the
-easing gate reports every unused kit file as an uncited motion call. Then adapt:
+Take the package from step 1b, which already renders one real component, and make it the reel. The scaffold and kit
+are already in place, so this step is adaptation rather than setup. Delete the kit files this reel does not use:
+`easing-inventory.mjs` reports every unused kit file as an uncited motion call, so an unused `Keys.tsx` is a gate
+failure rather than dead weight. Then adapt:
 
-- exact-pinned `remotion` and `@remotion/*` versions, `@remotion/fonts` for the product's own font files
+- add `@remotion/fonts` when the product ships its own font files. The pinned `remotion` and `@remotion/*` versions in
+  the scaffold's `package.json` are the ones this kit is tested against, so change them together or not at all
 - `remotion.config.ts`: public dir pointing at the product, aliases, a user agent matching the audience's platform
 - the product's own theme: `GLOW` in `Reel.tsx` and the `gradientClass` passed to `Lockup` and `Captions` come from its
   design tokens, so the reel looks like the product and not like the kit
@@ -237,7 +255,7 @@ easing gate reports every unused kit file as an uncited motion call. Then adapt:
   token, so `#0d0f16` is about 0.05 and `#ffffff` is 1. It sets how fast the product leaves at the outro and how much
   it blooms, because the two ends fail in opposite ways: a dark product can empty the stage as it blurs out, and a
   pale one can leave a visible slab under the end card's wordmark. The kit ships at 0, so a pale product needs this
-  changed and `scripts/lightness.mjs` fails the render if it was not
+  changed and `lightness.mjs` fails the render if it was not
 - utility CSS generated by its CLI over both source trees before `studio` and `render`
 
 ### 5. Build the scenes on the timeline
@@ -264,7 +282,7 @@ Keep one `CUE` object of cue points in seconds, each beat anchored on the one be
 Rendering is the only proof. After each change:
 
 1. Typecheck the reel (and the product if you touched it).
-2. Render, then build contact sheets at the cue points that moved with `node scripts/contact-sheet.mjs`: before, during
+2. Render, then build contact sheets at the cue points that moved with `node ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: before, during
    and after each move, in the middle of each hold and at the midpoint of every handoff (title to product, page changes,
    product to end card). Crop small effects at full resolution.
 3. Read the sheets and fix what you see before reporting. Common catches: an empty frame while the camera is zoomed on
@@ -272,16 +290,16 @@ Rendering is the only proof. After each change:
    slicing a table row or long line, keycaps flashing by or sitting on the product, a state swap that flashes dark, a
    highlight that disagrees with the active row mid-glide.
 4. Run the gates on the render and the source. All six must exit 0:
-   - `node scripts/check-video.mjs outputs/reel.mp4` (resolution, length, fades, no near-empty stage in a handoff)
-   - `node scripts/edge-scan.mjs outputs/reel.mp4` (borders inside the action-safe margin fail, then crop every CROSSES
+   - `node ${CLAUDE_SKILL_DIR}/scripts/check-video.mjs outputs/reel.mp4` (resolution, length, fades, no near-empty stage in a handoff)
+   - `node ${CLAUDE_SKILL_DIR}/scripts/edge-scan.mjs outputs/reel.mp4` (borders inside the action-safe margin fail, then crop every CROSSES
      range it lists and look for a sliced line, and move the ones you judge deliberate into `--accept`)
-   - `node scripts/easing-inventory.mjs src --storyboard storyboard.md` (the easing table matches the code)
-   - `node scripts/claims.mjs src --doc storyboard.md` (every number the source and the storyboard claim about the
+   - `node ${CLAUDE_SKILL_DIR}/scripts/easing-inventory.mjs src --storyboard storyboard.md` (the easing table matches the code)
+   - `node ${CLAUDE_SKILL_DIR}/scripts/claims.mjs src --doc storyboard.md` (every number the source and the storyboard claim about the
      timing is still what the timing does). Every timing figure you write in a comment or the storyboard goes in as a
      claim: an unchecked one reads as documentation while being a defect report, which is how six of them shipped.
-   - `node scripts/fonts.mjs src --storyboard storyboard.md` (every font comes from the repo and the storyboard says
+   - `node ${CLAUDE_SKILL_DIR}/scripts/fonts.mjs src --storyboard storyboard.md` (every font comes from the repo and the storyboard says
      where each one comes from)
-   - `node scripts/lightness.mjs outputs/reel.mp4 --src src` (the product's lightness is what the kit was told it is,
+   - `node ${CLAUDE_SKILL_DIR}/scripts/lightness.mjs outputs/reel.mp4 --src src` (the product's lightness is what the kit was told it is,
      so the outro is tuned for the product that actually rendered)
 5. Write what each sheet, crop and gate showed in the storyboard's frame review log, with a verdict per problem. A
    problem has two possible verdicts: **fixed** (name the change and the render that shows it) or **not a problem**
@@ -291,7 +309,7 @@ Rendering is the only proof. After each change:
 6. When the reel is close to done, run `/product-reel:review` on the timeline and sheets.
 
 Send the rendered video to the user as soon as it exists: they judge motion in motion, not from a description. The final
-report pastes the last output of the three gate scripts.
+report pastes the last output of all six gate scripts.
 
 ### 7. Hand off
 

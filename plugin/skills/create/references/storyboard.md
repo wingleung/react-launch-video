@@ -102,7 +102,7 @@ references/pacing.md rule 1. Check the midpoint of each handoff on a contact she
 
 Push-in zooms come from `fitCamera` on a measured box, inside `ACTION_SAFE` (3.5% in from each edge) or `CAPTION_SAFE`
 while a caption is up. A framing either keeps the window's borders inside the safe area or bleeds them well off the
-frame, and a bleed slices no text line, row or control. `node scripts/edge-scan.mjs` reports both on the render.
+frame, and a bleed slices no text line, row or control. `edge-scan.mjs` reports both on the render.
 
 ## Frame review log
 
@@ -112,8 +112,9 @@ frame, and a bleed slices no text line, row or control. `node scripts/edge-scan.
 
 Fill it in as you review. Every problem ends as **fixed** (the change and the render that shows it) or **not a problem**
 (the rule that allows it). "Accepted", "known issue" and "left for later" are not verdicts: they mean another pass. The
-final rows name the render and paste the result of `check-video.mjs`, `edge-scan.mjs` and
-`easing-inventory.mjs --storyboard`, all exiting 0.
+final rows name the render and paste the result of all six gates, exiting 0. Any range passed to `edge-scan --accept`
+goes in this log with the reason: an accepted range is a judgement, and a judgement nobody wrote down is a defect that
+the review skill will raise again from scratch.
 
 ## Worked example (a 26s reel of a browser extension)
 

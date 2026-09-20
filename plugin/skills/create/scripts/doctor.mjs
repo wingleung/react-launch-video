@@ -79,6 +79,13 @@ main("doctor", () => {
     report(false, "ffmpeg and ffprobe", `not found. ${hint("ffmpeg")}`);
   }
 
+  // Said here because this is the first thing a user runs, and step 1b installs Remotion immediately after it.
+  // Leaving it to later means the dependency is already in their repo before the licence is mentioned.
+  console.log(
+    "\nRemotion is free for individuals, non-profits and for-profit companies with up to 3 employees." +
+      "\nA larger for-profit company needs a Remotion Company License: https://remotion.dev/license",
+  );
+
   if (problems.length) {
     console.log(`\nMissing: ${problems.join(", ")}. Fix these before building a reel.`);
     return 1;

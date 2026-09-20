@@ -219,7 +219,7 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
   packages on the exact same version).
 - `npm --prefix <dir>` runs the script with the package as its working directory, so a `render` script written as
   `remotion render Reel outputs/reel.mp4` writes to `<reel-dir>/outputs/`, not to the root the user is standing in.
-  Write the script's output path as `../outputs/reel.mp4` and run the documented command once for real to see where
+  Write the script's output path as `outputs/reel.mp4` and run the documented command once for real to see where
   the file lands.
 - Hand the user commands that run from the session's root (`npm --prefix <reel-dir> run render`), verified in their own
   interactive shell, not only in yours.
