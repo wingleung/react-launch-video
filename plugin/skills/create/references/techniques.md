@@ -88,6 +88,17 @@ found after the storyboard is not.
 - **Utility CSS (UnoCSS, Tailwind):** generate the stylesheet with the tool's CLI over both the reel's and the product's
   component sources, before `studio` and `render`. Bundler plugins can fail inside Remotion's config loader (seen with
   `@unocss/webpack`: CommonJS and ES module interop errors). Import the product's own config so tokens match.
+- **The product's global styles live in its entry point, not in its components, and the reel imports components.** A
+  reset (`@unocss/reset`, Tailwind's preflight, normalize.css), a base layer and any `app.css` are imported once in
+  `main.tsx` or `index.tsx`, so importing a component brings none of them. Open the product's entry point and copy
+  every import that is not a component into the reel's `Root.tsx`, in the same order.
+
+  This is worth its own line because of how it fails. The component renders, the render exits 0, the layout is right
+  and the utility classes work, so it looks like a success. What is wrong is typography: links come back
+  browser-default blue and underlined, headings take the user agent's margins, and buttons lose their reset. It reads
+  as "slightly off brand" rather than as a broken render, which is exactly the kind of thing that ships. Measured on a
+  real extension, the fix was one import line and it changed nothing else.
+
 - **Fonts and icons from the product's public folder** via `Config.setPublicDir`, loaded with `@remotion/fonts`. Never
   fetch fonts at render time: CI and restricted networks break, and the render stops being reproducible.
 - **Dark mode** usually keys on a `.dark` class on an ancestor: wrap each rendered view in `className="dark"` instead of

@@ -123,6 +123,11 @@ not style the reel: this package is the one step 4 builds on, so the work is not
 Read the still. A command that exits 0 is not a pass: a component that renders a loading skeleton, an unstyled block,
 the wrong theme or an overlay drawn outside the frame has failed this gate as surely as one that threw.
 
+Compare it against the empty-stage still from before the import. On a real product whose utility CSS had not been
+generated yet, the two were indistinguishable by measurement, same lit area to a tenth of a percent and the same peak
+brightness, because the component rendered as unstyled markup too dark to see. Nothing but looking at the two images
+side by side would have caught it. If they look the same, the component did not really render.
+
 If it does not render, stop and tell the user which build tool and framework you found, what failed and what it would
 take to get past it. The whole method depends on the product's components running inside a plain webpack bundle, and
 every later step costs more to undo. `references/techniques.md` section 1b covers the usual causes: build-tool-only
