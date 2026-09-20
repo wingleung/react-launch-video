@@ -324,6 +324,13 @@ describe("reading-time", () => {
     const { stdout } = gate(join(review, "reading-time.mjs"), [], "1.0\tRetry 🚀 uploads\n");
     assert.match(stdout, /^ {2}1\.00 {3}1\.38 {2}SHORT {6}15 {2}Retry 🚀 uploads$/m);
   });
+
+  // An empty table above exit 0 reads exactly like a pass, which is the shape of silent success.
+  test("fails when handed nothing rather than reporting an empty pass", () => {
+    const { stderr, status } = gate(join(review, "reading-time.mjs"), [], "");
+    assert.equal(status, 1);
+    assert.match(stderr, /nothing was checked/);
+  });
 });
 
 describe("claims", () => {

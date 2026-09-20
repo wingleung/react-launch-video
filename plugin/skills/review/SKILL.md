@@ -44,6 +44,7 @@ hold for being slow if the text on screen needs it.
    reel rendered in the fallback looks entirely plausible), and `node claims.mjs <src> --doc <storyboard>` re-derives
    every timing number the source and the storyboard assert. A number in a comment that the code no longer supports is
    a defect report, not documentation, so report it as one.
+
 5. If there is no render, review code and timeline only, and list what could not be verified. Work out edge distances
    and overlaps from the layout numbers (a window's left plus width against the 1920 frame) where you can.
 

@@ -26,6 +26,7 @@ main("reading-time", () => {
   // Fold CRLF first, so a Windows file does not count its carriage returns as characters.
   const source = readFileSync(path === undefined ? 0 : path, "utf8").replace(/\r\n/g, "\n");
   let failures = 0;
+  let rows = 0;
   console.log(`${"held".padStart(6)} ${"needs".padStart(6)}  status  chars  text`);
   for (const line of source.split("\n")) {
     if (!line.trim()) continue;
@@ -36,10 +37,17 @@ main("reading-time", () => {
     if (held.trim() === "" || Number.isNaN(hold)) throw new Error(`not a number of seconds: ${held}`);
     const need = required(text);
     const ok = hold >= need;
+    rows += 1;
     if (!ok) failures += 1;
     const status = !ok ? "SHORT" : hold < need + TIGHT ? "TIGHT" : "ok";
     const chars = String(charCount(text)).padStart(5);
     console.log(`${fixed(hold, 2).padStart(6)} ${fixed(need, 2).padStart(6)}  ${status.padEnd(6)}  ${chars}  ${text}`);
+  }
+  // Handed nothing, this has checked nothing, and an empty table above an exit code of 0 reads exactly like a pass.
+  // That is the shape of silent success: the caller believes every hold was verified when none was.
+  if (!rows) {
+    console.error("reading-time: no `seconds<TAB>text` rows were given, so nothing was checked");
+    return 1;
   }
   return failures ? 1 : 0;
 });
