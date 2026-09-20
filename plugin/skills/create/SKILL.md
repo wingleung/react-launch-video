@@ -7,7 +7,9 @@ description: >-
   source) with a storyboard, sourced reading-time holds, title and end cards, feature captions, a still-holding camera
   and scripted quality gates. Use this whenever someone wants a video of their app, extension, website or CLI, asks how
   to time or pace a promo or demo video, wants a title card, end card or smoother intro or outro, or asks to make a
-  Remotion video more cinematic, even if they never say Remotion or cinematic.
+  Remotion video more cinematic, even if they never say Remotion or cinematic. React web apps and CLIs only:
+  not Vue, Svelte, Angular or native apps, not editing or cleaning up an existing screen recording, and not
+  in-app UI animation code. For a reel that already exists, review it first.
 ---
 
 # Cinematic product reel
@@ -257,7 +259,9 @@ revert the split: the user asked for a video, not a refactor.
 Take the package from step 1b, which already renders one real component, and make it the reel. The scaffold and kit
 are already in place, so this step is adaptation rather than setup. Keep `index.ts`, `Root.tsx`, `reel.css`,
 `timeline.ts`, `motion.ts` and `curves.ts` whatever the reel does: they are the package, not scene components, and
-`boxes.ts` is filled in by step 1c rather than imported. Delete the scene files this reel does not use:
+`boxes.ts` is filled in by step 1c rather than imported. `references/customise.md` is the full list of about twenty
+things the kit leaves open, including three separate theme-colour sites that no gate can check. Work down it.
+Delete the scene files this reel does not use:
 `easing-inventory.mjs` reports every unused kit file as an uncited motion call, so an unused `Keys.tsx` is a gate
 failure rather than dead weight. Then adapt:
 
@@ -305,24 +309,20 @@ ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: before, during
    something that just left, a caption overlapping the product, text rising over the product in a handoff, a push-in
    slicing a table row or long line, keycaps flashing by or sitting on the product, a state swap that flashes dark, a
    highlight that disagrees with the active row mid-glide.
-4. Run the gates on the render and the source. All six must exit 0:
-   - `node ${CLAUDE_SKILL_DIR}/scripts/check-video.mjs outputs/reel.mp4` (resolution, length, fades, no near-empty stage
-     in a handoff)
-   - `node ${CLAUDE_SKILL_DIR}/scripts/edge-scan.mjs outputs/reel.mp4` (borders inside the action-safe margin fail, then
-     crop every CROSSES
-     range it lists and look for a sliced line, and move the ones you judge deliberate into `--accept`)
-   - `node ${CLAUDE_SKILL_DIR}/scripts/easing-inventory.mjs src --storyboard storyboard.md` (the easing table matches
-     the code)
-   - `node ${CLAUDE_SKILL_DIR}/scripts/claims.mjs src --doc storyboard.md` (every number the source and the storyboard
-     claim about the
-     timing is still what the timing does). Every timing figure you write in a comment or the storyboard goes in as a
-     claim: an unchecked one reads as documentation while being a defect report, which is how six of them shipped.
-   - `node ${CLAUDE_SKILL_DIR}/scripts/fonts.mjs src --storyboard storyboard.md` (every font comes from the repo and the
-     storyboard says
-     where each one comes from)
-   - `node ${CLAUDE_SKILL_DIR}/scripts/lightness.mjs outputs/reel.mp4 --src src` (the product's lightness is what the
-     kit was told it is,
-     so the outro is tuned for the product that actually rendered)
+4. Run the gates on the render and the source, in one command from the reel package:
+
+   ```
+   node ${CLAUDE_SKILL_DIR}/scripts/gates.mjs outputs/reel.mp4 --src src --storyboard storyboard.md
+   ```
+
+   It refuses to start when the reel is not finished enough to gate (no storyboard, the template unedited, the kit's
+   placeholder colours still in place), which takes a moment rather than a render. Then it runs all six and exits
+   non-zero naming the ones that failed. Pass `--min` and `--max` when the brief asked for a length outside 15 to
+   30s, `--width` and `--height` for a cut that is not 16:9, and `--accept` for an edge range already judged
+   deliberate, which also goes in the storyboard's frame review log. Crop every CROSSES range edge-scan lists and
+   look at it before deciding. Every timing figure you write in a comment or the storyboard goes in as a claim: an
+   unchecked one reads as documentation while being a defect report, which is how six of them shipped.
+
 5. Write what each sheet, crop and gate showed in the storyboard's frame review log, with a verdict per problem. A
    problem has two possible verdicts: **fixed** (name the change and the render that shows it) or **not a problem**
    (name the rule that allows it, for example "bleed, no line sliced, crop at frame 1140"). "Accepted", "known issue",

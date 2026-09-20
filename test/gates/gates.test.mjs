@@ -1,7 +1,7 @@
 // What the gate scripts print, pinned. These ran for months with no tests, and two defects survived that way: the
 // bottom edge was never scanned, and nothing would have caught a JSON timestamp losing its ".0".
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -18,9 +18,14 @@ const demo = join(root, "docs/demo-relay-web.mp4");
 let clips;
 
 /** Run a gate and return its stdout and exit code rather than throwing, since a failing gate is the thing under test. */
-function gate(script, args, input) {
+function gate(script, args, input, cwd) {
   try {
-    const stdout = execFileSync("node", [script, ...args], { encoding: "utf8", input, maxBuffer: 64 * 1024 * 1024 });
+    const stdout = execFileSync("node", [script, ...args], {
+      encoding: "utf8",
+      input,
+      cwd,
+      maxBuffer: 64 * 1024 * 1024,
+    });
     return { stdout, stderr: "", status: 0 };
   } catch (error) {
     return { stdout: error.stdout ?? "", stderr: error.stderr ?? "", status: error.status };
@@ -690,5 +695,57 @@ describe("render-motion-blur", () => {
     const { stderr, status } = gate(join(create, "render-motion-blur.mjs"), []);
     assert.equal(status, 1);
     assert.match(stderr, /usage: render-motion-blur\.mjs/);
+  });
+});
+
+describe("gates runner", () => {
+  let reel;
+
+  before(() => {
+    reel = join(clips, "runner");
+    mkdirSync(join(reel, "src"), { recursive: true });
+    mkdirSync(join(reel, "outputs"), { recursive: true });
+  });
+
+  /** Build a reel package in whatever state the test needs, then run the runner over it. */
+  function run(state = {}, args = []) {
+    const src = join(reel, "src");
+    writeFileSync(join(reel, "outputs", "reel.mp4"), "");
+    writeFileSync(join(src, "Reel.tsx"), state.glow ?? 'const GLOW = ["rgba(122, 162, 255, 0.14)"];\n');
+    writeFileSync(join(reel, "remotion.config.ts"), state.config ?? 'const product = "../relay";\n');
+    if (state.storyboard === null) rmSync(join(reel, "storyboard.md"), { force: true });
+    else writeFileSync(join(reel, "storyboard.md"), state.storyboard ?? "# Storyboard\n\nReal content.\n");
+    return gate(join(create, "gates.mjs"), ["outputs/reel.mp4", "--src", "src", ...args], undefined, reel);
+  }
+
+  // The point of the preflight: these all used to be silent passes, found only after a twenty minute render.
+  test("refuses a reel with no storyboard, before running any gate", () => {
+    const { stdout, status } = run({ storyboard: null });
+    assert.equal(status, 1);
+    assert.match(stdout, /storyboard\.md does not exist/);
+    assert.doesNotMatch(stdout, /== check-video/, "it must not reach the gates");
+  });
+
+  test("refuses a storyboard that is still the shipped template", () => {
+    const template = readFileSync(join(create, "..", "references", "storyboard.md"), "utf8");
+    const { stdout, status } = run({ storyboard: template });
+    assert.equal(status, 1);
+    assert.match(stdout, /still the unedited template/);
+  });
+
+  test("refuses a kit whose placeholders were never edited", () => {
+    const { stdout, status } = run({
+      glow: 'const GLOW = ["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.05)"];\n',
+      config: 'const product = path.resolve("../my-product");\n',
+    });
+    assert.equal(status, 1);
+    assert.match(stdout, /GLOW is still the kit's neutral placeholder/);
+    assert.match(stdout, /still points at \.\.\/my-product/);
+  });
+
+  test("--skip-preflight runs the gates on a reel it does not understand", () => {
+    const { stdout } = run({ storyboard: null }, ["--skip-preflight"]);
+    assert.match(stdout, /== check-video/, "it should reach the gates");
+    assert.doesNotMatch(stdout, /does not exist\. Render before gating/);
   });
 });

@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.5.0
+
+Three audits agreed the method was sound and that a stranger could not follow it to a finished reel. This release is
+about the on-ramp.
+
+- **The kit now ships a reel package.** It had no `package.json`, no `tsconfig.json`, no `Root.tsx`, no `index.ts`
+  and no `registerRoot` anywhere, while step 1b said to "stand up a bare Remotion package" and gave nothing to stand
+  it up with. `assets/scaffold/` is the package root and `assets/kit/` is its `src/`, which is the split `SKILL.md`
+  already papered over with a parenthetical. Copy two directories, `npm install`, `npm run still`, and a frame comes
+  out. `kit-check.mjs` assembles the same two halves, so CI typechecks the pins users actually get.
+- **One command runs every gate.** `scripts/gates.mjs` replaces six hand-typed commands that had four argument
+  shapes and three different names for "point at the other artefact". On a real reel those were re-run once per
+  iteration, 36 to 60 invocations across a session, each one a permission prompt.
+- **The runner refuses to start on a reel that was never finished.** Four gates could be satisfied by doing less
+  work rather than more: write no claims and the claim gate passes, load no font and the font gate only warns. It
+  now checks for a missing storyboard, an unedited template and the kit's own placeholder colours, and says so in
+  about twenty milliseconds rather than after a twenty minute render.
+- **Every script invocation in both skills is absolute.** They were bare relative, so `node scripts/check-video.mjs
+outputs/reel.mp4` had no working directory that satisfied both halves: `scripts/` only exists under the skill,
+  `outputs/` only under the reel. It hit six times on the first gate run. `skill-paths.mjs` now validates 24
+  references where it validated 5, and fails a bare one.
+- **`references/customise.md`**, the twenty or so things the kit leaves open, five of which were documented. Three
+  of them are theme colours in three different files, and a reel that sets one and misses the others renders
+  perfectly in someone else's palette, which no gate can see.
+- **Every gate failure names its lever.** `check-video`'s duration gate fails correct reels, because the skill lets
+  the user set the length while the gate defaults to 15 to 30, and nothing said `--min` and `--max` existed.
+- **The scaffold's proof-of-life still rendered frame 0**, which is the fade from black: zero lit pixels, the one
+  image that cannot tell a working install from a broken one, directly above the line "A command that exits 0 is not
+  a pass".
+- The Remotion licence notice moves ahead of the first install and `doctor.mjs` prints it. `create`'s description
+  gains the negative scope clause `review` already had. `frameworks.md` gains the row for a site with no React
+  component at all, which it had no answer for. `render-motion-blur.mjs` gets its first test.
+
 ## 1.4.0
 
 The blur fix in 1.3.0 was verified against the curves and never against pixels, and it was a regression. Rendering it

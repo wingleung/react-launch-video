@@ -38,6 +38,7 @@ const SPEC = {
     { flag: "--src", dest: "src", metavar: "SRC", default: undefined, help: "the reel's source, to read LIGHTNESS" },
     { flag: "--declared", dest: "declared", metavar: "N", type: "float", default: undefined },
     { flag: "--tolerance", dest: "tolerance", metavar: "N", type: "float", default: 0.2 },
+    { flag: "--strict", dest: "strict", store: true, default: false, help: "an unreadable frame is a failure" },
   ],
 };
 
@@ -119,6 +120,10 @@ main("lightness", () => {
       `warn  less than ${SURFACE * 100}% of the frame is product, so there is nothing to take a reading from`,
     );
     console.log(`      this reads as a product that never fills the stage, or one darker than the backdrop it sits on`);
+    // Without --strict a dark declaration passes here, because a dark product genuinely can read as no surface at
+    // all. That is also exactly how the shipped default of 0 slips through on a product this cannot measure, so the
+    // runner passes --strict and makes "I could not tell" a failure rather than a pass.
+    if (args.strict) return 1;
     return declared <= 0.1 ? 0 : 1;
   }
 

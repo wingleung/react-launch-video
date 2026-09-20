@@ -30,7 +30,9 @@ hold for being slow if the text on screen needs it.
    `node ${CLAUDE_SKILL_DIR}/../create/scripts/contact-sheet.mjs`. Pick frames at every cue point that matters: just
    before a move, mid-move, on arrival and mid-hold, plus every handoff between beats. Crop small effects at full
    resolution. Look at the sheets, do not infer them from the code.
-4. **Gate scripts** from `${CLAUDE_SKILL_DIR}/../create/scripts/`:
+4. **Gate scripts** from `${CLAUDE_SKILL_DIR}/../create/scripts/`. Run
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/doctor.mjs` first: everything below shells out to ffmpeg, and without
+   it the failure is a raw spawn error rather than an install hint.
    `node ${CLAUDE_SKILL_DIR}/../create/scripts/easing-inventory.mjs <src> --storyboard <storyboard>` whenever there is source and a storyboard (it lists every
    motion call with the easing the code applies, even without a storyboard), and on a render `${CLAUDE_SKILL_DIR}/../create/scripts/check-video.mjs` and
    `${CLAUDE_SKILL_DIR}/../create/scripts/edge-scan.mjs`. Crop every CROSSES range edge-scan lists and look for sliced text.

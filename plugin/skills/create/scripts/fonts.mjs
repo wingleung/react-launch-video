@@ -22,7 +22,10 @@ import { main } from "./lib/run.mjs";
 
 const SPEC = {
   positionals: ["src"],
-  options: [{ flag: "--storyboard", dest: "storyboard", metavar: "STORYBOARD", default: undefined }],
+  options: [
+    { flag: "--storyboard", dest: "storyboard", metavar: "STORYBOARD", default: undefined },
+    { flag: "--strict", dest: "strict", store: true, default: false, help: "loading no font at all is a failure" },
+  ],
 };
 
 const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".css", ".html"];
@@ -183,7 +186,12 @@ main("fonts", () => {
   }
 
   if (!rows.length && !asked.length) {
-    console.log("warn  no font is named or loaded anywhere, so the reel renders in the browser's default");
+    // A reel that loads nothing renders in whatever the browser has, which is the failure this gate is named for.
+    // It is a warning on its own so the kit itself can pass, and a failure under --strict, which is how the runner
+    // invokes it: by then a real reel is being checked and "no typography at all" is not a pass.
+    const message = "no font is named or loaded anywhere, so the reel renders in the browser's default";
+    console.log(`${mark(!args.strict)}  ${message}`);
+    if (args.strict) failures.push(message);
   }
 
   if (args.storyboard) {
