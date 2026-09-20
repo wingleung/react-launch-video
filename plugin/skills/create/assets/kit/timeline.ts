@@ -29,8 +29,8 @@ export const CUE = {
   lastAction: LAST_ACTION,
   // Outro: pull back as the product recedes, end card comes forward, holds, then everything fades to black.
   outro: OUTRO,
-  // The logo starts here with the product at 15% and still leaving, so no frame is empty. The headline's words settle
-  // later, by which time the product is gone: readable text never lands on readable product.
+  // The logo starts here with the product at 50% and still leaving, so no frame is empty, and the product's blur ramp
+  // ends on this cue, so from here on it is unreadable however bright it still is.
   endCard: OUTRO + 0.5,
   fadeOut: OUTRO + 3.8,
 } as const;

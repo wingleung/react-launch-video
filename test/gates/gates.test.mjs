@@ -201,7 +201,7 @@ describe("easing-inventory", () => {
       join(root, "plugin/skills/create/references/storyboard.md"),
     ]);
     assert.equal(status, 0);
-    assert.match(stdout, /storyboard check passed: 23 motion calls/);
+    assert.match(stdout, /storyboard check passed: 24 motion calls/);
   });
 
   test("accepts a citation by symbol, so an edit elsewhere does not invalidate the storyboard", () => {

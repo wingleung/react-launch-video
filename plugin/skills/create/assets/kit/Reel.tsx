@@ -1,6 +1,6 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { CAMERA } from "./camera";
-import { easeInOut, emphasizedIn, emphasizedOut, smoothPath, tween } from "./motion";
+import { easeInOut, easeOut, emphasizedIn, emphasizedOut, smoothPath, tween } from "./motion";
 import { Stage } from "./scene/Stage";
 import { CUE } from "./timeline";
 
@@ -30,10 +30,12 @@ export function Reel() {
   const exit = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], emphasizedOut);
   // The product's departure and the end card's arrival cannot both satisfy the handoff rule by timing alone: the
   // product has to be under 10% before the card is readable, which guarantees a dim moment between them. Blur is what
-  // resolves it, not timing: the product leaves slowly enough to still be substantial when the card arrives, and its
-  // blur rides the fade rather than the slower recede, so by then it is not readable at any opacity. The measured
-  // numbers live in references/pacing.md rule 1 and are deliberately not repeated here.
+  // resolves it, not timing. So the blur runs on its own ramp, finishing as the end card starts rather than riding the
+  // fade: by the time anything on the card is readable the product is unreadable at any opacity, while still bright
+  // enough to keep the frame alive. Tying it to the fade left it at 5px there, which is still legible shapes. The
+  // measured numbers live in references/pacing.md rule 1 and are deliberately not repeated here.
   const gone = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], easeInOut);
+  const dissolve = tween(frame, fps, [CUE.outro + 0.1, CUE.endCard], [0, 1], easeOut);
   const fade =
     tween(frame, fps, [0, 0.8], [0, 1], easeInOut) *
     (1 - tween(frame, fps, [CUE.fadeOut, CUE.fadeOut + 0.6], [0, 1], easeInOut));
@@ -66,7 +68,7 @@ export function Reel() {
               transform:
                 `perspective(2400px) translateY(${(1 - enter) * 140 + exit * 40}px) ` +
                 `rotateX(${(1 - enter) * 22}deg) scale(${0.94 + 0.06 * enter - 0.08 * exit})`,
-              filter: `blur(${(1 - arrived) * 14 + gone * 10}px)`,
+              filter: `blur(${(1 - arrived) * 14 + dissolve * 14}px)`,
             }}
           >
             {/* The product frame (browser, terminal, device) with the real components inside. */}

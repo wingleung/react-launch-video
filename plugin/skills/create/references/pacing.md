@@ -61,7 +61,7 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
    0.05s in and takes 0.8 to 1.0s. [convention], following the overlapping action principle
    ([StudioBinder](https://www.studiobinder.com/blog/what-are-the-12-principles-of-animation/)). Blur hides crossfade
    artifacts, but keep it under 20px (Emil Kowalski). Overlap the motion, not the legibility: at the first frame
-   arriving text passes 50% opacity, the product under it is **either** below 10% **or** blurred past about 5px, and
+   arriving text passes 50% opacity, the product under it is **either** below 10% **or** blurred past about 12px, and
    neither side is ever alone on an empty stage.
 
    Those two halves fight each other, and which way you resolve it depends on the handoff. Sampled every quarter frame
@@ -69,9 +69,14 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
    puts a bright product under readable text. 0.05s is the measured middle: faintest 40.3%, and nothing readable
    overlapping. The outro has no such middle. Search the whole timing space and there is none, because the product must
    fall below 10% before the card is readable, which guarantees a dim frame between them. Blur is what resolves it
-   rather than timing: the product leaves over 0.8s so it is still at 45% when the card passes 50%, and its blur rides
-   the fade rather than the slower recede, reaching 5.5px by then. A blurred product is not readable at any opacity,
+   rather than timing: the product leaves over 0.8s so it is still at 50% when the end card starts, and its blur runs
+   on its own faster ramp that finishes on that same cue, at 14px. A blurred product is not readable at any opacity,
    which is the point the 10% figure was always standing in for.
+
+   The 12px figure is measured, not chosen. An earlier kit tied the blur to the fade and reached 5px at the handoff,
+   which passes a rule written as "blurred" and still shows legible window shapes and text blocks under the wordmark.
+   Ramp the blur separately from the opacity so it is finished before the card arrives, rather than stretching the
+   fade, which only trades a readable product for a dark frame.
 
    An emphasized accelerate exit still shows 85% opacity at its midpoint, so fade the product's opacity on a faster
    curve than its recede. Measured while building the kit: sequencing the two moves so they never overlap looks safer
