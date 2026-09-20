@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.4.0
+
+The blur fix in 1.3.0 was verified against the curves and never against pixels, and it was a regression. Rendering it
+is what found that, so this release is mostly about the difference between a number a curve predicts and a number a
+frame shows.
+
+- **The outro no longer goes dark.** Defocus spreads a highlight, so it takes peak brightness with it, and a product
+  screenshot is mostly thin text on a dark panel: rendered, peak luma fell from 243 to 76 in three frames as the exit
+  blur crossed 8px and bottomed at 11% of the reel's median. Blur can make the product unreadable or keep the stage
+  lit, not both. The outro now uses three levers, the blur for unreadability, a bloom that puts back the light the
+  blur takes, and a real overlap with the end card starting 0.4s into the outro rather than 0.5s. The darkest outro
+  frame goes from 11% of the median to 33%.
+- **`brightest` reads opacity and blur, not opacity alone.** A blurred layer keeps all of its opacity while losing
+  almost all of its light, so the old signal certified a near-black frame as 96% lit and the claim gate agreed with
+  it. It now folds in a falloff keyed on blur per stroke width, calibrated on two far-apart points from a real render
+  (a 112px wordmark at 4.3px keeps 97%, 2px UI text at 8px keeps 30%), and it agrees with the render at both handoffs
+  to within 3 points. `kit-check` pins both calibration points and its monotonicity. It is still a smoke alarm:
+  `check-video.mjs` on a real render measures pixels instead of predicting them, and it is the authority.
+- **A new gate, `scripts/fonts.mjs`.** It says where every font comes from and fails one taken from a machine's font
+  folder, one fetched over the network at render time, or a family named in a stack that nothing loads. The last is
+  the dangerous one: it renders in the fallback and looks entirely plausible. The kit's own `reel.css` asked for Inter
+  and never loaded it, which this found on its first run. The rule existed in one clause in the middle of a sentence
+  in SKILL.md and two evaluation rounds could not tell whether a finished reel had obeyed it.
+- **The review skill runs the source gates too**, `fonts.mjs` and `claims.mjs`, so a reviewer can decide font
+  provenance and stale timing numbers instead of guessing at them from a finished video.
+- **`doctor.mjs` reports the Node version the claim gate needs.** It checked 18, which renders but cannot import the
+  kit's TypeScript; type stripping landed in 22.18. A user on 20 used to meet that requirement as an import error an
+  hour into a reel.
+- The claim lint gains a **[rendered]** tag for figures read off real frames that no curve can re-derive. That class
+  of number is most of this release and there was no honest way to write one down.
+
 ## 1.3.0
 
 Every number the kit and the references state about the reel's timing is now re-derived from the code on every run.

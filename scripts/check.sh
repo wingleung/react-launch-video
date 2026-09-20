@@ -35,6 +35,9 @@ step "storyboard easings match the kit"
 node plugin/skills/create/scripts/easing-inventory.mjs plugin/skills/create/assets/kit \
   --storyboard plugin/skills/create/references/storyboard.md || fail=1
 
+step "kit names no font it does not load"
+node plugin/skills/create/scripts/fonts.mjs plugin/skills/create/assets/kit || fail=1
+
 step "gate scripts"
 node plugin/skills/create/scripts/doctor.mjs || fail=1
 node --test test/gates/*.test.mjs || fail=1

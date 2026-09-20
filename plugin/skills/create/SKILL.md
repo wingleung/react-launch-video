@@ -59,6 +59,9 @@ Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
   `curves.ts`, and fails prose that puts a percentage or a pixel figure beside a signal without one. Write a
   measurement as `[measured: product blur at endCard is 14.0px]` and it stays true or the gate says so. Run
   `--values cues` to print every signal at every cue, which is where the number in a claim comes from.
+- `node scripts/fonts.mjs`: lists every font the reel loads with where it comes from, and fails a font taken from a
+  machine's font folder, one fetched over the network at render time, or a family named in a stack that nothing
+  loads. That last one renders in the fallback and looks plausible, so nobody catches it by eye.
 - `scripts/render-motion-blur.mjs` with `assets/kit/MotionBlur.tsx`: optional band-free motion blur for the final
   render.
 - `node scripts/add-music.mjs`: puts a track on a finished reel by copying the video stream, never re-encoding it.
@@ -260,7 +263,7 @@ Rendering is the only proof. After each change:
    something that just left, a caption overlapping the product, text rising over the product in a handoff, a push-in
    slicing a table row or long line, keycaps flashing by or sitting on the product, a state swap that flashes dark, a
    highlight that disagrees with the active row mid-glide.
-4. Run the gates on the render and the source. All four must exit 0:
+4. Run the gates on the render and the source. All five must exit 0:
    - `node scripts/check-video.mjs outputs/reel.mp4` (resolution, length, fades, no near-empty stage in a handoff)
    - `node scripts/edge-scan.mjs outputs/reel.mp4` (borders inside the action-safe margin fail, then crop every CROSSES
      range it lists and look for a sliced line, and move the ones you judge deliberate into `--accept`)
@@ -268,6 +271,8 @@ Rendering is the only proof. After each change:
    - `node scripts/claims.mjs src --doc storyboard.md` (every number the source and the storyboard claim about the
      timing is still what the timing does). Every timing figure you write in a comment or the storyboard goes in as a
      claim: an unchecked one reads as documentation while being a defect report, which is how six of them shipped.
+   - `node scripts/fonts.mjs src --storyboard storyboard.md` (every font comes from the repo and the storyboard says
+     where each one comes from)
 5. Write what each sheet, crop and gate showed in the storyboard's frame review log, with a verdict per problem. A
    problem has two possible verdicts: **fixed** (name the change and the render that shows it) or **not a problem**
    (name the rule that allows it, for example "bleed, no line sliced, crop at frame 1140"). "Accepted", "known issue",

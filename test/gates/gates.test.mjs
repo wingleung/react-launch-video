@@ -461,3 +461,70 @@ describe("doctor", () => {
     assert.match(stdout, /node 22\.18\+ for the claim gate/);
   });
 });
+
+describe("fonts", () => {
+  let src;
+
+  before(() => {
+    src = join(clips, "fonts-src");
+    mkdirSync(src, { recursive: true });
+  });
+
+  /** Write one file into the fixture and run the gate over it. */
+  function fonts(name, body, args = []) {
+    writeFileSync(join(src, name), body);
+    const result = gate(join(create, "fonts.mjs"), [src, ...args]);
+    rmSync(join(src, name));
+    return result;
+  }
+
+  test("passes a font from a licensed package", () => {
+    const { stdout, status } = fonts("App.tsx", 'import "@fontsource/inter/400.css";\n');
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /a licensed package/);
+  });
+
+  test("passes a font file the product ships", () => {
+    const { status } = fonts("reel.css", '@font-face { src: url("/fonts/Relay-Bold.woff2"); }\n');
+    assert.equal(status, 0);
+  });
+
+  test("fails a font taken from the machine's font folder", () => {
+    const { stdout, status } = fonts("reel.css", '@font-face { src: url("/System/Library/Fonts/Helvetica.ttc"); }\n');
+    assert.equal(status, 1);
+    assert.match(stdout, /loads Helvetica from a font folder/);
+  });
+
+  test("fails a font fetched over the network at render time", () => {
+    const { stdout, status } = fonts(
+      "index.html",
+      '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400" rel="stylesheet">\n',
+    );
+    assert.equal(status, 1);
+    assert.match(stdout, /loads Inter from the network/);
+  });
+
+  // The one that renders perfectly and ships wrong, which is why it is a gate and not a review note.
+  test("fails a family that is named but never loaded", () => {
+    const { stdout, status } = fonts("reel.css", 'body { font-family: "S\u00f6hne", sans-serif; }\n');
+    assert.equal(status, 1);
+    assert.match(stdout, /asks for S\u00f6hne but nothing loads it/);
+  });
+
+  test("lets a stack fall back to whatever the machine has", () => {
+    const { status } = fonts("reel.css", "body { font-family: ui-sans-serif, system-ui, sans-serif; }\n");
+    assert.equal(status, 0);
+  });
+
+  test("checks the storyboard accounts for every family the code loads", () => {
+    const story = join(clips, "fonts-story.md");
+    writeFileSync(story, "# Storyboard\n\nNothing about type here.\n");
+    const missing = fonts("App.tsx", 'import "@fontsource/inter/400.css";\n', ["--storyboard", story]);
+    assert.equal(missing.status, 1);
+    assert.match(missing.stdout, /the storyboard does not say where inter comes from/);
+
+    writeFileSync(story, "# Storyboard\n\nType is Inter, from @fontsource, SIL Open Font License.\n");
+    const named = fonts("App.tsx", 'import "@fontsource/inter/400.css";\n', ["--storyboard", story]);
+    assert.equal(named.status, 0, named.stdout);
+  });
+});

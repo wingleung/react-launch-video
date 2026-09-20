@@ -6,7 +6,13 @@
   animation: none !important;
 }
 
+/*
+ * Load the product's own font here and name it first in the stack, through @remotion/fonts for files in its public
+ * folder or by importing the @fontsource package it already uses. Naming a family nothing loads renders the whole
+ * reel in the fallback below, which looks entirely plausible until someone who knows the brand sees it.
+ * `scripts/fonts.mjs` fails on that, and on a font taken from a font folder or fetched over the network.
+ */
 body {
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
