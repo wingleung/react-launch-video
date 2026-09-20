@@ -91,17 +91,35 @@ main("check-video", () => {
   const empty = emptyStretches(args.video, fps, luma);
   const found = empty.map(([from, to]) => ` (FOUND ${fixed(from, 2)}s to ${fixed(to, 2)}s)`).join("");
 
+  // Each gate carries the lever that moves it. A gate that reports a fact without naming the fix sends the reader
+  // looking for one, and the duration gate in particular fails correct reels: the skill lets the user set the
+  // length, this defaults to 15 to 30, and nothing said --min and --max existed.
   const gates = [
-    [`resolution ${args.width}x${args.height}`, width === args.width && height === args.height],
+    [
+      `resolution ${args.width}x${args.height}`,
+      width === args.width && height === args.height,
+      `the render is ${width}x${height}. Pass --width and --height for a cut that is not 16:9.`,
+    ],
     [
       `duration ${g(args.min)} to ${g(args.max)}s (is ${fixed(duration, 2)}s)`,
       args.min <= duration && duration <= args.max,
+      "if the brief asked for this length, pass --min and --max rather than cutting the reel to fit the default.",
     ],
-    ["opens from black", brightest(args.video, 0) <= BLACK],
-    ["ends on black", brightest(args.video, duration - 0.05) <= BLACK],
-    [`no near-empty stage mid-reel${found}`, !empty.length],
+    ["opens from black", brightest(args.video, 0) <= BLACK, "the reel has to fade up. See reelFade in curves.ts."],
+    [
+      "ends on black",
+      brightest(args.video, duration - 0.05) <= BLACK,
+      "the reel has to fade out. Check CUE.fadeOut against the composition's duration.",
+    ],
+    [
+      `no near-empty stage mid-reel${found}`,
+      !empty.length,
+      "a handoff queued instead of overlapping. Re-run with --handoffs for the darkest moments, and see rule 1 of" +
+        " references/pacing.md, which covers the three levers: overlap, blur and bloom.",
+    ],
   ];
   for (const [name, ok] of gates) console.log(`${mark(ok)}  ${name}`);
+  for (const [, ok, remedy] of gates) if (!ok && remedy) console.log(`      ${remedy}`);
 
   // A gate that passes says nothing about how close it came. On request, show the darkest moments mid-reel so a
   // handoff can be checked against its cue points instead of taking a silent pass as proof.

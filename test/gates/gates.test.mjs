@@ -8,6 +8,7 @@ import { join } from "node:path";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { stripsTypes } from "../../plugin/skills/create/scripts/lib/run.mjs";
+import { blurFilter } from "../../plugin/skills/create/scripts/render-motion-blur.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const create = join(root, "plugin/skills/create/scripts");
@@ -648,5 +649,46 @@ describe("lightness", () => {
     const { stderr, status } = gate(join(create, "lightness.mjs"), [reel("any.mp4", "8f"), "--src", src]);
     assert.equal(status, 1);
     assert.match(stderr, /no literal "export const LIGHTNESS = <number>"/);
+  });
+});
+
+describe("render-motion-blur", () => {
+  // The whole script was untested and check.sh never ran it. The fragile part is the escaping: the commas inside
+  // mod(n\,N) have to survive being joined into a filter list, and when they do not, ffmpeg reads them as filter
+  // separators and fails in a way that reads like a codec problem rather than a quoting one.
+  test("keeps the commas inside the select expression escaped", () => {
+    assert.match(blurFilter(4, 60), /select=eq\(mod\(n\\,4\)\\,3\)/);
+    assert.equal(blurFilter(4, 60).split(",").length, 7, "an unescaped comma would split into more filters");
+  });
+
+  test("ffmpeg accepts the chain and it averages each group into one frame", () => {
+    const input = join(clips, "blur-in.mp4");
+    const output = join(clips, "blur-out.mp4");
+    // 24 frames in, 4 samples per frame, so 6 frames out.
+    ffmpeg("-f", "lavfi", "-i", "testsrc=s=320x180:r=60:d=0.4", "-pix_fmt", "yuv420p", input);
+    ffmpeg("-i", input, "-vf", blurFilter(4, 60), "-fps_mode", "passthrough", "-c:v", "libx264", output);
+    const frames = execFileSync(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-count_frames",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=nb_read_frames",
+        "-of",
+        "default=nk=1:nw=1",
+        output,
+      ],
+      { encoding: "utf8" },
+    ).trim();
+    assert.equal(Number(frames), 6, `expected 24 frames to average into 6, got ${frames}`);
+  });
+
+  test("refuses to run without a composition id and an output", () => {
+    const { stderr, status } = gate(join(create, "render-motion-blur.mjs"), []);
+    assert.equal(status, 1);
+    assert.match(stderr, /usage: render-motion-blur\.mjs/);
   });
 });

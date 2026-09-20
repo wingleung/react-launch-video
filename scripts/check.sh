@@ -31,7 +31,7 @@ else
 fi
 
 step "formatting (prettier)"
-npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}" || note
+npx --yes prettier@3 --check "**/*.{ts,tsx,js,cjs,mjs,css,html,json,md,yml,yaml}" || note
 
 step "skills reach the files they point at"
 node scripts/skill-paths.mjs || note
