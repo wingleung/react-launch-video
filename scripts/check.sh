@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Everything CI runs, in the same order. Run it before opening a pull request.
+# Every check there is. CI runs this exact script rather than a copy of it, so the two cannot drift.
+# Run it before opening a pull request.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 fail=0

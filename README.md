@@ -77,11 +77,14 @@ Every rule is sourced in the create skill's `references/pacing.md`.
 
 These run on every render, and a failing one means another pass rather than a caveat in the report:
 
-| Gate                   | Fails when                                                                    |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| `check-video.mjs`      | wrong resolution or length, no fade from or to black, an empty stage mid-reel |
-| `edge-scan.mjs`        | a border rests inside the action-safe margin, or content runs off the frame   |
-| `easing-inventory.mjs` | an animated value does not have the easing the storyboard says it has         |
+| Gate                   | Fails when                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| `check-video.mjs`      | wrong resolution or length, no fade from or to black, an empty stage mid-reel      |
+| `edge-scan.mjs`        | a border rests inside the action-safe margin, or content runs off the frame        |
+| `easing-inventory.mjs` | an animated value does not have the easing the storyboard says it has              |
+| `claims.mjs`           | a number a comment or a doc states about the timing is not what the code does      |
+| `fonts.mjs`            | a font comes from a machine's font folder or the network, or is named but unloaded |
+| `lightness.mjs`        | the product's lightness is not what the kit was told, so the outro is mistuned     |
 
 These are tools rather than gates, and pass or fail nothing:
 
@@ -89,11 +92,13 @@ These are tools rather than gates, and pass or fail nothing:
 | ------------------------ | -------------------------------------------------------------- |
 | `contact-sheet.mjs`      | builds the frame sheets and crops the review is done on        |
 | `doctor.mjs`             | checks this machine has Node and ffmpeg with the right filters |
+| `reading-time.mjs`       | works out how long a piece of on-screen text has to be held    |
 | `render-motion-blur.mjs` | renders the final with band-free motion blur                   |
 | `add-music.mjs`          | adds a music track without re-encoding the video               |
 
-The kit adds one more: `assertStillWhileReading` runs when the composition loads and throws when the camera moves
-while text is being read, so that render fails in seconds instead of after an hour.
+The kit adds two more that run when the composition loads, so a render fails in seconds instead of after an hour:
+`assertStillWhileReading` throws when the camera moves while text is being read, and `assertReadingTime` throws when
+a caption is held for less time than it takes to read.
 
 ## Install
 
