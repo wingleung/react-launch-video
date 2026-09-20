@@ -29,6 +29,9 @@ fi
 step "formatting (prettier)"
 npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}" || fail=1
 
+step "skills reach the files they point at"
+node scripts/skill-paths.mjs || fail=1
+
 step "kit typecheck and camera"
 node scripts/kit-check.mjs || fail=1
 
