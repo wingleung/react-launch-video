@@ -41,6 +41,17 @@ export function runLenient(command, args, timeoutMs = 30000) {
   return `${result.stdout ?? ""}${result.stderr ?? ""}`;
 }
 
+/**
+ * Whether a Node version can import TypeScript directly, which is how the claim gate reads the kit's curves without
+ * a build step. Unflagged type stripping landed in 22.18. Takes the version rather than reading process.version, so
+ * a test can ask about the versions the machine running it is not on.
+ */
+export function stripsTypes(version = process.version) {
+  const [major, minor] = version.replace(/^v+/, "").split(".").map(Number);
+  if (!major) return false;
+  return major > 22 || (major === 22 && (minor ?? 0) >= 18);
+}
+
 /** Run a script body, sync or async, reporting a failure as one line rather than a stack trace. */
 export function main(name, body) {
   const fail = (error) => {

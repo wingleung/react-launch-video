@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import { stripsTypes } from "../../plugin/skills/create/scripts/lib/run.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const create = join(root, "plugin/skills/create/scripts");
@@ -440,5 +441,23 @@ describe("doctor", () => {
       assert.match(stdout, new RegExp(`ok {4}ffmpeg filter ${filter}:`));
     }
     assert.match(stdout, /\nReady\.\n$/);
+  });
+});
+
+describe("doctor", () => {
+  // The claim gate needs a newer Node than a render does, so doctor has to say which one this machine is on.
+  // Asking the predicate directly is the only way to cover the versions the machine running the tests is not on.
+  test("knows which Node versions can import TypeScript", () => {
+    for (const version of ["18.20.0", "20.11.1", "22.17.9", "nonsense", ""]) {
+      assert.equal(stripsTypes(version), false, version);
+    }
+    for (const version of ["22.18.0", "22.19.1", "24.0.0", "v26.8.1"]) {
+      assert.equal(stripsTypes(version), true, version);
+    }
+  });
+
+  test("reports the claim gate's Node requirement as its own row", () => {
+    const { stdout } = gate(join(create, "doctor.mjs"), []);
+    assert.match(stdout, /node 22\.18\+ for the claim gate/);
   });
 });

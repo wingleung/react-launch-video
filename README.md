@@ -108,7 +108,8 @@ That is `plugin@marketplace`, and both are called `product-reel`.
 
 ### Prerequisites
 
-- Node.js with npm (tested with Node 22)
+- Node.js 22.18 or later, with npm. A reel renders on 18, but the claim gate imports the kit's TypeScript directly
+  to re-derive every measured number, and that needs 22.18
 - ffmpeg and ffprobe on your PATH. A system ffmpeg with the `tmix` filter is only needed for the motion blur render.
 
 Ask Claude to run the doctor (`/product-reel:create run the doctor`) to check. It prints the install command for your

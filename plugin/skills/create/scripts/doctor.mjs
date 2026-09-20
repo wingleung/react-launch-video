@@ -4,9 +4,13 @@
 //     node doctor.mjs
 //
 // Node, npm and ffmpeg with the filters the gates use. Exits 1 when something required is missing.
+//
+// Two Node versions matter. A reel renders on 18, but claims.mjs imports the kit's TypeScript directly to re-derive
+// every measured number, and type stripping only landed in 22.18. That gate is step 4 of the skill, so the higher
+// version is reported as required rather than as a nicety.
 import { accessSync, constants } from "node:fs";
 import { delimiter, join } from "node:path";
-import { main, runLenient } from "./lib/run.mjs";
+import { main, runLenient, stripsTypes } from "./lib/run.mjs";
 import { mark } from "./lib/report.mjs";
 
 const SYSTEM = { darwin: "Darwin", linux: "Linux", win32: "Windows" }[process.platform] ?? "Linux";
@@ -51,8 +55,14 @@ main("doctor", () => {
 
   if (which("node")) {
     const version = runLenient("node", ["--version"]).trim().replace(/^v+/, "");
-    const major = /^\d/.test(version) ? Number(version.split(".")[0]) : 0;
+    const [major] = /^\d/.test(version) ? version.split(".").map(Number) : [0];
     report(major >= 18, "node", `${version} (tested with 22, 18 or later expected)`);
+    const strips = stripsTypes(version);
+    report(
+      strips,
+      "node 22.18+ for the claim gate",
+      strips ? "can import the kit's TypeScript" : `${version} cannot import TypeScript, so claims.mjs will not run`,
+    );
   } else {
     report(false, "node", `not found. ${hint("node")}`);
   }
