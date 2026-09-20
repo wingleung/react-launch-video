@@ -29,10 +29,10 @@ export function Reel() {
   const arrived = tween(frame, fps, [CUE.productIn, CUE.productIn + 0.4], [0, 1], emphasizedIn);
   const exit = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], emphasizedOut);
   // The product's departure and the end card's arrival cannot both satisfy the handoff rule by timing alone: the
-  // product has to be under 10% before the card is readable, which guarantees a dim moment between them. Measured at
-  // the old 0.6s departure, the frame fell to 15% and a render put its brightest pixel at 36 of 255. Blur is what
-  // resolves it, not timing. The product now leaves over 0.8s, so it is still at 33% when the card passes 50%, and
-  // its blur rides the fade rather than the slower recede, so by then it carries 6.7px and is not readable.
+  // product has to be under 10% before the card is readable, which guarantees a dim moment between them. Blur is what
+  // resolves it, not timing: the product leaves slowly enough to still be substantial when the card arrives, and its
+  // blur rides the fade rather than the slower recede, so by then it is not readable at any opacity. The measured
+  // numbers live in references/pacing.md rule 1 and are deliberately not repeated here.
   const gone = tween(frame, fps, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], easeInOut);
   const fade =
     tween(frame, fps, [0, 0.8], [0, 1], easeInOut) *

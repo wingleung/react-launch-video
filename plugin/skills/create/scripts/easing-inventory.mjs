@@ -256,7 +256,17 @@ main("easing-inventory", () => {
   const cite = /([\w./-]+\.tsx?)(?::(\d+)(?:\s*-\s*(\d+))?|#(\w+))/g;
   const failures = [];
   const covered = new Set();
-  for (const row of rows) {
+  for (const raw of rows) {
+    // `Captions.tsx#enter` `#leave` is how a person writes a row with two citations from one file. Expand the
+    // shorthand rather than leaving it unmatched, which would report the call as cited by nothing.
+    let lastFile = null;
+    const row = raw.replace(/([\w./-]+\.tsx?)#(\w+)|#(\w+)/g, (whole, named, symbol, bare) => {
+      if (named) {
+        lastFile = named;
+        return whole;
+      }
+      return lastFile ? `${lastFile}#${bare}` : whole;
+    });
     for (const [, file, start, end, symbol] of row.matchAll(cite)) {
       const low = Number(start);
       const high = Number(end ?? start);

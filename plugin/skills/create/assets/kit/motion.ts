@@ -172,6 +172,10 @@ export const ACTION_SAFE: Box = { x: 67, y: 38, width: 1786, height: 1004 };
 /**
  * Action safe minus the caption column (Captions sits at left 110 with width 560). Frame the product here while a
  * caption is up.
+ *
+ * This constrains the box you pass to `fitCamera`, and nothing else. The rest of the product still bleeds across the
+ * full frame, including under the caption, so a window wider than this area will sit behind the text however the
+ * camera is placed. The fix is the product's render width, not the camera.
  */
 export const CAPTION_SAFE: Box = { x: 700, y: 38, width: 1153, height: 1004 };
 

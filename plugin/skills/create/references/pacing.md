@@ -50,6 +50,10 @@ to the product's own components inside the reel (a popover opening, a keypress r
 
 Never ease-in something that is arriving: it delays the moment the viewer is watching (Emil Kowalski).
 
+Where a band and a reading time disagree, **reading time wins**. A 16-character title already needs about 1.6s of
+hold on top of its reveal, so a title card carrying real product copy will run past the 1.5 to 2.5s band. Take the
+extra length rather than a hold nobody can read, and say so in the storyboard.
+
 ## Rules
 
 1. **Overlap handoffs.** Start the next move while the previous one is still finishing, 30 to 50% overlap. Title to

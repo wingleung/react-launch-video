@@ -138,6 +138,11 @@ The storyboard also fixes five things that are expensive to retrofit:
   larger source element, or a caption carrying the words instead. Decide it here. Found after three drafts it costs a
   restructure, and `/product-reel:review` is the last line of defence rather than the first.
 
+  The lever for both legibility and framing is the **width you render the product at**, not the zoom. A card grid has
+  no safe place to put a frame edge: a 20px gutter leaves a border about 9px from the frame, which `edge-scan` fails,
+  and an edge inside a card slices text. Narrow the product's viewport until a whole-window framing fits, then derive
+  every camera key from `fitCamera`. Choosing a zoom and hunting for a crop that survives is the long way round.
+
 - **An easing for every animated element**, not only the big moves: the title words, the product entrance, each camera
   key, captions in and out, keycaps, the cursor's fade and click, highlights, the ambient drift and the fade to black.
   Arrivals decelerate (Material 3 emphasized decelerate `cubic-bezier(0.05, 0.7, 0.1, 1)`), exits accelerate

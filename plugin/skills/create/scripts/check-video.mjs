@@ -20,6 +20,7 @@ const SPEC = {
     { flag: "--max", dest: "max", metavar: "MAX", type: "float", default: 30 },
     { flag: "--width", dest: "width", metavar: "WIDTH", type: "int", default: 1920 },
     { flag: "--height", dest: "height", metavar: "HEIGHT", type: "int", default: 1080 },
+    { flag: "--handoffs", dest: "handoffs", store: true, default: false, help: "also report the darkest moments" },
   ],
 };
 
@@ -53,9 +54,10 @@ function brightest(video, seconds) {
  * Mid-reel runs of 0.1s or more whose brightest pixel is under 45% of the median (and under 60). A shorter dip in a
  * crossfade does not read as empty.
  */
-function emptyStretches(video, fps) {
+function emptyStretches(video, fps, collected) {
   const out = luma(video);
   const values = [...out.matchAll(new RegExp(YMAX.source, "g"))].map((found) => Number(found[1]));
+  if (collected) collected.values = values;
   if (!values.length) return [];
   const median = [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
   const edge = Math.trunc(1.5 * fps); // the fades from and to black are allowed to be dark
@@ -85,7 +87,8 @@ main("check-video", () => {
   const args = parse("check-video.mjs", SPEC, process.argv.slice(2));
   const { width, height, duration } = probeGeometry(args.video);
   const fps = probeFps(args.video);
-  const empty = emptyStretches(args.video, fps);
+  const luma = {};
+  const empty = emptyStretches(args.video, fps, luma);
   const found = empty.map(([from, to]) => ` (FOUND ${fixed(from, 2)}s to ${fixed(to, 2)}s)`).join("");
 
   const gates = [
@@ -99,5 +102,21 @@ main("check-video", () => {
     [`no near-empty stage mid-reel${found}`, !empty.length],
   ];
   for (const [name, ok] of gates) console.log(`${mark(ok)}  ${name}`);
+
+  // A gate that passes says nothing about how close it came. On request, show the darkest moments mid-reel so a
+  // handoff can be checked against its cue points instead of taking a silent pass as proof.
+  if (args.handoffs && luma.values?.length) {
+    const values = luma.values;
+    const median = [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+    const edge = Math.trunc(1.5 * fps);
+    const middle = values.map((value, index) => ({ value, index })).slice(edge, values.length - edge);
+    const darkest = [...middle].sort((a, b) => a.value - b.value).slice(0, 5);
+    console.log(`\nbrightest pixel: median ${median} across the reel. Darkest moments away from the fades:`);
+    for (const { value, index } of darkest) {
+      console.log(
+        `  ${fixed(index / fps, 2).padStart(7)}s  ${String(value).padStart(3)}  (${fixed((100 * value) / median, 1).padStart(5)}% of median)`,
+      );
+    }
+  }
   return gates.every(([, ok]) => ok) ? 0 : 1;
 });
