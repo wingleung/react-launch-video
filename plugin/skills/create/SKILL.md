@@ -94,6 +94,18 @@ components, or a `use server` module in the path, say so here and agree with the
 build the reel from its client components only. `references/frameworks.md` has the full table, including the `next/*`
 components, the styling systems that need a plugin and the `next/font` substitution.
 
+### 1c. Measure the real boxes
+
+Render a throwaway composition that prints the measurements you need into a still: the product window's box, the rows
+or cards the camera will frame, the cursor's targets. Read the numbers off it and keep them in a `boxes.ts`.
+
+This is not optional and it is not part of step 1b. Every camera key comes from `fitCamera(box, safe)` and a box chosen
+by eye is how tables and long lines end up cropped. Expect it to be its own small piece of code.
+
+If the split in step 3 pins a value the storyboard depends on (a clock-driven greeting becoming a fixed prop changes
+what the header says, and so what it costs to read), do that part of the split first. The order below is the common
+case, not a rule.
+
 ### 2. Storyboard with timings
 
 Fill in `references/storyboard.md` and show it to the user before building scenes. Structure:
@@ -104,6 +116,12 @@ Fill in `references/storyboard.md` and show it to the user before building scene
    numbered caption using the product's own feature names.
 4. **Outro**: pull back as the product recedes, **end card** with the headline and a subline (homepage, platforms),
    hold, fade to black.
+
+When the captions, the reading-time floor and a requested length cannot all hold, **reading time wins and the total
+length gives**. A product whose own sentences run 40 to 55 characters cannot carry three captions in 20 seconds. Say so
+and agree the trade with the user rather than shortening a hold below its floor, and remember that the user's stated
+length beats the gate's 15 to 30s range: passing the gate is not the same as answering the brief. Captions also come in
+zero, two or more. A lone caption numbered "01" with no "02" reads as broken.
 
 Size every hold with reading time (characters ÷ 17 + 0.5s, never under 0.8s). Count every character visible in the block
 with its lines joined by single spaces, chapter numbers and keycap labels included. Measure from the moment the whole
@@ -191,8 +209,9 @@ revert the split: the user asked for a video, not a refactor.
 
 Take the package from step 1b, which already renders one real component, and make it the reel. Remotion is free for
 individuals, non-profits and companies with up to 3 employees. A larger for-profit company needs a Remotion Company
-License, so say so once if the user works for one. Copy `assets/kit/` into the package's `src/` (move
-`remotion.config.ts` to the package root), then adapt:
+License, so say so once if the user works for one. Copy the parts of `assets/kit/` you will actually use into the
+package's `src/` (move `remotion.config.ts` to the package root). Copying all of it and deleting later is worse: the
+easing gate reports every unused kit file as an uncited motion call. Then adapt:
 
 - exact-pinned `remotion` and `@remotion/*` versions, `@remotion/fonts` for the product's own font files
 - `remotion.config.ts`: public dir pointing at the product, aliases, a user agent matching the audience's platform

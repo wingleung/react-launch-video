@@ -38,10 +38,12 @@ Remotion bundles with webpack, not with the product's own build tool, so a produ
 still fail to bundle here. Work through this before splitting anything: a split is cheap to redo and an integration wall
 found after the storyboard is not.
 
-- **A Vite product does not get Vite.** `import.meta.glob` has no webpack equivalent and needs a small pre-loader that
-  expands it into real imports, `import.meta.env` needs a `DefinePlugin`, and any import the product's plugins handle
-  (yaml, and anything else non-standard) needs its own loader. Root-relative `url()` in CSS resolves only once
-  `resolve.roots` points at the product's public folder.
+- **A Vite product bundles fine unless it uses Vite's own features.** Grep for them before assuming a fight:
+  `grep -rE "import\.meta\.(glob|env)|\.ya?ml"" src`. `import.meta.glob` has no webpack equivalent and needs a small
+  pre-loader that expands it into real imports, `import.meta.env` needs a `DefinePlugin`, and any import the product's
+  plugins handle (yaml, and anything else non-standard) needs its own loader. Root-relative `url()` in CSS resolves
+  only once `resolve.roots` points at the product's public folder. A plain Vite app with none of these needs one
+  alias.
 - **Root-relative URLs built at runtime return 404.** `Config.setPublicDir` is necessary and not sufficient: Remotion
   serves that folder under `/public/`, not at `/`. Any path the product assembles while running, an image path inside
   its data or a CSS custom property a theme loader sets, has to go through `staticFile`.
@@ -54,6 +56,14 @@ found after the storyboard is not.
   Sass modules) has never been told the reel's own composition is content. The failure is silent: the render succeeds
   and the product looks unstyled or half styled. Add the reel's sources to the tool's globs, and add the plugin to
   `remotion.config.ts` where one is needed.
+- **A wide product cannot fill the frame while a caption is up.** `Captions` sits at left 110 with width 560 and
+  `CAPTION_SAFE` starts at x=700, so the product has about 1153px to live in. An app laid out at 1080 CSS px fits only
+  at a zoom around 1.26, and at that zoom its 12px text lands at 15px, under the 18px floor. The answer is to render
+  the product at a **narrower viewport** (880px works) so its own text is larger relative to its window, not to raise
+  the zoom until something crops.
+- **`position: fixed` escapes the camera too, and more often than portals do.** A dialog overlay that dims "the page"
+  dims the whole 1920x1080 canvas once it is inside the camera layer. Give the product's container `contain: paint`.
+  This is the cheapest thing step 1b catches, so look for it in the first still.
 - **Portals leave the camera.** Dialogs, popovers, tooltips, selects and dropdowns from Radix, Headless UI, shadcn and
   MUI portal to `document.body` by default, which is outside the camera transform. The overlay draws unzoomed over the
   captions, and `fitCamera` frames empty space because the measured box no longer says where the thing appears. Pass

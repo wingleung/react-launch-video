@@ -19,12 +19,16 @@ export function Cursor({
   start,
   moves,
   clickAt,
+  clicks,
   visibleFrom,
   hideAt,
 }: {
   start: { x: number; y: number };
   moves: CursorMove[];
+  /** One click, for the common case. */
   clickAt?: number;
+  /** Every click, when the cursor presses more than once. A reel with two clicks should not have to patch the kit. */
+  clicks?: number[];
   visibleFrom: number;
   hideAt: number;
 }) {
@@ -40,18 +44,22 @@ export function Cursor({
     previous = to;
   }
 
-  const press =
-    clickAt === undefined
-      ? 1
-      : interpolate(
-          frame,
-          [clickAt, clickAt + 0.06, clickAt + 0.2].map((s) => s * fps),
-          [1, 0.82, 1],
-          {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          },
-        );
+  // Each press dips the cursor and returns it, so the presses multiply: away from any click every term is 1.
+  const at = clicks ?? (clickAt === undefined ? [] : [clickAt]);
+  const press = at.reduce(
+    (scale, when) =>
+      scale *
+      interpolate(
+        frame,
+        [when, when + 0.06, when + 0.2].map((s) => s * fps),
+        [1, 0.82, 1],
+        {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        },
+      ),
+    1,
+  );
 
   return (
     <svg

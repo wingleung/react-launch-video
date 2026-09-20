@@ -30,13 +30,14 @@ table, because the reel is then showing something very slightly different from w
 The rule from techniques.md section 2 is not only about Tailwind and UnoCSS. Anything that decides CSS at build time
 has to be told the reel's own sources exist, or the render succeeds and the product looks unstyled.
 
-| System                     | Renders?    | What to do                                                                                                                                                       |
-| -------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tailwind, UnoCSS, Panda    | Yes         | Run the tool's CLI over the product's **and** the reel's sources before `studio` and `render`. Panda's content globs will not include the reel unless you add it |
-| CSS Modules                | Yes         | Remotion's bundler handles them                                                                                                                                  |
-| styled-components, Emotion | Yes         | Runtime CSS needs no compiler. Alias the library to one copy and mount the product's `ThemeProvider`, or `theme.*` lookups throw                                 |
-| vanilla-extract            | Needs setup | `.css.ts` is compiled by a bundler plugin. Add `@vanilla-extract/webpack-plugin` to `remotion.config.ts` or importing one throws                                 |
-| Sass or Less modules       | Needs setup | Remotion gates these behind a config flag                                                                                                                        |
+| System                       | Renders?    | What to do                                                                                                                                                       |
+| ---------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tailwind, UnoCSS, Panda      | Yes         | Run the tool's CLI over the product's **and** the reel's sources before `studio` and `render`. Panda's content globs will not include the reel unless you add it |
+| Plain CSS, custom properties | Yes         | Nothing to do. Import the stylesheet and the variables resolve                                                                                                   |
+| CSS Modules                  | Yes         | Remotion's bundler handles them                                                                                                                                  |
+| styled-components, Emotion   | Yes         | Runtime CSS needs no compiler. Alias the library to one copy and mount the product's `ThemeProvider`, or `theme.*` lookups throw                                 |
+| vanilla-extract              | Needs setup | `.css.ts` is compiled by a bundler plugin. Add `@vanilla-extract/webpack-plugin` to `remotion.config.ts` or importing one throws                                 |
+| Sass or Less modules         | Needs setup | Remotion gates these behind a config flag                                                                                                                        |
 
 ## Fonts
 
