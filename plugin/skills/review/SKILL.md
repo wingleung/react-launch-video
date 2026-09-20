@@ -35,6 +35,10 @@ hold for being slow if the text on screen needs it.
    motion call with the easing the code applies, even without a storyboard), and on a render `check-video.mjs` and
    `edge-scan.mjs`. Crop every CROSSES range edge-scan lists and look for sliced text.
 
+   On a render with its source, `node lightness.mjs <reel> --src <src>` checks that the product's lightness is what
+   the kit's `curves.ts` was told, since the outro's fade and bloom are tuned from it and the default suits a dark
+   product. A pale product left at the default reads as an end card sitting on a visible slab.
+
    Two more run on source alone and answer questions that are otherwise guesswork from a finished reel:
    `node fonts.mjs <src> --storyboard <storyboard>` says where every font comes from, which no frame can show you (a
    reel rendered in the fallback looks entirely plausible), and `node claims.mjs <src> --doc <storyboard>` re-derives

@@ -38,7 +38,12 @@ frame shows.
   before. Set on the test products it took the slab behind the wordmark from 35% of peak brightness to 12% on a
   mid-grey product and from 23% to 3% on a light one, and all three palettes then land within 5.6 to 5.8:1 of
   wordmark contrast. `kit-check` pins the default and the direction of both derived values.
-- **The opposite risk appears as the product gets paler, and no gate reports it.** At the frame where the end card's
+- **A new gate, `scripts/lightness.mjs`**, so `LIGHTNESS` is enforced rather than advisory. It finds the product's
+  own background in the render as the most repeated non-stage luma, which is what a large flat UI surface is, and
+  fails when that disagrees with what `curves.ts` declares. On three reels differing only in palette it recovered
+  0.06, 0.56 and 1.00 against declared values of 0.05, 0.56 and 1.00. It names the direction and the remedy, because
+  the two ends go wrong in opposite ways.
+- **The opposite risk appears as the product gets paler, and the lightness gate is what now reports it.** At the frame where the end card's
   wordmark is half risen, the blurred product behind it sits at 7% of the reel's peak brightness when the product is
   dark, 23% when it is light and 35% when it is mid-grey. All three pass the 12px rule, so the card always lands on
   something unreadable, but on a dark product that is near-blackness and on a pale one it is a visible slab. Rule 1

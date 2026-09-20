@@ -20,9 +20,9 @@ let clips;
 function gate(script, args, input) {
   try {
     const stdout = execFileSync("node", [script, ...args], { encoding: "utf8", input, maxBuffer: 64 * 1024 * 1024 });
-    return { stdout, status: 0 };
+    return { stdout, stderr: "", status: 0 };
   } catch (error) {
-    return { stdout: error.stdout ?? "", status: error.status };
+    return { stdout: error.stdout ?? "", stderr: error.stderr ?? "", status: error.status };
   }
 }
 
@@ -526,5 +526,69 @@ describe("fonts", () => {
     writeFileSync(story, "# Storyboard\n\nType is Inter, from @fontsource, SIL Open Font License.\n");
     const named = fonts("App.tsx", 'import "@fontsource/inter/400.css";\n', ["--storyboard", story]);
     assert.equal(named.status, 0, named.stdout);
+  });
+});
+
+describe("lightness", () => {
+  // A reel is a dark stage with the product's own surface on it, so a panel of known grey is the whole fixture.
+  function reel(name, grey) {
+    const out = join(clips, name);
+    ffmpeg(
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=0x05060a:s=1920x1080:r=60:d=20",
+      "-vf",
+      `drawbox=x=360:y=210:w=1200:h=460:color=0x${grey}${grey}${grey}:t=fill`,
+      "-pix_fmt",
+      "yuv420p",
+      out,
+    );
+    return out;
+  }
+
+  test("passes a dark product declared dark", () => {
+    const { stdout, status } = gate(join(create, "lightness.mjs"), [reel("dark.mp4", "10"), "--declared", "0.05"]);
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /ok\s+LIGHTNESS declared 0\.05/);
+  });
+
+  test("passes a white product declared white", () => {
+    const { status } = gate(join(create, "lightness.mjs"), [reel("white.mp4", "ff"), "--declared", "1"]);
+    assert.equal(status, 0);
+  });
+
+  // The mistake the gate exists for: the shipped default left alone on a pale product.
+  test("fails a pale product left at the shipped default, and says which way to move", () => {
+    const { stdout, status } = gate(join(create, "lightness.mjs"), [reel("pale.mp4", "ff"), "--declared", "0"]);
+    assert.equal(status, 1);
+    assert.match(stdout, /FAIL {2}LIGHTNESS declared 0\.00, the render shows 1\.00/);
+    assert.match(stdout, /paler than the kit was told/);
+    assert.match(stdout, /sits as a visible slab/);
+  });
+
+  test("fails a dark product declared pale, with the opposite diagnosis", () => {
+    const { stdout, status } = gate(join(create, "lightness.mjs"), [reel("murk.mp4", "10"), "--declared", "1"]);
+    assert.equal(status, 1);
+    assert.match(stdout, /darker than the kit was told/);
+    assert.match(stdout, /can empty the stage/);
+  });
+
+  test("reads the declared value out of the kit's own curves.ts", () => {
+    const src = join(clips, "lightness-src");
+    mkdirSync(src, { recursive: true });
+    writeFileSync(join(src, "curves.ts"), "export const LIGHTNESS = 0.56;\n");
+    const { stdout, status } = gate(join(create, "lightness.mjs"), [reel("mid.mp4", "8f"), "--src", src]);
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /declared 0\.56/);
+  });
+
+  test("says so rather than guessing when curves.ts has no literal to read", () => {
+    const src = join(clips, "lightness-nolit");
+    mkdirSync(src, { recursive: true });
+    writeFileSync(join(src, "curves.ts"), "export const LIGHTNESS = measured();\n");
+    const { stderr, status } = gate(join(create, "lightness.mjs"), [reel("any.mp4", "8f"), "--src", src]);
+    assert.equal(status, 1);
+    assert.match(stderr, /no literal "export const LIGHTNESS = <number>"/);
   });
 });
