@@ -14,6 +14,30 @@ import { CUE, FPS } from "./timeline";
  */
 const f = (seconds: number) => seconds * FPS;
 
+/**
+ * How light the product's own UI is, from 0 for a dark interface to 1 for a white one. Read it off the product's
+ * surface token rather than guessing: take the background it shows behind its content and use its lightness, so
+ * `#0d0f16` is about 0.05, `#8a8f99` about 0.56 and `#ffffff` is 1.
+ *
+ * This is here because the outro behaves differently at each end and one set of numbers cannot serve both. A dark
+ * product is at risk of emptying the stage as it blurs out, because blur takes the light with it, so it leaves
+ * slowly and blooms. A pale product blurs to a bright slab that keeps its own light and was never at that risk, so
+ * the risk it runs is the opposite one: the end card's wordmark landing on a visibly present rectangle. Measured at
+ * the frame where the wordmark is half risen, the product behind it sat at 7% of the reel's peak brightness when
+ * dark and 35% when mid-grey, and no gate tells those apart because both are blurred past the rule's threshold.
+ * [rendered], September 2026.
+ *
+ * So a pale product leaves faster and blooms less, and both fall out of this one number. 0 reproduces the dark
+ * kit exactly. Set it once, then confirm with `check-video.mjs` on a render, which is the only real authority.
+ */
+export const LIGHTNESS = 0;
+
+/** A pale product can leave faster because it was never in danger of emptying the stage. */
+export const fadeFor = (lightness: number) => 0.8 - 0.25 * lightness;
+/** And it needs less of the bloom, which exists to replace light that a dark product loses to the blur. */
+export const bloomFor = (lightness: number) => 1.2 * (1 - lightness);
+const FADE = fadeFor(LIGHTNESS);
+
 /** A word is readable once fully settled: its start plus REVEAL. Count holds from the last word's settle. */
 export const REVEAL = 0.9;
 
@@ -37,7 +61,7 @@ export const productArrived = (seconds: number) =>
 export const productRecede = (seconds: number) =>
   tween(f(seconds), FPS, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], emphasizedOut);
 export const productGone = (seconds: number) =>
-  tween(f(seconds), FPS, [CUE.outro + 0.1, CUE.outro + 0.9], [0, 1], easeInOut);
+  tween(f(seconds), FPS, [CUE.outro + 0.1, CUE.outro + 0.1 + FADE], [0, 1], easeInOut);
 /** The exit blur, on its own faster ramp that finishes as the end card starts. See references/pacing.md rule 1. */
 export const productDissolve = (seconds: number) =>
   tween(f(seconds), FPS, [CUE.outro + 0.1, CUE.endCard], [0, 1], easeOut);
@@ -49,12 +73,11 @@ export const productDissolve = (seconds: number) =>
  * whatever the timing, which is what an earlier version of rule 1 got wrong. This puts the light back as the blur
  * takes it away, the way a real defocused highlight blooms rather than simply dimming.
  *
- * 1.2 is for a dark product, which is the case that needs it. A light product blurs to a bright slab and keeps its
- * own light: rendered, the same outro measured 53% of the reel's median with this bloom and 53% with none at all, so
- * on a light product this is inert rather than wrong. Leave it, or take it to 0 and confirm with check-video.
- * [rendered], September 2026.
+ * 1.2 is for a dark product, which is the case that needs it, and LIGHTNESS scales it away for paler ones. A light
+ * product blurs to a bright slab and keeps its own light: rendered, the same outro measured 53% of the reel's median
+ * with the full bloom and 53% with none at all, so there it was inert rather than wrong. [rendered], September 2026.
  */
-export const productBloom = (seconds: number) => 1 + productDissolve(seconds) * 1.2;
+export const productBloom = (seconds: number) => 1 + productDissolve(seconds) * bloomFor(LIGHTNESS);
 
 export const reelFade = (seconds: number) =>
   tween(f(seconds), FPS, [0, 0.8], [0, 1], easeInOut) *
@@ -105,15 +128,18 @@ const KEEPS: [number, number][] = [
 ];
 /** Typical stroke widths on a 1920x1080 stage: a display lockup, and text inside the product's own UI. */
 export const STROKE = { display: 12, ui: 2 };
-export const survivesBlur = (blur: number, stroke: number) => {
+export const survivesBlur = (blur: number, stroke: number, floor: number = LIGHTNESS) => {
   const ratio = blur / stroke;
   if (ratio <= 0) return 1;
+  // `floor` is there because blur pulls a peak towards the average of what surrounds it, and a pale panel's average
+  // is its own background, so however hard it is blurred it cannot end up darker than that. Without it the curve,
+  // calibrated on a dark product, reads a mid-grey one nearly 50 points low.
   for (let i = 1; i < KEEPS.length; i++) {
     const [x0, y0] = KEEPS[i - 1]!;
     const [x1, y1] = KEEPS[i]!;
-    if (ratio <= x1) return y0 + ((y1 - y0) * (ratio - x0)) / (x1 - x0);
+    if (ratio <= x1) return Math.max(floor, y0 + ((y1 - y0) * (ratio - x0)) / (x1 - x0));
   }
-  return KEEPS[KEEPS.length - 1]![1];
+  return Math.max(floor, KEEPS[KEEPS.length - 1]![1]);
 };
 
 /**

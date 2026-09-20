@@ -32,6 +32,12 @@ frame shows.
   a bright slab that keeps its own light: the same outro rendered at 53% and 82% of each reel's median against the
   dark product's 33%, and the bloom moved none of them. So the bloom is for dark products and inert on paler ones,
   and `brightest` reads them low, which is the safe direction.
+- **`LIGHTNESS` in `curves.ts` makes the outro product-dependent.** One number, 0 for a dark product UI and 1 for a
+  white one, read off the product's own surface token. It drives how fast the product leaves and how much it blooms,
+  because the two ends fail in opposite ways. At 0 it is a no-op: the dark reel renders byte for byte identical to
+  before. Set on the test products it took the slab behind the wordmark from 35% of peak brightness to 12% on a
+  mid-grey product and from 23% to 3% on a light one, and all three palettes then land within 5.6 to 5.8:1 of
+  wordmark contrast. `kit-check` pins the default and the direction of both derived values.
 - **The opposite risk appears as the product gets paler, and no gate reports it.** At the frame where the end card's
   wordmark is half risen, the blurred product behind it sits at 7% of the reel's peak brightness when the product is
   dark, 23% when it is light and 35% when it is mid-grey. All three pass the 12px rule, so the card always lands on
