@@ -102,7 +102,19 @@ found after the storyboard is not.
 - **Fonts and icons from the product's public folder** via `Config.setPublicDir`, loaded with `@remotion/fonts`. Never
   fetch fonts at render time: CI and restricted networks break, and the render stops being reproducible.
 - **Dark mode** usually keys on a `.dark` class on an ancestor: wrap each rendered view in `className="dark"` instead of
-  touching the document root.
+  touching the document root. Get this wrong and the failure is invisibility rather than an error: a logo painted
+  `fill-[#123456] dark:fill-white` renders as near-black on a near-black stage, and the only symptom is that you cannot
+  find it.
+- **Media queries measure the composition, not the window you drew around the product.** A product placed inside a
+  720px browser frame still sees a 1920px viewport, so it picks its widest breakpoint: four columns squeezed into a
+  two-column box, titles truncated to fit, a desktop nav where the real window shows a menu. Nothing errors and the
+  frame looks deliberate. Set the layout the product really uses at that width from the reel's own CSS, or give the
+  frame a container query the product already responds to.
+- **A class name assembled at runtime is invisible to the utility-CSS scanner.** UnoCSS and Tailwind generate CSS by
+  reading source text, so `` `i-lucide-${name}` `` or `` `text-${colour}-500` `` produce no CSS and the element renders
+  as an empty box while the render exits 0. This catches reels twice over: once in the product, where a good codebase
+  already lists the classes as literals, and once in the reel's own new code, where nobody has learned that lesson
+  yet. Write the literals out, or add them to the config's safelist.
 - **`position: fixed` inside the stage** resolves against the nearest transformed ancestor, which is the whole camera
   layer. Give the page container `contain: paint` so fixed children stay inside it.
 - **Negative z-index backgrounds** inside a component need a stacking context on the reel's wrapper
