@@ -28,11 +28,15 @@ frame shows.
 - **`doctor.mjs` reports the Node version the claim gate needs.** It checked 18, which renders but cannot import the
   kit's TypeScript; type stripping landed in 22.18. A user on 20 used to meet that requirement as an import error an
   hour into a reel.
-- **Tested against a light-themed product too**, since the falloff was calibrated on a dark one. A light product
-  blurs to a bright slab that keeps its own light: the same outro rendered at 53% of the reel's median against the
-  dark product's 33%, and the bloom changed nothing either way. So the bloom is for dark products and inert on light
-  ones, and `brightest` reads a light product about 18 points low, which is the safe direction. Both are recorded in
-  the code rather than left for the next person to rediscover.
+- **Tested against a light and a mid-grey product too**, since the falloff was calibrated on a dark one. Both blur to
+  a bright slab that keeps its own light: the same outro rendered at 53% and 82% of each reel's median against the
+  dark product's 33%, and the bloom moved none of them. So the bloom is for dark products and inert on paler ones,
+  and `brightest` reads them low, which is the safe direction.
+- **The opposite risk appears as the product gets paler, and no gate reports it.** At the frame where the end card's
+  wordmark is half risen, the blurred product behind it sits at 7% of the reel's peak brightness when the product is
+  dark, 23% when it is light and 35% when it is mid-grey. All three pass the 12px rule, so the card always lands on
+  something unreadable, but on a dark product that is near-blackness and on a pale one it is a visible slab. Rule 1
+  now says so and names the lever, which is the opacity fade rather than the blur.
 - The claim lint gains a **[rendered]** tag for figures read off real frames that no curve can re-derive. That class
   of number is most of this release and there was no honest way to write one down.
 

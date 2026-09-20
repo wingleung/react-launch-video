@@ -87,10 +87,10 @@ export const endCardOpacity = (seconds: number) => reelFade(seconds) * rise(seco
  * frame is empty is `check-video.mjs` on a real render, which measures pixels instead of predicting them. This
  * exists so that a number written in a comment is not actively wrong.
  *
- * Both ends were measured on a dark product, so it reads a light one low: the same outro rendered 33% of the reel's
- * median with a dark panel and 53% with a light one, against the one figure of 35% this predicts for both. Wrong in
- * the safe direction, which is the direction to keep it, since the failure it replaced was the optimistic one.
- * [rendered], September 2026.
+ * Both ends were measured on a dark product, so it reads a paler one low: the same outro rendered 33% of the reel's
+ * median with a dark panel, 53% with a light one and 82% with a mid-grey one, against the single figure of 35% this
+ * predicts for all three. Wrong in the safe direction, which is the direction to keep it, since the failure it
+ * replaced was the optimistic one. [rendered], September 2026.
  */
 const KEEPS: [number, number][] = [
   [0, 1],

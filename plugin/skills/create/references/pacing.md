@@ -93,10 +93,18 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
    [measured: min brightest over outro..fadeOut is 34.9%]. Do not verify any of this from the curves alone: run
    `check-video.mjs` on a real render, which measures pixels instead of predicting them.
 
-   All of that is about a dark product, which is the hard case. A light one blurs to a bright slab that keeps its own
-   light, and the same outro rendered at 53% of the reel's median rather than 33%, with the bloom making no difference
-   either way. So the bloom is for dark products and merely inert on light ones, and `brightest` reads a light product
-   low, which is the safe direction to be wrong in. [rendered], September 2026.
+   All of that is about a dark product, which is the hard case for emptiness. Rendered with a light panel and then a
+   mid-grey one, nothing else changed, the same outro measured 53% and 82% of each reel's median against the dark
+   product's 33%, and the bloom moved none of them. [rendered], September 2026. So the bloom is for dark products and
+   merely inert on the others, and `brightest` reads them low, which is the safe direction to be wrong in.
+
+   The lighter the product, though, the more the **opposite** risk appears, and no gate reports it. At the frame where
+   the wordmark is half risen, the blurred product behind it sits at 7% of the reel's peak brightness when the product
+   is dark, 23% when it is light and 35% when it is mid-grey. All three pass the 12px rule above, so the card is
+   landing on something genuinely unreadable in every case, but on a dark product it lands on near-blackness and on a
+   pale one it lands on a visible slab. If a reviewer says the end card sits on top of the product, that is this, and
+   the lever is the product's opacity fade rather than its blur: a pale product can leave faster because it was never
+   at risk of emptying the stage. [rendered], September 2026.
 
    An emphasized accelerate exit still shows 85% opacity at its midpoint, so fade the product's opacity on a faster
    curve than its recede. Measured while building the kit: sequencing the two moves so they never overlap looks safer
