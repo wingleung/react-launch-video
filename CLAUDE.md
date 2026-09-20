@@ -17,3 +17,9 @@ and `plugin/skills/review` (review one). It is also its own marketplace (`.claud
   numbers.
 - Release: bump `version` in `plugin/.claude-plugin/plugin.json`, add a CHANGELOG entry,
   `claude plugin validate --strict .`, then `claude plugin tag`.
+- **Testing a change against a real session means updating the installed copy first**, with
+  `claude plugin marketplace update product-reel && claude plugin update product-reel@product-reel`. Installed copies
+  are cached per version under `~/.claude/plugins/cache/`, old versions are never pruned, and an agent that goes
+  looking for the skill's own files will happily read whichever one it finds. A refusal test failed exactly this way:
+  the agent quoted a table row from a cached 1.4.0 that predated the row being tested, and the conclusion looked like
+  a defect in the skill rather than a stale copy on disk.
