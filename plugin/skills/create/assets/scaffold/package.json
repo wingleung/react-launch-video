@@ -5,7 +5,8 @@
     "product-reel repo, so they are pins rather than suggestions. Keep remotion and every @remotion/* package on",
     "the same exact version or the bundler and the renderer disagree in ways that surface as a blank frame rather",
     "than an error. Add @remotion/fonts when the product ships its own font files. The product's own dependencies",
-    "are NOT copied here: the reel imports them from the product through the alias in remotion.config.ts."
+    "still renders frame 480 on purpose. Frame 0 is the reel's fade from black, so a default still is a",
+    "solid black image that looks identical whether the toolchain works or not."
   ],
   "name": "reel",
   "private": true,
@@ -13,7 +14,7 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts Reel outputs/reel.mp4",
-    "still": "remotion still src/index.ts Reel outputs/still.png",
+    "still": "remotion still src/index.ts Reel outputs/still.png --frame=480",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
