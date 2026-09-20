@@ -4,11 +4,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 fail=0
-step() { printf "\n== %s\n" "$1"; }
+failed=()
+# The step name is remembered so the end of the run can name what broke. A filtered view of this output (a grep for
+# "ok" or "passed") otherwise shows a wall of green and the absence of the final line reads like a dropped match.
+step() { current="$1"; printf "\n== %s\n" "$1"; }
+note() { fail=1; failed+=("$current"); }
 
 step "plugin and marketplace manifests"
-claude plugin validate --strict . || fail=1
-claude plugin validate --strict plugin || fail=1
+claude plugin validate --strict . || note
+claude plugin validate --strict plugin || note
 
 step "no personal paths or private names"
 # A home directory that reached a doc or a fixture. Add your own patterns (an employer, a client, an internal
@@ -21,33 +25,38 @@ if grep -rniE --binary-files=without-match "$patterns" . \
   --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=renders \
   --exclude=check.sh --exclude=ci.yml --exclude=.private-names; then
   echo "FAIL: the matches above must not ship"
-  fail=1
+  note
 else
   echo "ok"
 fi
 
 step "formatting (prettier)"
-npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}" || fail=1
+npx --yes prettier@3 --check "**/*.{ts,tsx,md,json,mjs}" || note
 
 step "skills reach the files they point at"
-node scripts/skill-paths.mjs || fail=1
+node scripts/skill-paths.mjs || note
 
 step "kit typecheck and camera"
-node scripts/kit-check.mjs || fail=1
+node scripts/kit-check.mjs || note
 
 step "storyboard easings match the kit"
 node plugin/skills/create/scripts/easing-inventory.mjs plugin/skills/create/assets/kit \
-  --storyboard plugin/skills/create/references/storyboard.md || fail=1
+  --storyboard plugin/skills/create/references/storyboard.md || note
 
 step "kit names no font it does not load"
-node plugin/skills/create/scripts/fonts.mjs plugin/skills/create/assets/kit || fail=1
+node plugin/skills/create/scripts/fonts.mjs plugin/skills/create/assets/kit || note
 
 step "gate scripts"
-node plugin/skills/create/scripts/doctor.mjs || fail=1
-node --test test/gates/*.test.mjs || fail=1
+node plugin/skills/create/scripts/doctor.mjs || note
+node --test test/gates/*.test.mjs || note
 
 step "fixtures build"
-(cd evals/fixtures/relay-web && npm ci --silent && npm run build --silent) || fail=1
-node --test evals/fixtures/relay-cli/test/*.test.js || fail=1
+(cd evals/fixtures/relay-web && npm ci --silent && npm run build --silent) || note
+node --test evals/fixtures/relay-cli/test/*.test.js || note
 
-[ "$fail" -eq 0 ] && echo -e "\nAll checks passed" || { echo -e "\nSome checks failed"; exit 1; }
+if [ "$fail" -eq 0 ]; then
+  echo -e "\nAll checks passed"
+else
+  printf "\nFAILED: %s\n" "$(printf '%s; ' "${failed[@]}")"
+  exit 1
+fi
