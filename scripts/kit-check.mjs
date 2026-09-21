@@ -19,6 +19,10 @@ const dir = mkdtempSync(join(tmpdir(), "kit-check-"));
 cpSync(scaffold, dir, { recursive: true });
 cpSync(kit, join(dir, "src"), { recursive: true });
 
+// Lockless on purpose, and the one install in this repo that is not pinned. The scaffold's direct dependencies are
+// exact, which is what a typecheck actually rides on, so the float is transitive. A lockfile here would pin the whole
+// tree, but it would also ship to every user through `assets/scaffold/`, go stale, and be rewritten by npm into a
+// diff that `prettier --check` then argues with. If CI ever reddens with no repo change, look here first.
 execFileSync("npm", ["install", "--silent", "--no-audit", "--no-fund"], { cwd: dir, stdio: "inherit" });
 // tsc prints its own errors, so a stack trace from execFileSync on top of them is pure noise.
 try {
