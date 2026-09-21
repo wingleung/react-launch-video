@@ -72,8 +72,10 @@ What happens next:
 4. **You get** `reel.mp4` (1920x1080), `storyboard.md` and the frames it reviewed.
 
 A real product takes longer than the fixture, and the time goes into getting it to render rather than into the motion:
-two reels of a Vite monorepo app took **3 to 4 hours** end to end. Most of that runs unattended, but stay for step 3,
-which is the one that edits your components. Ask for motion blur at the end ("render the final with motion blur"), it
+two reels of a Vite monorepo app took **3 to 4 hours** end to end, before v1.5.0 rebuilt the setup step. The most
+recent run, unattended and against a real browser extension, reached a rendered frame **18 seconds** from a cold
+start and produced a reel that passed every gate on the first attempt. Most of a run is unattended, but stay for
+step 3, which is the one that edits your components. Ask for motion blur at the end ("render the final with motion blur"), it
 multiplies render time so it is not used during iteration.
 
 ### What it changes in your repo
