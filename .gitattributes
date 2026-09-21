@@ -1,0 +1,16 @@
+# Normalise line endings in the repo and check out LF everywhere. Without this a Windows contributor's checkout
+# arrives with CRLF, `prettier --check` fails on every file they did not touch, and the first thing the project
+# says to them is that their machine is wrong.
+* text=auto eol=lf
+
+# Never touched, never diffed as text.
+*.mp4 binary
+*.gif binary
+*.png binary
+*.jpg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+
+# Executables keep their bit and their endings regardless of the platform they are edited on.
+*.sh text eol=lf

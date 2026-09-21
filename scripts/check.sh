@@ -14,6 +14,9 @@ step "plugin and marketplace manifests"
 claude plugin validate --strict . || note
 claude plugin validate --strict plugin || note
 
+step "version, CHANGELOG and descriptions agree"
+node scripts/release-check.mjs || note
+
 step "no personal paths or private names"
 # A home directory that reached a doc or a fixture. Add your own patterns (an employer, a client, an internal
 # hostname) one per line in .private-names, which is ignored, so the names themselves never ship.
@@ -31,7 +34,9 @@ else
 fi
 
 step "formatting (prettier)"
-npx --yes prettier@3 --check "**/*.{ts,tsx,js,cjs,mjs,css,html,json,md,yml,yaml}" || note
+# Exact, not `@3`. A floating major lets a prettier release redden a commit that changed nothing in this
+# repo, which is a failure nobody can reproduce from the diff.
+npx --yes prettier@3.9.8 --check "**/*.{ts,tsx,js,cjs,mjs,css,html,json,md,yml,yaml}" || note
 
 step "skills reach the files they point at"
 node scripts/skill-paths.mjs || note

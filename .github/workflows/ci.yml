@@ -9,9 +9,17 @@ on:
 permissions:
   contents: read
 
+# A push that supersedes a running job cancels it rather than queueing behind it. Never on main, where every
+# commit's result is worth having.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The whole suite is minutes. A run that reaches this has hung, and a hung run holds the queue for six hours.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
@@ -24,8 +32,10 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
+      # Pinned. `claude plugin validate --strict` is a gate here, so an unpinned install means a CLI release can
+      # redden a commit that changed nothing. Bump this deliberately.
       - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code@2.1.278
 
       # One step on purpose. This used to be a copy of scripts/check.sh with a step per check, and the two drifted
       # the first time a gate was added to one and not the other, which is exactly the failure a copy always has.

@@ -9,5 +9,18 @@
   "homepage": "https://github.com/wingleung/product-reel",
   "repository": "https://github.com/wingleung/product-reel",
   "license": "MIT",
-  "keywords": ["remotion", "video", "promo", "motion-graphics", "product-reel", "launch-video"]
+  "keywords": [
+    "remotion",
+    "video",
+    "promo",
+    "motion-graphics",
+    "product-reel",
+    "launch-video",
+    "demo-video",
+    "product-demo",
+    "screencast",
+    "react",
+    "cli",
+    "claude-code"
+  ]
 }

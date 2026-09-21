@@ -10,3 +10,12 @@ dist/
 # Rendered reels: kept locally for reference, far too big for the repo.
 renders/*
 !renders/README.md
+
+# Local environment and noise that must never reach a public repo.
+.env
+.env.*
+*.log
+coverage/
+.idea/
+.vscode/
+*.swp

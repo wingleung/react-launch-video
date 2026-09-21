@@ -1,6 +1,6 @@
 {
   "name": "product-reel",
-  "description": "Claude Code plugins for making product videos.",
+  "description": "Cinematic product reels rendered from a React app or CLI's real components in Remotion, with scripted quality gates.",
   "owner": {
     "name": "Wing Leung",
     "url": "https://github.com/wingleung/product-reel"
