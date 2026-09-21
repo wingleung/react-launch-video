@@ -3,8 +3,8 @@
 A public Claude Code plugin (`plugin/.claude-plugin/plugin.json`) with two skills: `plugin/skills/create` (build a reel)
 and `plugin/skills/review` (review one). It is also its own marketplace (`.claude-plugin/marketplace.json`).
 
-- GitHub issues are the backlog. There is no `tasks/todo.md`, and `tasks/lessons.md` is the corrections log rather than
-  a second backlog.
+- GitHub issues are the backlog. There is no `tasks/` directory here: no `todo.md` and no `lessons.md`. A lesson worth
+  keeping goes into the skill's `references/` with the evidence that bought it, which is where a reader will look.
 - Nothing private goes in this repo: no employer or client material, and no absolute home paths. Examples use the
   fictional product "Relay". `./scripts/check.sh` fails on a home path and on any pattern listed in `.private-names`,
   which is ignored so the patterns themselves never ship.
@@ -12,7 +12,7 @@ and `plugin/skills/review` (review one). It is also its own marketplace (`.claud
   after), not taste.
 - Paths inside SKILL.md use `${CLAUDE_SKILL_DIR}`. The review skill reaches the create skill's files through
   `${CLAUDE_SKILL_DIR}/../create/`.
-- Kit changes: format with `npx prettier@3 --write "plugin/skills/create/assets/kit/**/*.{ts,tsx}"` (printWidth 120),
+- Kit changes: format with `npx prettier@3.9.8 --write "plugin/skills/create/assets/kit/**/*.{ts,tsx}"` (printWidth 120),
   then run `./scripts/check.sh`, which typechecks the kit and runs the easing check whose example table cites kit line
   numbers.
 - Release: bump `version` in `plugin/.claude-plugin/plugin.json`, add a CHANGELOG entry,
