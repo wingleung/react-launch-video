@@ -15,8 +15,11 @@ poster=4.5
 width=720
 fps=12.5
 
-palette=$(mktemp -t react-launch-video-palette).png
-trap 'rm -f "$palette"' EXIT
+# A directory, because `mktemp -t prefix` plus a suffix left the file mktemp made behind on macOS and fails outright
+# on GNU mktemp, which wants an XXX template.
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
+palette="$scratch/palette.png"
 
 ffmpeg -v error -ss "$start" -i "$src" -vf "fps=$fps,scale=$width:-1:flags=lanczos,palettegen=stats_mode=diff" -y "$palette"
 ffmpeg -v error -ss "$start" -i "$src" -i "$palette" \
