@@ -102,7 +102,8 @@ main("gates", () => {
 
   const gates = [
     ["check-video", [args.reel, ...bounds, ...size]],
-    ["edge-scan", [args.reel, ...size, ...(args.accept === undefined ? [] : ["--accept", args.accept])]],
+    // No size here: edge-scan reads the frame from the file and its margin is a share of it.
+    ["edge-scan", [args.reel, ...(args.accept === undefined ? [] : ["--accept", args.accept])]],
     ["easing-inventory", [args.src, "--storyboard", args.storyboard]],
     ["claims", [args.src, "--doc", args.storyboard]],
     // Strict, because by here a real reel is being checked: "no typography at all" and "I could not read the
@@ -114,7 +115,8 @@ main("gates", () => {
   const failed = [];
   for (const [name, gateArgs] of gates) {
     console.log(`\n== ${name}`);
-    const result = spawnSync("node", [resolve(here, `${name}.mjs`), ...gateArgs], { stdio: "inherit" });
+    // The Node running this one, since a version manager can leave `node` off the PATH a tool spawns with.
+    const result = spawnSync(process.execPath, [resolve(here, `${name}.mjs`), ...gateArgs], { stdio: "inherit" });
     if (result.error) throw result.error;
     if (result.status !== 0) failed.push(name);
   }

@@ -1,10 +1,10 @@
 // What the gate scripts print, pinned. These ran for months with no tests, and two defects survived that way: the
 // bottom edge was never scanned, and nothing would have caught a JSON timestamp losing its ".0".
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { stripsTypes } from "../../plugin/skills/create/scripts/lib/run.mjs";
@@ -18,12 +18,13 @@ const demo = join(root, "docs/demo-relay-web.mp4");
 let clips;
 
 /** Run a gate and return its stdout and exit code rather than throwing, since a failing gate is the thing under test. */
-function gate(script, args, input, cwd) {
+function gate(script, args, input, cwd, env) {
   try {
-    const stdout = execFileSync("node", [script, ...args], {
+    const stdout = execFileSync(process.execPath, [script, ...args], {
       encoding: "utf8",
       input,
       cwd,
+      env,
       maxBuffer: 64 * 1024 * 1024,
     });
     return { stdout, stderr: "", status: 0 };
@@ -756,5 +757,83 @@ describe("gates runner", () => {
     const { stdout } = run({ storyboard: null }, ["--skip-preflight"]);
     assert.match(stdout, /== check-video/, "it should reach the gates");
     assert.doesNotMatch(stdout, /does not exist\. Render before gating/);
+  });
+});
+
+describe("gates runner on a finished reel", () => {
+  // Every gate's own tests feed it a fixture, which never proved the runner can pass anything at all. This is the
+  // smallest package that is honestly finished: one cited motion call, one claim, one loaded font and a render
+  // whose surface matches its LIGHTNESS. It is portrait, so the size flags have somewhere to go.
+  let video;
+  const SIZE = ["--width", "864", "--height", "1080", "--min", "1", "--max", "10"];
+  const FINISHED = {
+    "src/timeline.ts":
+      "export const FPS = 60;\nexport const CUE = { start: 0, endCard: 2 } as const;\nexport const DURATION_SECONDS = 4;\n",
+    "src/curves.ts":
+      "export const LIGHTNESS = 0.56;\n" +
+      "const ramp = (seconds: number) => Math.min(1, Math.max(0, seconds / 2));\n" +
+      'export const SIGNALS: Record<string, { unit: "%" | "px"; at: (seconds: number) => number }> = {\n' +
+      '  "product opacity": { unit: "%", at: ramp },\n};\n',
+    "src/motion.ts":
+      'import { Easing, interpolate } from "remotion";\n' +
+      "export const emphasizedIn = Easing.bezier(0.05, 0.7, 0.1, 1);\n" +
+      "export function tween(frame: number, range: number[], to: number[], easing = emphasizedIn) {\n" +
+      "  return interpolate(frame, range, to, { easing });\n}\n",
+    "src/Panel.tsx":
+      'import "@fontsource/inter/400.css";\nimport { emphasizedIn, tween } from "./motion";\n' +
+      "// [measured: product opacity at endCard is 100%]\n" +
+      "export const Panel = ({ frame }: { frame: number }) => {\n" +
+      "  const slide = tween(frame, [0, 30], [0, 1], emphasizedIn);\n  return slide;\n};\n",
+    "src/Reel.tsx": 'const GLOW = ["rgba(122, 162, 255, 0.14)"];\n',
+    "remotion.config.ts": 'const product = "../relay";\n',
+    "storyboard.md":
+      "# Storyboard\n\nType is Inter, from @fontsource, SIL Open Font License.\n\n" +
+      "| Beat | Code | Easing |\n| --- | --- | --- |\n| Slide | `Panel.tsx#slide` | emphasizedIn `0.05, 0.7, 0.1, 1` |\n",
+  };
+
+  before(() => {
+    video = join(clips, "finished.mp4");
+    // fades up from black, holds a mid-grey product well inside the action-safe margin, fades out to black
+    ffmpeg(
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=0x05060a:s=864x1080:r=60:d=4",
+      "-vf",
+      "drawbox=x=132:y=240:w=600:h=600:color=0x8f8f8f:t=fill,fade=t=in:st=0:d=0.5,fade=t=out:st=3.4:d=0.5",
+      "-pix_fmt",
+      "yuv420p",
+      video,
+    );
+  });
+
+  /** A fresh reel package with `changes` applied over the finished one (null deletes a file), gated with `args`. */
+  function finished(changes = {}, args = SIZE, env = undefined) {
+    const dir = mkdtempSync(join(clips, "package-"));
+    for (const [path, body] of Object.entries({ ...FINISHED, ...changes })) {
+      if (body === null) continue;
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), body);
+    }
+    mkdirSync(join(dir, "outputs"));
+    copyFileSync(video, join(dir, "outputs", "reel.mp4"));
+    return gate(join(create, "gates.mjs"), ["outputs/reel.mp4", ...args], undefined, dir, env);
+  }
+
+  test("passes a finished reel cut to a size that is not 16:9", () => {
+    const { stdout, status } = finished();
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /All 6 gates passed\./);
+  });
+
+  // A version manager can put node on an interactive shell's PATH and nowhere else, so the runner runs its gates on
+  // the Node that is already running it.
+  test("runs every gate when node is not on the PATH", () => {
+    const bin = mkdtempSync(join(clips, "bin-"));
+    for (const tool of ["ffmpeg", "ffprobe"]) {
+      symlinkSync(execFileSync("which", [tool], { encoding: "utf8" }).trim(), join(bin, tool));
+    }
+    const { stdout, stderr, status } = finished({}, SIZE, { ...process.env, PATH: bin });
+    assert.equal(status, 0, stdout + stderr);
   });
 });
