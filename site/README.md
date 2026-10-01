@@ -16,6 +16,7 @@ from the manifest and the skills. The reels are imported from `docs/`.
 
 Three things are measured from `docs/demo-relay-web.mp4` by hand: the hero timeline in `src/components/Reel.astro`, and
 the holds table and the gate output in `src/pages/index.astro`. Replace that reel and all three have to be measured
-again, the way their comments describe.
+again, the way their comments describe, and its 720p copy for phones in `src/assets/` re-encoded with the command in
+`Reel.astro`.
 
 Before the first deploy, set the repo's Pages source to GitHub Actions (Settings, Pages).

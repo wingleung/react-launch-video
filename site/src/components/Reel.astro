@@ -1,12 +1,18 @@
 ---
 import { getImage } from "astro:assets";
 import reel from "../../../docs/demo-relay-web.mp4?url";
+// The same reel at 720p for phones, a sixth of the bytes with no visible loss at that size. Re-encode it whenever the
+// reel is replaced: ffmpeg -i docs/demo-relay-web.mp4 -vf scale=1280:720:flags=lanczos -c:v libx264 -preset veryslow
+// -crf 26 -pix_fmt yuv420p -movflags +faststart -an site/src/assets/demo-relay-web-720p.mp4
+import reelSmall from "../assets/demo-relay-web-720p.mp4?url";
 import posterSource from "../../../docs/poster.png";
 
 // Beats and motion spans of docs/demo-relay-web.mp4, measured from the render rather than taken from its storyboard: a
 // frame-difference scan at 10 fps (ffmpeg scene score above 0.001), so every edge is within 0.1s. Re-measure when the
-// reel is replaced, because the timeline claims to show what this file does.
+// reel is replaced, because the timeline claims to show what this file does, and read its frame rate again for the
+// timecode (ffprobe r_frame_rate).
 const duration = 21.37;
+const fps = 60;
 const clips = [
   { label: "Title card", kind: "title", start: 0, end: 3.1, moves: [[0.2, 1.1]] },
   { label: "01 Inbox", kind: "product", start: 3.1, end: 7.2, moves: [[3.1, 4.3]] },
@@ -34,13 +40,19 @@ const clips = [
 ];
 
 const pct = (value: number, of: number) => `${((value / of) * 100).toFixed(3)}%`;
+// The stripes are drawn for the eye only, so each beat's name says where it moves.
+const spoken = (moves: number[][]) => {
+  const spans = moves.map(([from, to]) => `${from!.toFixed(1)} to ${to!.toFixed(1)}s`);
+  return spans.length > 1 ? `${spans.slice(0, -1).join(", ")} and ${spans.at(-1)}` : spans[0];
+};
 const poster = await getImage({ src: posterSource, format: "webp", width: 1920 });
+const attached = Astro.slots.has("above");
 ---
 
-<figure class="reel" data-reel data-duration={duration}>
+<figure class="reel" data-reel data-duration={duration} data-fps={fps}>
   {/* Whatever led to the video, drawn attached to its top edge: on the page, the Claude Code prompt that asks for it. */}
   <slot name="above" />
-  <div class="monitor">
+  <div class:list={["monitor", { attached }]}>
     <video
       muted
       playsinline
@@ -51,6 +63,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
       height="1080"
       aria-label="A reel of Relay, a small issue tracker: a title card, the inbox, focus mode turned on in settings and an end card"
     >
+      <source src={reelSmall} type="video/mp4" media="(max-width: 640px)" />
       <source src={reel} type="video/mp4" />
     </video>
     <div class="safe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -65,25 +78,31 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     </button>
     <output class="timecode" data-timecode aria-hidden="true">00:00:00:00</output>
 
-    <ol class="track" aria-label="Beats in this reel">
-      {
-        clips.map((clip) => (
-          <li class={clip.kind} style={`flex-grow: ${clip.end - clip.start}`}>
-            <button type="button" data-seek={clip.start} aria-label={`Jump to ${clip.label}`}>
-              <span class="clip-label">{clip.label}</span>
-              <span class="moves" aria-hidden="true">
-                {clip.moves.map(([from, to]) => (
-                  <span
-                    style={`left: ${pct(from - clip.start, clip.end - clip.start)}; width: ${pct(to - from, clip.end - clip.start)}`}
-                  />
-                ))}
-              </span>
-            </button>
-          </li>
-        ))
-      }
+    <div class="track">
+      <ol class="clips" aria-label="Beats in this reel">
+        {
+          clips.map((clip) => (
+            <li class={clip.kind} style={`flex-grow: ${clip.end - clip.start}`}>
+              <button
+                type="button"
+                data-seek={clip.start}
+                aria-label={`Jump to ${clip.label}, moves ${spoken(clip.moves)}, holds still otherwise`}
+              >
+                <span class="clip-label">{clip.label}</span>
+                <span class="moves" aria-hidden="true">
+                  {clip.moves.map(([from, to]) => (
+                    <span
+                      style={`left: ${pct(from - clip.start, clip.end - clip.start)}; width: ${pct(to - from, clip.end - clip.start)}`}
+                    />
+                  ))}
+                </span>
+              </button>
+            </li>
+          ))
+        }
+      </ol>
       <span class="playhead" data-playhead aria-hidden="true"></span>
-    </ol>
+    </div>
   </div>
 
   <figcaption>
@@ -107,13 +126,20 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     background: var(--stage);
   }
 
+  /* Whatever sits above draws the top edge, so the video's own top corners give way to it. */
+  .monitor.attached {
+    border-color: var(--border-strong);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
   video {
     display: block;
     width: 100%;
     height: 100%;
   }
 
-  /* SMPTE ST 2046-1 action safe, the 3.5% inset edge-scan.mjs measures against. Section 4 points back at them. */
+  /* SMPTE ST 2046-1 action safe, the 3.5% inset edge-scan.mjs measures against. */
   .safe {
     position: absolute;
     inset: 3.5%;
@@ -199,6 +225,9 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
 
   .track {
     position: relative;
+  }
+
+  .clips {
     display: flex;
     gap: 2px;
     margin: 0;
@@ -206,7 +235,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     list-style: none;
   }
 
-  .track li {
+  .clips li {
     flex-basis: 0;
     min-width: 0;
   }
@@ -240,11 +269,12 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     z-index: 1;
   }
 
+  /* Black at 0.6 keeps a stripe at 3.48:1 on the title clip and 3.78:1 on the product clip, over WCAG's 3:1. */
   .moves span {
     position: absolute;
     bottom: 0;
     height: 18px;
-    background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.42) 0 3px, transparent 3px 6px);
+    background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.6) 0 3px, transparent 3px 6px);
   }
 
   .playhead {
@@ -283,7 +313,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
 
   .key.moving {
     background:
-      repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.42) 0 3px, transparent 3px 6px),
+      repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.6) 0 3px, transparent 3px 6px),
       var(--clip-product);
   }
 
@@ -314,7 +344,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     const timecode = figure.querySelector<HTMLOutputElement>("[data-timecode]")!;
     const playhead = figure.querySelector<HTMLElement>("[data-playhead]")!;
     const fallback = Number(figure.dataset.duration);
-    const fps = 60;
+    const fps = Number(figure.dataset.fps);
     const two = (n: number) => String(n).padStart(2, "0");
 
     const draw = () => {

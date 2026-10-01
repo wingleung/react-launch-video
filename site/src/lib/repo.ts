@@ -23,6 +23,8 @@ const blob = `${plugin.repository}/blob/main/`;
 const raw = plugin.repository.replace("https://github.com/", "https://raw.githubusercontent.com/") + "/main/";
 
 export const repoUrl = (path = "") => (path ? blob + path : plugin.repository);
+// The folder `git clone` makes, which is the last segment of the repo URL.
+export const cloneDir = plugin.repository.split("/").at(-1)!;
 export const rawUrl = (path: string) => raw + path;
 
 export const install = [

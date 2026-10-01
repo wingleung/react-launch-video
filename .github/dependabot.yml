@@ -12,3 +12,14 @@ updates:
     directory: /site
     schedule:
       interval: monthly
+  # The reel package every user installs. No lockfile here, which Dependabot handles by bumping package.json alone.
+  - package-ecosystem: npm
+    directory: /plugin/skills/create/assets/scaffold
+    schedule:
+      interval: monthly
+    groups:
+      # The scaffold needs remotion and every @remotion/* package on one exact version, so they move together.
+      remotion:
+        patterns:
+          - remotion
+          - "@remotion/*"
