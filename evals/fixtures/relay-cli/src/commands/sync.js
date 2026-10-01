@@ -15,7 +15,7 @@ async function fetchChanges() {
 }
 
 export async function sync() {
-  const changes = await withSpinner("Comparing drafts with relay.app", fetchChanges);
+  const changes = await withSpinner("Comparing drafts with relay.example", fetchChanges);
   console.log(bold(`${changes.length} local changes are not on the server yet`));
 
   // Prompts in sync stay compact: no key help, the default theme.
