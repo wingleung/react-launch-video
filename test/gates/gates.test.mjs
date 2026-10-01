@@ -201,6 +201,23 @@ describe("edge-scan", () => {
     assert.equal(gate(join(create, "edge-scan.mjs"), ["--accept", "top:9-10", border]).status, 1);
   });
 
+  // The faint threshold used to come from the strongest edge in the whole strip across the whole reel, so 0.4s of a
+  // bright card raised it for every frame and a dim border resting in the margin for six seconds went unreported.
+  test("still sees a faint border when something bright passes the same edge for a moment", () => {
+    const faint = "drawbox=x=25:y=25:w=1870:h=1030:color=0x101218:t=2";
+    const card = "drawbox=x=40:y=500:w=20:h=40:color=white:t=fill:enable='between(t,5,5.4)'";
+    for (const [name, filter] of [
+      ["faint.mp4", faint],
+      ["faint-card.mp4", `${faint},${card}`],
+    ]) {
+      const out = join(clips, name);
+      ffmpeg("-f", "lavfi", "-i", "color=c=0x0b0d12:s=1920x1080:r=60:d=6", "-vf", filter, "-pix_fmt", "yuv420p", out);
+      const { stdout, status } = gate(join(create, "edge-scan.mjs"), [out]);
+      assert.equal(status, 1, `${name}: ${stdout}`);
+      assert.match(stdout, /TIGHT {4}left {5}0\.00s to/, name);
+    }
+  });
+
   test("prints a whole-number sampling interval as a float", () => {
     const { stdout } = gate(join(create, "edge-scan.mjs"), ["--every", "1.0", demo]);
     assert.match(stdout, /sampled every 1\.0s/); // the interval prints as a float, so "1.0" and never "1"
