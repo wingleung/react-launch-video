@@ -29,6 +29,12 @@ You also need **Node.js 22.18 or later** and **ffmpeg** on your PATH. Ask Claude
 (`/react-launch-video:create run the doctor`) and it prints the install command for your OS when something is missing.
 Remotion is installed per reel and downloads its own headless browser on the first render, so the first one is slower.
 
+**What it costs.** Remotion is free for individuals, non-profits and companies with up to 3 employees. A for-profit
+company with more than 3 employees needs a
+[Remotion Company License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). The fixture reel below takes
+20 to 30 minutes. A real product takes longer: two reels of a Vite monorepo app took 3 to 4 hours before v1.5.0
+rebuilt the setup step, and the most recent run reached its first rendered frame 18 seconds from a cold start.
+
 | Skill                        | Use it for                                                                     |
 | ---------------------------- | ------------------------------------------------------------------------------ |
 | `/react-launch-video:create` | Plan, build, render and verify a reel of your app or CLI                       |
@@ -68,17 +74,19 @@ What happens next:
 
 1. **It reads your product** and asks what the reel should say, then writes a storyboard: beats, timings, easings,
    which data is real and which is a placeholder. Read that storyboard, it is where changes are cheap.
-2. **It builds a reel package** next to your product (`reel/` by default) and renders drafts, reviewing frames as it
+2. **It makes your components renderable**: where a page fetches its own data, it splits it into a display-only view
+   that takes its state as props, and checks your typecheck, tests and build before and after.
+3. **It builds a reel package** next to your product (`reel/` by default) and renders drafts, reviewing frames as it
    goes.
-3. **It runs the gates** and keeps iterating until they pass, reporting which gate still fails if it cannot.
-4. **You get** `reel.mp4` (1920x1080), `storyboard.md` and the frames it reviewed.
+4. **It runs the gates** and keeps iterating until they pass, reporting which gate still fails if it cannot.
+5. **You get** `reel.mp4` (1920x1080), `storyboard.md` and the frames it reviewed.
 
 A real product takes longer than the fixture, and the time goes into getting it to render rather than into the motion:
 two reels of a Vite monorepo app took **3 to 4 hours** end to end, before v1.5.0 rebuilt the setup step. The most
 recent run, unattended and against a real browser extension, reached a rendered frame **18 seconds** from a cold
 start and produced a reel that passed every gate on the first attempt. Most of a run is unattended, but stay for
-step 3, which is the one that edits your components. Ask for motion blur at the end ("render the final with motion blur"), it
-multiplies render time so it is not used during iteration.
+step 2, which is the one that edits your components. Ask for motion blur at the end ("render the final with motion
+blur"). It multiplies render time, so it is not used during iteration.
 
 ### What it changes in your repo
 
@@ -89,15 +97,15 @@ multiplies render time so it is not used during iteration.
 - **It does not** upload or send your product, your reel or your data anywhere. It does download npm packages and
   Remotion's headless browser. See [SECURITY.md](SECURITY.md).
 
-## What it covers (v1)
+## What it covers
 
 - **React web apps.** The reel imports your real components, split into display-only views, and renders them frame by
   frame. What ships is what the video shows.
 - **CLIs.** The terminal session is recreated from the CLI's own source: its strings, colours and prompts, traced
   through the code path that actually runs.
 
-Other stacks (Vue, Svelte, Angular, plain HTML, native apps) are out of scope for v1. The skill says so and stops, rather than
-redrawing your product by hand.
+Other stacks (Vue, Svelte, Angular, plain HTML, native apps) are out of scope. The skill says so and stops, rather
+than redrawing your product by hand.
 
 ## What you get in a reel
 
@@ -114,27 +122,29 @@ Every rule is sourced in the create skill's `references/pacing.md`.
 These run on every render, and a failing one means another pass rather than a caveat in the report. The skill runs all
 six through a single `gates.mjs` command, so a round of iteration is one invocation rather than six.
 
-| Gate                   | Fails when                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| `check-video.mjs`      | wrong resolution or length, no fade from or to black, an empty stage mid-reel      |
-| `edge-scan.mjs`        | a border rests inside the action-safe margin, or content runs off the frame        |
-| `easing-inventory.mjs` | an animated value does not have the easing the storyboard says it has              |
-| `claims.mjs`           | a number a comment or a doc states about the timing is not what the code does      |
-| `fonts.mjs`            | a font comes from a machine's font folder or the network, or is named but unloaded |
-| `lightness.mjs`        | the product's lightness is not what the kit was told, so the outro is mistuned     |
+| Gate                   | Fails when                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `check-video.mjs`      | wrong resolution or length, no fade from or to black, an empty stage mid-reel                                                                                |
+| `edge-scan.mjs`        | a border rests inside the action-safe margin, or content runs off the frame                                                                                  |
+| `easing-inventory.mjs` | an animated value does not have the easing the storyboard says it has                                                                                        |
+| `claims.mjs`           | a number a comment or a doc states about the timing is not what the code does                                                                                |
+| `fonts.mjs`            | a font comes from a machine's font folder or the network (`@remotion/google-fonts` included), or a family named in CSS or a JSX `fontFamily` is never loaded |
+| `lightness.mjs`        | the product's lightness is not what the kit was told, so the outro is mistuned                                                                               |
 
 The runner also refuses to start on a reel that was never really finished, an unedited storyboard template or the
-kit's own placeholder colours, which takes milliseconds instead of failing after a twenty minute render.
+kit's own placeholder colours, which takes milliseconds instead of failing after a twenty minute render. It runs
+`easing-inventory`, `claims`, `fonts` and `lightness` with `--strict`, so a package with no motion call, no claim, no
+loaded font or a product it cannot find in the frame fails instead of passing with nothing to check.
 
 These are tools rather than gates, and pass or fail nothing:
 
-| Tool                     | In skill | Does                                                           |
-| ------------------------ | -------- | -------------------------------------------------------------- |
-| `contact-sheet.mjs`      | `create` | builds the frame sheets and crops the review is done on        |
-| `doctor.mjs`             | `create` | checks this machine has Node and ffmpeg with the right filters |
-| `render-motion-blur.mjs` | `create` | renders the final with band-free motion blur                   |
-| `add-music.mjs`          | `create` | adds a music track without re-encoding the video               |
-| `reading-time.mjs`       | `review` | works out how long a piece of on-screen text has to be held    |
+| Tool                     | In skill | Does                                                                                 |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------ |
+| `contact-sheet.mjs`      | `create` | builds the frame sheets and crops the review is done on                              |
+| `doctor.mjs`             | `create` | checks this machine has Node and ffmpeg with the right filters                       |
+| `render-motion-blur.mjs` | `create` | renders the final with band-free motion blur                                         |
+| `add-music.mjs`          | `create` | adds a music track without re-encoding the video, padding a short track with silence |
+| `reading-time.mjs`       | `review` | works out how long a piece of on-screen text has to be held                          |
 
 The kit adds two more that run when the composition loads, so a render fails in seconds instead of after an hour:
 `assertStillWhileReading` throws when the camera moves while text is being read, and `assertReadingTime` throws when
