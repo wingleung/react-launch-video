@@ -25,6 +25,11 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const openResult = (result: string) => {
+    if (result === "Toggle focus mode") setFocusMode((on) => !on);
+    else if (result === "Open settings") setSettingsOpen(true);
+  };
+
   const issues = focusMode ? ISSUES.filter((issue) => issue.team === MY_TEAM) : ISSUES;
 
   return (
@@ -49,7 +54,7 @@ export function App() {
       {settingsOpen && (
         <SettingsDialog focusMode={focusMode} onFocusModeChange={setFocusMode} onClose={() => setSettingsOpen(false)} />
       )}
-      {paletteOpen && <CommandPalette issues={ISSUES} onClose={() => setPaletteOpen(false)} />}
+      {paletteOpen && <CommandPalette issues={ISSUES} onOpen={openResult} onClose={() => setPaletteOpen(false)} />}
     </div>
   );
 }
