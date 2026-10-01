@@ -1,13 +1,24 @@
 // What the gate scripts print, pinned. These ran for months with no tests, and two defects survived that way: the
 // bottom edge was never scanned, and nothing would have caught a JSON timestamp losing its ".0".
-import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import {
+  chmodSync,
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { dirname, join, win32 } from "node:path";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { stripsTypes } from "../../plugin/skills/create/scripts/lib/run.mjs";
+import { citesFile } from "../../plugin/skills/create/scripts/lib/paths.mjs";
 import { blurFilter } from "../../plugin/skills/create/scripts/render-motion-blur.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -17,19 +28,17 @@ const demo = join(root, "docs/demo-relay-web.mp4");
 
 let clips;
 
-/** Run a gate and return its stdout and exit code rather than throwing, since a failing gate is the thing under test. */
-function gate(script, args, input, cwd) {
-  try {
-    const stdout = execFileSync("node", [script, ...args], {
-      encoding: "utf8",
-      input,
-      cwd,
-      maxBuffer: 64 * 1024 * 1024,
-    });
-    return { stdout, stderr: "", status: 0 };
-  } catch (error) {
-    return { stdout: error.stdout ?? "", stderr: error.stderr ?? "", status: error.status };
-  }
+/** Run a gate and return its output and exit code rather than throwing, since a failing gate is the thing under test. */
+function gate(script, args, input, cwd, env) {
+  const result = spawnSync(process.execPath, [script, ...args], {
+    encoding: "utf8",
+    input,
+    cwd,
+    env,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.error) throw result.error;
+  return { stdout: result.stdout, stderr: result.stderr, status: result.status };
 }
 
 const ffmpeg = (...args) => execFileSync("ffmpeg", ["-loglevel", "error", "-y", ...args]);
@@ -150,6 +159,15 @@ describe("check-video", () => {
     assert.match(stdout, /^FAIL {2}no near-empty stage mid-reel \(FOUND 2\.00s to 2\.08s\)$/m);
   });
 
+  // A container is as long as its longest stream, so a score that runs past the last frame used to set the length.
+  test("measures the video stream, not a longer audio track muxed beside it", () => {
+    const long = join(clips, "long-audio.mp4");
+    ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=30", "-c:a", "aac", join(clips, "tone30.m4a"));
+    ffmpeg("-i", demo, "-i", join(clips, "tone30.m4a"), "-map", "0:v", "-map", "1:a", "-c", "copy", long);
+    const { stdout } = gate(join(create, "check-video.mjs"), [long]);
+    assert.match(stdout, /duration 15 to 30s \(is 21\.37s\)/);
+  });
+
   test("formats the duration bounds the way %g does", () => {
     const { stdout } = gate(join(create, "check-video.mjs"), ["--min", "17.5", "--max", "1234567", demo]);
     assert.match(stdout, /duration 17\.5 to 1\.23457e\+06s \(is 21\.37s\)/);
@@ -192,6 +210,23 @@ describe("edge-scan", () => {
     assert.equal(gate(join(create, "edge-scan.mjs"), ["--accept", "left:0-3.1", border]).status, 1);
     // nor a range that does not cover the finding
     assert.equal(gate(join(create, "edge-scan.mjs"), ["--accept", "top:9-10", border]).status, 1);
+  });
+
+  // The faint threshold used to come from the strongest edge in the whole strip across the whole reel, so 0.4s of a
+  // bright card raised it for every frame and a dim border resting in the margin for six seconds went unreported.
+  test("still sees a faint border when something bright passes the same edge for a moment", () => {
+    const faint = "drawbox=x=25:y=25:w=1870:h=1030:color=0x101218:t=2";
+    const card = "drawbox=x=40:y=500:w=20:h=40:color=white:t=fill:enable='between(t,5,5.4)'";
+    for (const [name, filter] of [
+      ["faint.mp4", faint],
+      ["faint-card.mp4", `${faint},${card}`],
+    ]) {
+      const out = join(clips, name);
+      ffmpeg("-f", "lavfi", "-i", "color=c=0x0b0d12:s=1920x1080:r=60:d=6", "-vf", filter, "-pix_fmt", "yuv420p", out);
+      const { stdout, status } = gate(join(create, "edge-scan.mjs"), [out]);
+      assert.equal(status, 1, `${name}: ${stdout}`);
+      assert.match(stdout, /TIGHT {4}left {5}0\.00s to/, name);
+    }
   });
 
   test("prints a whole-number sampling interval as a float", () => {
@@ -244,6 +279,45 @@ describe("easing-inventory", () => {
     assert.match(missing.stdout, /cites Panel\.tsx#nosuch but no motion call is there/);
   });
 
+  test("matches a cited file on a path boundary, so Captions.tsx does not cite MyCaptions.tsx", () => {
+    const src = join(clips, "cite-src");
+    mkdirSync(join(src, "scene"), { recursive: true });
+    writeFileSync(
+      join(src, "motion.ts"),
+      'import { Easing, interpolate } from "remotion";\n' +
+        "export const emphasizedIn = Easing.bezier(0.05, 0.7, 0.1, 1);\n" +
+        "export function tween(frame: number, range: number[], to: number[], easing = emphasizedIn) {\n" +
+        "  return interpolate(frame, range, to, { easing });\n}\n",
+    );
+    const component = (name) =>
+      `import { emphasizedIn, tween } from "../motion";\nexport const ${name} = ({ frame }: { frame: number }) => {\n` +
+      "  const slide = tween(frame, [0, 30], [0, 1], emphasizedIn);\n  return slide;\n};\n";
+    writeFileSync(join(src, "scene", "Captions.tsx"), component("Captions"));
+    writeFileSync(join(src, "scene", "MyCaptions.tsx"), component("MyCaptions"));
+    const board = join(clips, "cite-board.md");
+    const rows = (...cites) =>
+      "| Beat | Code | Easing |\n| --- | --- | --- |\n" +
+      cites.map((cite) => `| Slide | \`${cite}\` | emphasizedIn \`0.05, 0.7, 0.1, 1\` |\n`).join("");
+
+    writeFileSync(board, rows("Captions.tsx:3"));
+    const one = gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]);
+    assert.equal(one.status, 1);
+    assert.match(one.stdout, /scene\/MyCaptions\.tsx:3 .* is cited by no storyboard row/);
+
+    writeFileSync(board, rows("scene/Captions.tsx#slide", "MyCaptions.tsx:3"));
+    const both = gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]);
+    assert.equal(both.status, 0, both.stdout);
+  });
+
+  // relative() returns backslashes on Windows, and a storyboard writes forward slashes everywhere.
+  test("matches a forward-slash citation against a Windows path", () => {
+    const file = win32.relative("C:\\reel\\src", "C:\\reel\\src\\scene\\Captions.tsx");
+    assert.equal(file, "scene\\Captions.tsx");
+    assert.equal(citesFile(file, "scene/Captions.tsx"), true);
+    assert.equal(citesFile(file, "Captions.tsx"), true);
+    assert.equal(citesFile(win32.relative("C:\\reel\\src", "C:\\reel\\src\\MyCaptions.tsx"), "Captions.tsx"), false);
+  });
+
   test("fails a reel whose motion is not in its storyboard", () => {
     const { stdout, status } = gate(join(create, "easing-inventory.mjs"), [
       join(root, "evals/fixtures/flawed-reel/src"),
@@ -279,6 +353,35 @@ describe("add-music", () => {
     ).trim();
     assert.equal(audio, "aac");
   });
+
+  // -shortest stopped at whichever stream ended first, so a short track cut the reel and its end card with it.
+  test("keeps every frame when the track is shorter than the reel, and says so", () => {
+    const silent = join(clips, "silent-short.mp4");
+    const scored = join(clips, "scored-short.mp4");
+    ffmpeg("-t", "4", "-i", demo, "-c:v", "copy", silent);
+    ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=1.5", "-c:a", "aac", join(clips, "short.m4a"));
+    const { stderr, status } = gate(join(create, "add-music.mjs"), [silent, join(clips, "short.m4a"), scored]);
+    assert.equal(status, 0, stderr);
+    assert.match(stderr, /the track ends at 1\.5\ds, before the reel's last frame at 4\.0\ds/);
+    const stream = (file, kind, entry) =>
+      execFileSync(
+        "ffprobe",
+        [
+          "-v",
+          "error",
+          "-count_frames",
+          "-select_streams",
+          kind,
+          "-show_entries",
+          `stream=${entry}`,
+          "-of",
+          "csv=p=0",
+        ].concat(file),
+        { encoding: "utf8" },
+      ).trim();
+    assert.equal(stream(scored, "v:0", "nb_read_frames"), stream(silent, "v:0", "nb_read_frames"));
+    assert.ok(Number(stream(scored, "a:0", "duration")) >= 3.9, "the audio should be padded to the reel's length");
+  });
 });
 
 describe("contact-sheet", () => {
@@ -308,6 +411,34 @@ describe("contact-sheet", () => {
     const { status } = gate(join(create, "contact-sheet.mjs"), [demo, "out.jpeg", "1", "2", "3"]);
     assert.equal(status, 1);
   });
+
+  test("crops one frame at full resolution", () => {
+    const out = join(clips, "crop.png");
+    const { stdout, status } = gate(join(create, "contact-sheet.mjs"), [demo, "--crop", out, "4.5", "100:60:0:0"]);
+    assert.equal(status, 0);
+    assert.equal(stdout.trim(), out);
+    const size = execFileSync(
+      "ffprobe",
+      ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", out],
+      { encoding: "utf8" },
+    ).trim();
+    assert.equal(size, "100,60");
+  });
+
+  // Both used to print the output path and exit 0 having written nothing, which reads exactly like a crop to look at.
+  test("refuses a moment the reel does not have", () => {
+    const past = join(clips, "past.png");
+    const crop = gate(join(create, "contact-sheet.mjs"), [demo, "--crop", past, "99", "100:100:0:0"]);
+    assert.equal(crop.status, 1);
+    assert.match(crop.stderr, /99s is past the end of the reel \(21\.37s\)/);
+    assert.equal(crop.stdout, "");
+
+    const tiles = (...frames) => gate(join(create, "contact-sheet.mjs"), [demo, join(clips, "bad.jpeg"), ...frames]);
+    const negative = tiles("-5", "300", "500", "700", "900", "1100");
+    assert.equal(negative.status, 1);
+    assert.match(negative.stderr, /frame -5 is outside the reel's frames 0 to 1281/);
+    assert.equal(tiles("100", "300", "500", "700", "900", "99999").status, 1);
+  });
 });
 
 describe("reading-time", () => {
@@ -329,6 +460,25 @@ describe("reading-time", () => {
   test("counts an emoji as one character", () => {
     const { stdout } = gate(join(review, "reading-time.mjs"), [], "1.0\tRetry 🚀 uploads\n");
     assert.match(stdout, /^ {2}1\.00 {3}1\.38 {2}SHORT {6}15 {2}Retry 🚀 uploads$/m);
+  });
+
+  // A hold with nothing to read needs only the minimum, so a row that lost its text passed and checked nothing.
+  test("rejects a row with no text after the hold", () => {
+    const { stderr, status } = gate(join(review, "reading-time.mjs"), [], "9\n");
+    assert.equal(status, 1);
+    assert.match(stderr, /the row "9" has no text/);
+  });
+
+  test("prints its usage for --help and names a file it cannot read", () => {
+    const help = gate(join(review, "reading-time.mjs"), ["--help"]);
+    assert.equal(help.status, 0);
+    assert.match(help.stdout, /^usage: reading-time\.mjs \[FILE\]/);
+    const missing = gate(join(review, "reading-time.mjs"), [join(clips, "no-such-holds.tsv")]);
+    assert.equal(missing.status, 2);
+    assert.match(
+      missing.stderr,
+      /^usage: reading-time\.mjs \[FILE\]\nreading-time\.mjs: error: cannot read .*no-such-holds\.tsv/,
+    );
   });
 
   // An empty table above exit 0 reads exactly like a pass, which is the shape of silent success.
@@ -389,6 +539,23 @@ describe("claims", () => {
   test("finds where a signal crosses a threshold", () => {
     const { stdout, status } = claim("[measured: product opacity crosses 50% after start at 1.017s]");
     assert.equal(status, 0, stdout);
+  });
+
+  // The ramp crosses 50% on frame 60 at 60fps and frame 30 at 30fps, both 1.000s. A crossing written one frame late
+  // is within the default either way, and two frames late is not, at whichever rate the composition runs.
+  test("allows a crossing one frame of the composition's own rate either side", () => {
+    const slow = join(clips, "claims-kit-30");
+    mkdirSync(slow, { recursive: true });
+    writeFileSync(join(slow, "curves.ts"), readFileSync(join(kit, "curves.ts")));
+    writeFileSync(join(slow, "timeline.ts"), readFileSync(join(kit, "timeline.ts"), "utf8").replace("60", "30"));
+    const at = (dir, seconds) => {
+      writeFileSync(join(dir, "Demo.ts"), `// [measured: product opacity crosses 50% after start at ${seconds}s]\n`);
+      return gate(join(create, "claims.mjs"), [dir]).status;
+    };
+    assert.equal(at(slow, "1.033"), 0, "one frame late at 30fps");
+    assert.equal(at(slow, "1.067"), 1, "two frames late at 30fps");
+    assert.equal(at(kit, "1.017"), 0, "one frame late at 60fps");
+    assert.equal(at(kit, "1.033"), 1, "two frames late at 60fps");
   });
 
   test("rejects a signal the curves do not export, and lists the ones they do", () => {
@@ -522,6 +689,40 @@ describe("fonts", () => {
     const { stdout, status } = fonts("reel.css", 'body { font-family: "S\u00f6hne", sans-serif; }\n');
     assert.equal(status, 1);
     assert.match(stdout, /asks for S\u00f6hne but nothing loads it/);
+  });
+
+  // Each of the next three passed under --strict, with one loaded font beside it to satisfy the strict check.
+  test("compares whole family names, so a family that merely contains a loaded one is not loaded", () => {
+    const inter = 'import "@fontsource/inter/400.css";\n';
+    const near = fonts("App.tsx", `${inter}const css = "body { font-family: 'Interstate', sans-serif; }";\n`, [
+      "--strict",
+    ]);
+    assert.equal(near.status, 1, near.stdout);
+    assert.match(near.stdout, /asks for Interstate but nothing loads it/);
+    // and the names the gate has to keep matching: a weight in the file name, the variable package's own family
+    assert.equal(
+      fonts("reel.css", '@font-face { src: url("/fonts/Relay-Bold.woff2"); }\nh1 { font-family: Relay; }\n').status,
+      0,
+    );
+    const variable = 'import "@fontsource-variable/inter";\nconst css = "p { font-family: \'Inter Variable\'; }";\n';
+    assert.equal(fonts("App.tsx", variable, ["--strict"]).status, 0);
+  });
+
+  test("reads a family named in a JSX style object", () => {
+    const body =
+      'import "@fontsource/inter/400.css";\nexport const T = () => <h1 style={{ fontFamily: "S\u00f6hne, sans-serif" }} />;\n';
+    const { stdout, status } = fonts("Title.tsx", body, ["--strict"]);
+    assert.equal(status, 1, stdout);
+    assert.match(stdout, /asks for S\u00f6hne but nothing loads it/);
+  });
+
+  test("fails a font loaded through @remotion/google-fonts, which fetches it at render time", () => {
+    const { stdout, status } = fonts(
+      "Fonts.ts",
+      'import { loadFont } from "@remotion/google-fonts/RobotoMono";\nloadFont();\n',
+    );
+    assert.equal(status, 1, stdout);
+    assert.match(stdout, /loads Roboto Mono from the network/);
   });
 
   test("lets a stack fall back to whatever the machine has", () => {
@@ -696,6 +897,58 @@ describe("render-motion-blur", () => {
     assert.equal(status, 1);
     assert.match(stderr, /usage: render-motion-blur\.mjs/);
   });
+
+  test("refuses an id or a sample count it would have to pass on unchecked", () => {
+    const blur = (...args) => gate(join(create, "render-motion-blur.mjs"), args);
+    const id = blur("Reel&calc", "out.mp4");
+    assert.equal(id.status, 1);
+    assert.match(id.stderr, /composition id "Reel&calc"/);
+    const samples = blur("ReelBlur", "out.mp4", "--samples");
+    assert.equal(samples.status, 1);
+    assert.match(samples.stderr, /--samples needs a whole number/);
+  });
+
+  // A stand-in @remotion/cli that records what it was handed and fails, so the render step is under test and not
+  // Remotion. The scratch directory sits under a path with a space, the shape a Windows %TEMP% takes.
+  test("runs the reel's own remotion with its arguments intact, and cleans up when it fails", () => {
+    const reel = mkdtempSync(join(clips, "blur-reel-"));
+    const cli = join(reel, "node_modules", "@remotion", "cli");
+    mkdirSync(cli, { recursive: true });
+    writeFileSync(
+      join(cli, "package.json"),
+      JSON.stringify({
+        name: "@remotion/cli",
+        bin: { remotion: "cli.js" },
+        exports: { "./package.json": "./package.json" },
+      }),
+    );
+    writeFileSync(
+      join(cli, "cli.js"),
+      '#!/usr/bin/env node\nrequire("fs").writeFileSync(process.env.ARGV_LOG, JSON.stringify(process.argv.slice(2)));\nprocess.exit(3);\n',
+    );
+    // an executable npx bin link too, which the script used to run through
+    chmodSync(join(cli, "cli.js"), 0o755);
+    mkdirSync(join(reel, "node_modules", ".bin"));
+    symlinkSync(join(cli, "cli.js"), join(reel, "node_modules", ".bin", "remotion"));
+    const scratch = join(reel, "temp dir");
+    mkdirSync(scratch);
+    const log = join(reel, "argv.json");
+    const env = { ...process.env, TMPDIR: scratch, TMP: scratch, TEMP: scratch, ARGV_LOG: log };
+
+    const { status } = gate(join(create, "render-motion-blur.mjs"), ["ReelBlur", "out.mp4"], undefined, reel, env);
+    assert.equal(status, 3, "the render's own exit code");
+    const [command, id, intermediate] = JSON.parse(readFileSync(log, "utf8"));
+    assert.deepEqual([command, id], ["render", "ReelBlur"]);
+    assert.ok(intermediate.startsWith(scratch), `the path with a space survived: ${intermediate}`);
+    assert.deepEqual(readdirSync(scratch), [], "the scratch directory leaked");
+  });
+
+  test("says where to run it from when the reel's remotion is not installed", () => {
+    const empty = mkdtempSync(join(clips, "no-reel-"));
+    const { stderr, status } = gate(join(create, "render-motion-blur.mjs"), ["ReelBlur", "out.mp4"], undefined, empty);
+    assert.equal(status, 1);
+    assert.match(stderr, /@remotion\/cli is not installed here/);
+  });
 });
 
 describe("gates runner", () => {
@@ -747,5 +1000,107 @@ describe("gates runner", () => {
     const { stdout } = run({ storyboard: null }, ["--skip-preflight"]);
     assert.match(stdout, /== check-video/, "it should reach the gates");
     assert.doesNotMatch(stdout, /does not exist\. Render before gating/);
+  });
+});
+
+describe("gates runner on a finished reel", () => {
+  // Every gate's own tests feed it a fixture, which never proved the runner can pass anything at all. This is the
+  // smallest package that is honestly finished: one cited motion call, one claim, one loaded font and a render
+  // whose surface matches its LIGHTNESS. It is portrait, so the size flags have somewhere to go.
+  let video;
+  const SIZE = ["--width", "864", "--height", "1080", "--min", "1", "--max", "10"];
+  const FINISHED = {
+    "src/timeline.ts":
+      "export const FPS = 60;\nexport const CUE = { start: 0, endCard: 2 } as const;\nexport const DURATION_SECONDS = 4;\n",
+    "src/curves.ts":
+      "export const LIGHTNESS = 0.56;\n" +
+      "const ramp = (seconds: number) => Math.min(1, Math.max(0, seconds / 2));\n" +
+      'export const SIGNALS: Record<string, { unit: "%" | "px"; at: (seconds: number) => number }> = {\n' +
+      '  "product opacity": { unit: "%", at: ramp },\n};\n',
+    "src/motion.ts":
+      'import { Easing, interpolate } from "remotion";\n' +
+      "export const emphasizedIn = Easing.bezier(0.05, 0.7, 0.1, 1);\n" +
+      "export function tween(frame: number, range: number[], to: number[], easing = emphasizedIn) {\n" +
+      "  return interpolate(frame, range, to, { easing });\n}\n",
+    "src/Panel.tsx":
+      'import "@fontsource/inter/400.css";\nimport { emphasizedIn, tween } from "./motion";\n' +
+      "// [measured: product opacity at endCard is 100%]\n" +
+      "export const Panel = ({ frame }: { frame: number }) => {\n" +
+      "  const slide = tween(frame, [0, 30], [0, 1], emphasizedIn);\n  return slide;\n};\n",
+    "src/Reel.tsx": 'const GLOW = ["rgba(122, 162, 255, 0.14)"];\n',
+    "remotion.config.ts": 'const product = "../relay";\n',
+    "storyboard.md":
+      "# Storyboard\n\nType is Inter, from @fontsource, SIL Open Font License.\n\n" +
+      "| Beat | Code | Easing |\n| --- | --- | --- |\n| Slide | `Panel.tsx#slide` | emphasizedIn `0.05, 0.7, 0.1, 1` |\n",
+  };
+
+  before(() => {
+    video = join(clips, "finished.mp4");
+    // fades up from black, holds a mid-grey product well inside the action-safe margin, fades out to black
+    ffmpeg(
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=0x05060a:s=864x1080:r=60:d=4",
+      "-vf",
+      "drawbox=x=132:y=240:w=600:h=600:color=0x8f8f8f:t=fill,fade=t=in:st=0:d=0.5,fade=t=out:st=3.4:d=0.5",
+      "-pix_fmt",
+      "yuv420p",
+      video,
+    );
+  });
+
+  /** A fresh reel package with `changes` applied over the finished one (null deletes a file), gated with `args`. */
+  function finished(changes = {}, args = SIZE, env = undefined) {
+    const dir = mkdtempSync(join(clips, "package-"));
+    for (const [path, body] of Object.entries({ ...FINISHED, ...changes })) {
+      if (body === null) continue;
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), body);
+    }
+    mkdirSync(join(dir, "outputs"));
+    copyFileSync(video, join(dir, "outputs", "reel.mp4"));
+    return gate(join(create, "gates.mjs"), ["outputs/reel.mp4", ...args], undefined, dir, env);
+  }
+
+  test("passes a finished reel cut to a size that is not 16:9", () => {
+    const { stdout, status } = finished();
+    assert.equal(status, 0, stdout);
+    assert.match(stdout, /All 6 gates passed\./);
+  });
+
+  // Four gates can be satisfied by doing less. Each change below removes one piece of work and nothing else.
+  test("fails a reel with no motion in it, rather than passing an empty inventory", () => {
+    const { stdout, status } = finished({
+      "src/motion.ts": null,
+      "src/Panel.tsx": FINISHED["src/Panel.tsx"].replace(/^.*tween.*\n/gm, ""),
+      "storyboard.md": FINISHED["storyboard.md"].replace(/\n\|[\s\S]*$/, "\n"),
+    });
+    assert.equal(status, 1);
+    assert.match(stdout, /FAILED: easing-inventory$/m);
+  });
+
+  test("fails a reel that claims nothing, and one with no signal to claim about", () => {
+    const unclaimed = FINISHED["src/Panel.tsx"].replace(/^\/\/ \[measured.*\n/m, "");
+    const silent = finished({ "src/Panel.tsx": unclaimed });
+    assert.equal(silent.status, 1);
+    assert.match(silent.stdout, /FAILED: claims$/m);
+
+    const curves = FINISHED["src/curves.ts"].replace(/= \{\n.*\n\};/s, "= {};");
+    const empty = finished({ "src/curves.ts": curves, "src/Panel.tsx": unclaimed });
+    assert.equal(empty.status, 1);
+    assert.match(empty.stdout, /curves\.ts exports no signals/);
+    assert.match(empty.stdout, /FAILED: claims$/m);
+  });
+
+  // A version manager can put node on an interactive shell's PATH and nowhere else, so the runner runs its gates on
+  // the Node that is already running it.
+  test("runs every gate when node is not on the PATH", () => {
+    const bin = mkdtempSync(join(clips, "bin-"));
+    for (const tool of ["ffmpeg", "ffprobe"]) {
+      symlinkSync(execFileSync("which", [tool], { encoding: "utf8" }).trim(), join(bin, tool));
+    }
+    const { stdout, stderr, status } = finished({}, SIZE, { ...process.env, PATH: bin });
+    assert.equal(status, 0, stdout + stderr);
   });
 });

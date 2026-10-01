@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Find where a render's content comes too close to, or runs off, the frame edge.
 //
-//     node edge-scan.mjs reel.mp4 [--every 0.2] [--json]
+//     node edge-scan.mjs reel.mp4 [--every 0.2] [--json] [--accept "top:7.8-13.0,right:17.6-18.2"]
 //
 // Samples the video, runs a Sobel filter on four strips along the frame edges and reports two things per edge:
 //
@@ -11,6 +11,8 @@
 // - CROSSES: content runs across the edge. A deliberate bleed is fine only when no text line, row or control is sliced.
 //   Crop every CROSSES range at full resolution (contact-sheet.mjs --crop), look and write the verdict in the frame
 //   review log. A sliced line is a failing gate, not a caveat.
+//
+// --accept lists ranges already cropped and judged, as edge:from-to. They print as ALLOWED and no longer fail.
 //
 // Needs ffmpeg on the PATH. No dependencies.
 import { parse } from "./lib/cli.mjs";
@@ -37,7 +39,8 @@ const EDGE = 28; // Sobel magnitude that counts as an edge pixel on normal-contr
 // A dark theme's borders are genuinely faint: a #232833 line on #0b0d12 peaks at a Sobel magnitude around 8 to 12,
 // so a fixed 28 cannot see them and a real border 25px from the frame edge went unreported for four seconds. Scale
 // the threshold to the strongest edge the frame actually contains, and never upwards: bright content keeps 28 and
-// its false-positive behaviour is unchanged.
+// its false-positive behaviour is unchanged. Per frame, not per reel: a bright card passing for half a second
+// otherwise raises the threshold everywhere and hides a faint border resting in the margin for the rest of it.
 const FAINT = 0.35;
 const LINE = 0.1; // a run of edge pixels this long (fraction of the edge length) is a border, text never runs that long
 const CROSS = 12; // edge pixels on the outermost two lines that mean something crosses the edge
@@ -131,12 +134,12 @@ main("edge-scan", () => {
       "gray",
       "-",
     ]);
-    let strongest = 0;
-    for (const value of raw) if (value > strongest) strongest = value;
-    const edge = Math.min(EDGE, Math.max(8, FAINT * strongest));
     const rows = [];
     for (let n = 0; n < Math.floor(raw.length / frameBytes); n += 1) {
       const strip = raw.subarray(n * frameBytes, (n + 1) * frameBytes);
+      let strongest = 0;
+      for (const value of strip) if (value > strongest) strongest = value;
+      const edge = Math.min(EDGE, Math.max(8, FAINT * strongest));
       let state = "ok";
       let distance = -1;
       if (scanLine(strip, spec, 0, edge).sum + scanLine(strip, spec, 1, edge).sum >= CROSS) {

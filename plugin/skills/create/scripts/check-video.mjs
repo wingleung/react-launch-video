@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Check a rendered reel against the things a render gets wrong silently.
 //
-//     node check-video.mjs reel.mp4 [--min 15] [--max 30]
+//     node check-video.mjs reel.mp4 [--min 15] [--max 30] [--width 1920] [--height 1080] [--handoffs]
 //
 // Resolution, duration, that it opens and ends on black, and that the stage is never near-empty mid-reel (a handoff
-// that lets the old element leave before the new one arrives). Exits 1 when any gate fails.
+// that lets the old element leave before the new one arrives). Exits 1 when any gate fails. --width and --height
+// gate a cut that is not 16:9 against its own size, and --handoffs also prints the darkest moments mid-reel.
 //
 // Needs ffmpeg and ffprobe on the PATH. No dependencies.
 import { parse } from "./lib/cli.mjs";

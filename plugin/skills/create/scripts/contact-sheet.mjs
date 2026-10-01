@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Tile six frames of a rendered reel into one half-scale contact sheet for review, or crop one frame.
 // The usage text below is what the script prints when called with nothing, so keep the two in step.
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fixed } from "./lib/fmt.mjs";
-import { probeFps } from "./lib/probe.mjs";
+import { probeFps, probeGeometry } from "./lib/probe.mjs";
 import { main, runInherit } from "./lib/run.mjs";
 
 const USAGE = `Tile six frames of a rendered reel into one half-scale contact sheet for review, or crop one frame.
@@ -29,6 +29,13 @@ function wholeNumber(text) {
   return Number(text.trim());
 }
 
+// ffmpeg seeking past the end, or before the start, writes nothing and still exits 0. Without these the script then
+// printed the output path as if there were something there to look at.
+function written(out) {
+  if (!existsSync(out)) throw new Error(`ffmpeg wrote nothing to ${out}`);
+  console.log(out);
+}
+
 main("contact-sheet", () => {
   const argv = process.argv.slice(2);
   if (argv.length < 2) {
@@ -43,8 +50,13 @@ main("contact-sheet", () => {
       return 1;
     }
     const [, , out, seconds, box] = argv;
+    const { duration } = probeGeometry(video);
+    const at = Number(seconds);
+    if (seconds.trim() === "" || !Number.isFinite(at) || at < 0) throw new Error(`invalid seconds: ${seconds}`);
+    if (at >= duration) throw new Error(`${seconds}s is past the end of the reel (${fixed(duration, 2)}s)`);
+    rmSync(out, { force: true });
     ffmpeg("-ss", seconds, "-i", video, "-frames:v", "1", "-vf", `crop=${box}`, out);
-    console.log(out);
+    written(out);
     return 0;
   }
 
@@ -55,6 +67,14 @@ main("contact-sheet", () => {
     return 1;
   }
   const fps = probeFps(video);
+  const count = Math.round(probeGeometry(video).duration * fps);
+  for (const frame of frames) {
+    const number = wholeNumber(frame);
+    if (number < 0 || number >= count) {
+      throw new Error(`frame ${number} is outside the reel's frames 0 to ${count - 1}`);
+    }
+  }
+  rmSync(out, { force: true });
   const temporary = mkdtempSync(join(tmpdir(), "contact-sheet-"));
   try {
     const inputs = [];
@@ -69,6 +89,6 @@ main("contact-sheet", () => {
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }
-  console.log(out);
+  written(out);
   return 0;
 });

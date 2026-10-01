@@ -8,8 +8,7 @@
   "plugins": [
     {
       "name": "react-launch-video",
-      "source": "./plugin",
-      "description": "Launch videos of React apps in Remotion, from their real components, with a review counterpart."
+      "source": "./plugin"
     }
   ]
 }

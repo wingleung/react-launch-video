@@ -10,6 +10,7 @@
 // margin are reported as TIGHT.
 //
 //     printf '1.2\tCommand palette Search by name, hostname or group\n' | node reading-time.mjs
+//     node reading-time.mjs holds.tsv
 import { readFileSync } from "node:fs";
 import { charCount, fixed } from "../../create/scripts/lib/fmt.mjs";
 import { main } from "../../create/scripts/lib/run.mjs";
@@ -21,10 +22,29 @@ const TIGHT = 0.2;
 
 const required = (text) => Math.max(MINIMUM, charCount(text) / CHARS_PER_SECOND + SETTLE);
 
+const USAGE = "usage: reading-time.mjs [FILE]";
+const HELP = `${USAGE}
+
+Checks on-screen text holds against reading time. Reads lines of seconds<TAB>text from FILE, or from stdin when no
+FILE is given, and exits 1 when any hold is shorter than its text needs.`;
+
 main("reading-time", () => {
   const path = process.argv[2];
+  if (path === "-h" || path === "--help") {
+    console.log(HELP);
+    return 0;
+  }
+  let source;
+  try {
+    source = readFileSync(path === undefined ? 0 : path, "utf8");
+  } catch (error) {
+    if (path === undefined) throw error;
+    console.error(USAGE);
+    console.error(`reading-time.mjs: error: cannot read ${path} (${error.code ?? error.message})`);
+    return 2;
+  }
   // Fold CRLF first, so a Windows file does not count its carriage returns as characters.
-  const source = readFileSync(path === undefined ? 0 : path, "utf8").replace(/\r\n/g, "\n");
+  source = source.replace(/\r\n/g, "\n");
   let failures = 0;
   let rows = 0;
   console.log(`${"held".padStart(6)} ${"needs".padStart(6)}  status  chars  text`);
@@ -35,6 +55,8 @@ main("reading-time", () => {
     const text = tab === -1 ? "" : line.slice(tab + 1);
     const hold = Number(held.trim());
     if (held.trim() === "" || Number.isNaN(hold)) throw new Error(`not a number of seconds: ${held}`);
+    // A hold with nothing to read needs only the minimum, so a row that lost its text would pass checking nothing.
+    if (!text.trim()) throw new Error(`the row "${line}" has no text: write it as seconds<TAB>text`);
     const need = required(text);
     const ok = hold >= need;
     rows += 1;

@@ -4,6 +4,7 @@
 //     node claims.mjs src/                                check every [measured: ...] claim in the source
 //     node claims.mjs src/ --doc references/pacing.md     check a reference doc too, repeatable
 //     node claims.mjs src/ --values cues                  print every signal at every cue, to write a claim from
+//     node claims.mjs src/ --strict                       and fail when there is no claim, or no signal to claim
 //
 // Six wrong numbers shipped in kit comments before this existed. Every one was written as a justification for a
 // timing choice and never looked at again after the timing moved, so each read as documentation while being a defect
@@ -27,13 +28,15 @@
 // Needs the reel's own node_modules and a Node that can import TypeScript (22.18 or later), because it imports the
 // curves rather than reimplementing them. A second copy of the timing would drift exactly where this has to be right.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { registerHooks } from "node:module";
+// The default export, because a named import of registerHooks is a SyntaxError on a Node without it, thrown before
+// a line of this file runs, and the version check in loadKit is the message that Node's user needs.
+import nodeModule from "node:module";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parse } from "./lib/cli.mjs";
 import { fixed } from "./lib/fmt.mjs";
 import { mark } from "./lib/report.mjs";
-import { main } from "./lib/run.mjs";
+import { main, stripsTypes } from "./lib/run.mjs";
 
 const SPEC = {
   positionals: ["src"],
@@ -41,11 +44,13 @@ const SPEC = {
     { flag: "--doc", dest: "docs", metavar: "FILE", append: true, help: "a reference doc to check as well" },
     { flag: "--values", dest: "values", metavar: "MOMENTS", help: "print every signal at these moments, or at `cues`" },
     { flag: "--as", dest: "as", metavar: "DIR", help: "report src paths as if it were this directory" },
+    { flag: "--strict", dest: "strict", store: true, default: false, help: "checking no claim at all is a failure" },
   ],
 };
 
-// A percentage claim is written to a tenth, pixels to a tenth, and a crossing lands on a frame.
-const DEFAULT_TOLERANCE = { "%": 0.5, px: 0.1, s: 0.02 };
+// A percentage claim is written to a tenth and pixels to a tenth. A crossing lands on a frame, so its default is one
+// frame at the composition's own rate (see crossingTolerance), which a fixed figure is only at one rate.
+const DEFAULT_TOLERANCE = { "%": 0.5, px: 0.1 };
 const TOLERANCE = String.raw`(?:\s*(?:±|\+\/-)\s*([\d.]+))?`;
 const OVER = new RegExp(String.raw`^(min|max)\s+(.+?)\s+over\s+(.+?)\.\.(.+?)\s+is\s+(-?[\d.]+)\s*(%|px)${TOLERANCE}$`);
 const AT = new RegExp(String.raw`^(.+?)\s+at\s+(.+?)\s+is\s+(-?[\d.]+)\s*(%|px)${TOLERANCE}$`);
@@ -60,20 +65,22 @@ const MEASURE = /opacity|blur|bright|dim\b|fade|dissolve/;
 const CUE_EXPRESSION = /^[A-Za-z0-9_.+\-*/() ]+$/;
 
 // Resolve the kit's extensionless relative imports the way a bundler would, so Node can import curves.ts in place.
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (/^\.{1,2}\//.test(specifier) && !/\.[cm]?[jt]sx?$|\.json$/.test(specifier)) {
-      for (const extension of [".ts", ".tsx"]) {
-        try {
-          return nextResolve(`${specifier}${extension}`, context);
-        } catch {
-          // fall through, so an import that resolves to nothing fails naming itself rather than a guess
+function resolveLikeABundler() {
+  nodeModule.registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (/^\.{1,2}\//.test(specifier) && !/\.[cm]?[jt]sx?$|\.json$/.test(specifier)) {
+        for (const extension of [".ts", ".tsx"]) {
+          try {
+            return nextResolve(`${specifier}${extension}`, context);
+          } catch {
+            // fall through, so an import that resolves to nothing fails naming itself rather than a guess
+          }
         }
       }
-    }
-    return nextResolve(specifier, context);
-  },
-});
+      return nextResolve(specifier, context);
+    },
+  });
+}
 
 async function loadKit(src) {
   const curves = join(src, "curves.ts");
@@ -81,6 +88,10 @@ async function loadKit(src) {
   for (const file of [curves, timeline]) {
     if (!existsSync(file)) throw new Error(`${relative(process.cwd(), file)} not found, so no claim can be checked`);
   }
+  if (!stripsTypes() || typeof nodeModule.registerHooks !== "function") {
+    throw new Error(`needs Node 22.18 or later to import the kit's TypeScript, this is ${process.version}`);
+  }
+  resolveLikeABundler();
   let modules;
   try {
     modules = await Promise.all([curves, timeline].map((file) => import(pathToFileURL(file).href)));
@@ -152,7 +163,7 @@ function parseClaim(text) {
   const crosses = CROSSES.exec(text);
   if (crosses) {
     const [, name, threshold, unit, after, value, tolerance] = crosses;
-    const bound = Number(tolerance ?? DEFAULT_TOLERANCE.s);
+    const bound = tolerance === undefined ? undefined : Number(tolerance);
     return { form: "crosses", name, threshold: Number(threshold), unit, after, value: Number(value), tolerance: bound };
   }
   const at = AT.exec(text);
@@ -182,6 +193,9 @@ function derive(claim, kit) {
   const seconds = moment(claim.when, kit.cue);
   return { actual: sample(signal, seconds), unit: claim.unit, note: `at ${fixed(seconds, 3)}s` };
 }
+
+/** One frame, plus the half millisecond a time written to three decimals can be rounded by. */
+const crossingTolerance = (fps) => 1 / fps + 0.0005;
 
 function lineOf(text, index) {
   return text.slice(0, index).split("\n").length;
@@ -271,15 +285,17 @@ main("claims", async () => {
           const parsed = parseClaim(claim[1]);
           const found = derive(parsed, kit);
           const off = Math.abs(found.actual - parsed.value);
-          const ok = off <= parsed.tolerance;
+          const tolerance = parsed.tolerance ?? crossingTolerance(kit.fps);
+          const ok = off <= tolerance;
+          const places = found.unit === "s" ? 3 : 2;
           rows.push({
             ok,
             at,
             text: claim[1],
-            actual: `${fixed(found.actual, found.unit === "s" ? 3 : 2)}${found.unit}`,
+            actual: `${fixed(found.actual, places)}${found.unit}`,
             off: ok
               ? found.note
-              : `off by ${fixed(off, 2)}, outside the ${fixed(parsed.tolerance, 2)} this claim allows`,
+              : `off by ${fixed(off, places)}, outside the ${fixed(tolerance, places)} this claim allows`,
           });
         } catch (error) {
           rows.push({ ok: false, at, text: claim[1], actual: "", off: error.message });
@@ -314,7 +330,16 @@ main("claims", async () => {
   }
   for (const line of untagged) console.log(`${mark(false)}  ${line}`);
 
-  const failed = rows.filter((row) => !row.ok).length + untagged.length;
+  // Zero claims re-derive perfectly, so a reel that wrote none passed. Under --strict, which is how the runner calls
+  // this, a finished reel has to say something checkable about its own timing.
+  const hollow = [];
+  if (args.strict && !Object.keys(kit.signals).length)
+    hollow.push("curves.ts exports no signals, so nothing can be claimed");
+  else if (args.strict && !rows.length)
+    hollow.push("no [measured: ...] claim anywhere, so nothing about the timing was checked");
+  for (const line of hollow) console.log(`${mark(false)}  ${line}`);
+
+  const failed = rows.filter((row) => !row.ok).length + untagged.length + hollow.length;
   const summary = `${rows.length} claim${rows.length === 1 ? "" : "s"} re-derived from curves.ts`;
   console.log(failed ? `\nclaims check FAILED (${failed})` : `\nclaims check passed: ${summary}`);
   return failed ? 1 : 0;

@@ -8,10 +8,11 @@
 // the other artefact". On a real reel they get re-run once per iteration, which was 36 to 60 invocations across a
 // session and a permission prompt for every one of them.
 //
-// It also refuses to start when the reel has not really been made yet. Four of the gates can be satisfied by doing
-// less work rather than more: write no claims and the claim gate passes, load no font and the font gate only warns,
-// copy fewer kit files and the easing gate has less to check. Those are cheap to detect up front, and failing in a
-// second beats failing after a twenty minute render.
+// It also refuses to pass a reel that has not really been made yet. Four of the gates can be satisfied by doing less
+// work rather than more: write no claims and the claim gate passes, load no font and the font gate only warns, copy
+// no motion and the easing gate has nothing to check. The runner calls those three with --strict, which makes each
+// absence a failure, and a preflight catches the untouched kit before any of them run, since failing in a second
+// beats failing after a twenty minute render.
 //
 // Exits non-zero naming the gates that failed. Needs ffmpeg and ffprobe on the PATH.
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -102,11 +103,12 @@ main("gates", () => {
 
   const gates = [
     ["check-video", [args.reel, ...bounds, ...size]],
-    ["edge-scan", [args.reel, ...size, ...(args.accept === undefined ? [] : ["--accept", args.accept])]],
-    ["easing-inventory", [args.src, "--storyboard", args.storyboard]],
-    ["claims", [args.src, "--doc", args.storyboard]],
-    // Strict, because by here a real reel is being checked: "no typography at all" and "I could not read the
-    // product" are both answers that must not read as a pass.
+    // No size here: edge-scan reads the frame from the file and its margin is a share of it.
+    ["edge-scan", [args.reel, ...(args.accept === undefined ? [] : ["--accept", args.accept])]],
+    // Strict, because by here a real reel is being checked: "no motion", "no claim", "no typography at all" and "I
+    // could not read the product" are all answers that must not read as a pass.
+    ["easing-inventory", [args.src, "--storyboard", args.storyboard, "--strict"]],
+    ["claims", [args.src, "--doc", args.storyboard, "--strict"]],
     ["fonts", [args.src, "--storyboard", args.storyboard, "--strict"]],
     ["lightness", [args.reel, "--src", args.src, "--strict"]],
   ];
@@ -114,7 +116,8 @@ main("gates", () => {
   const failed = [];
   for (const [name, gateArgs] of gates) {
     console.log(`\n== ${name}`);
-    const result = spawnSync("node", [resolve(here, `${name}.mjs`), ...gateArgs], { stdio: "inherit" });
+    // The Node running this one, since a version manager can leave `node` off the PATH a tool spawns with.
+    const result = spawnSync(process.execPath, [resolve(here, `${name}.mjs`), ...gateArgs], { stdio: "inherit" });
     if (result.error) throw result.error;
     if (result.status !== 0) failed.push(name);
   }

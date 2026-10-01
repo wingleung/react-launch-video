@@ -23,18 +23,24 @@ if (headings.filter((v) => v === plugin.version).length > 1) {
   problems.push(`CHANGELOG has more than one ## ${plugin.version} entry.`);
 }
 
-// The marketplace entry is what plugin search shows, and it is easy to leave behind because it sits in a different
-// file from the one a release touches.
-const entry = marketplace.plugins.find((p) => p.name === plugin.name);
-if (!entry) problems.push(`marketplace.json lists no plugin named ${plugin.name}.`);
 for (const [what, value] of [
   ["marketplace description", marketplace.description],
-  ["plugin entry description", entry?.description],
   ["plugin description", plugin.description],
 ]) {
   if (!value || value.length < 40) problems.push(`The ${what} is missing or too short to say anything.`);
 }
 
+// A marketplace entry's own description replaces plugin.json's in the plugin listing and in `claude plugin details`,
+// and it sits in a file a release does not touch, so it drifts. Leaving it out shows plugin.json's.
+const entry = marketplace.plugins.find((p) => p.name === plugin.name);
+if (!entry) problems.push(`marketplace.json lists no plugin named ${plugin.name}.`);
+else if (entry.description !== undefined && entry.description !== plugin.description) {
+  problems.push(
+    "The marketplace entry's description differs from plugin.json's, and the listing shows the entry's. " +
+      "Delete it from marketplace.json so plugin.json's shows, or make the two identical.",
+  );
+}
+
 for (const problem of problems) console.log(`FAIL  ${problem}`);
 if (problems.length) process.exit(1);
-console.log(`ok  ${plugin.name} ${plugin.version}, CHANGELOG and both descriptions agree`);
+console.log(`ok  ${plugin.name} ${plugin.version}, CHANGELOG and the plugin listing's description agree`);
