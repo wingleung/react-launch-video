@@ -24,12 +24,13 @@ patterns='/Users/|/home/[a-z]|C:\\Users\\'
 if [ -f .private-names ]; then
   patterns="$patterns|$(tr '\n' '|' < .private-names | sed 's/|*$//')"
 fi
+# In a git worktree .git is a file naming the main checkout's absolute path, which --exclude-dir does not skip.
 # Lockfile integrity hashes are dropped: they are random base64, so a short pattern matched case-insensitively turns
 # up in one sooner or later. A lockfile's `resolved` URLs are still scanned, since that is where a private registry
 # host would leak.
 if grep -rniE --binary-files=without-match "$patterns" . \
   --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=renders --exclude-dir=.astro \
-  --exclude=check.sh --exclude=ci.yml --exclude=.private-names | grep -vE '"integrity": "sha(1|256|384|512)-'; then
+  --exclude=check.sh --exclude=.git --exclude=ci.yml --exclude=.private-names | grep -vE '"integrity": "sha(1|256|384|512)-'; then
   echo "FAIL: the matches above must not ship"
   note
 else
