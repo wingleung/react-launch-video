@@ -6,7 +6,7 @@ description: >-
   creeping camera, frame determinism, collisions and crops at the frame edge, empty frames and truthfulness of what is
   shown. Produces severity-ranked findings with file, cue or frame references and a concrete fix each. Use this whenever
   someone asks to review, critique, check or polish a promo video, demo reel or Remotion composition, asks whether a
-  reel works, or has just rendered one and wants to know what to fix. Not for in-app UI animation code (transitions,
+  reel works or has just rendered one and wants to know what to fix. Not for in-app UI animation code (transitions,
   hovers, gestures).
 ---
 
@@ -32,20 +32,24 @@ hold for being slow if the text on screen needs it.
    resolution. Look at the sheets, do not infer them from the code.
 4. **Gate scripts** from `${CLAUDE_SKILL_DIR}/../create/scripts/`. Run
    `node ${CLAUDE_SKILL_DIR}/../create/scripts/doctor.mjs` first: everything below shells out to ffmpeg, and without
-   it the failure is a raw spawn error rather than an install hint.
-   `node ${CLAUDE_SKILL_DIR}/../create/scripts/easing-inventory.mjs <src> --storyboard <storyboard>` whenever there is source and a storyboard (it lists every
-   motion call with the easing the code applies, even without a storyboard), and on a render `${CLAUDE_SKILL_DIR}/../create/scripts/check-video.mjs` and
-   `${CLAUDE_SKILL_DIR}/../create/scripts/edge-scan.mjs`. Crop every CROSSES range edge-scan lists and look for sliced text.
+   it the failure is a raw spawn error rather than an install hint. Then run
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/easing-inventory.mjs <src> --storyboard <storyboard>` whenever there
+   is source and a storyboard (it lists every motion call with the easing the code applies, even without a
+   storyboard). On a render run `node ${CLAUDE_SKILL_DIR}/../create/scripts/check-video.mjs <reel>` and
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/edge-scan.mjs <reel>`. Crop every CROSSES range edge-scan lists and
+   look for sliced text.
 
-   On a render with its source, `node ${CLAUDE_SKILL_DIR}/../create/scripts/lightness.mjs <reel> --src <src>` checks that the product's lightness is what
-   the kit's `curves.ts` was told, since the outro's fade and bloom are tuned from it and the default suits a dark
-   product. A pale product left at the default reads as an end card sitting on a visible slab.
+   On a render with its source, `node ${CLAUDE_SKILL_DIR}/../create/scripts/lightness.mjs <reel> --src <src>` checks
+   that the product's lightness is what the kit's `curves.ts` was told, since the outro's fade and bloom are tuned
+   from it and the default suits a dark product. A pale product left at the default reads as an end card sitting on
+   a visible slab.
 
    Two more run on source alone and answer questions that are otherwise guesswork from a finished reel:
-   `node ${CLAUDE_SKILL_DIR}/../create/scripts/fonts.mjs <src> --storyboard <storyboard>` says where every font comes from, which no frame can show you (a
-   reel rendered in the fallback looks entirely plausible), and `node ${CLAUDE_SKILL_DIR}/../create/scripts/claims.mjs <src> --doc <storyboard>` re-derives
-   every timing number the source and the storyboard assert. A number in a comment that the code no longer supports is
-   a defect report, not documentation, so report it as one.
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/fonts.mjs <src> --storyboard <storyboard>` says where every font comes
+   from, which no frame can show you (a reel rendered in the fallback looks entirely plausible), and
+   `node ${CLAUDE_SKILL_DIR}/../create/scripts/claims.mjs <src> --doc <storyboard>` re-derives every timing number
+   the source and the storyboard assert. A number in a comment that the code no longer supports is a defect report,
+   not documentation, so report it as one.
 
 5. If there is no render, review code and timeline only, and list what could not be verified. Work out edge distances
    and overlaps from the layout numbers (a window's left plus width against the 1920 frame) where you can.
@@ -55,7 +59,12 @@ styling system that needs a bundler plugin, a font that only exists inside a com
 `references/frameworks.md` has the table, and a reel built around an unrenderable product is a finding, not a detail.
 
 For every piece of on-screen text, compute its required hold with `node ${CLAUDE_SKILL_DIR}/scripts/reading-time.mjs`
-instead of estimating.
+instead of estimating. It reads one row per block of `hold<TAB>text` (the hold in seconds, then every character the
+block shows) from stdin or a file, and exits 1 when a hold is shorter than its text needs:
+
+```
+printf '1.2\tCommand palette Search by name, hostname or group\n' | node ${CLAUDE_SKILL_DIR}/scripts/reading-time.mjs
+```
 
 ## What to check
 
@@ -65,9 +74,10 @@ instead of estimating.
   the key UI text the beat is about (a result row, a catalog entry). Count every character visible in the block (lines
   joined by single spaces), chapter numbers and keycap labels included, and measure from when the whole block has fully
   settled (the last word's reveal has finished) to when its exit starts. Flag passes with under 0.2s of margin as minor.
-- Keycaps are text: each combo fully visible for at least 0.8s. A keycap that flashes by is a major.
-- Total length inside the agreed range is a gate: a reel over it is a major even if everything else passes.
-- Total length around 15 to 30s. Feature beats 3 to 5s. Title card 1.5 to 2.5s. End card 2 to 3s with a fade.
+- Keycaps are text: each combo stays up for its reading time, never under 0.8s (the kit's `Keys` adds 0.2s of margin).
+  A keycap that flashes by is a major.
+- Total length inside the agreed range (15 to 30s unless the brief said otherwise) is a gate: a reel over it is a major
+  even if everything else passes. Feature beats 3 to 5s. Title card 1.5 to 2.5s. End card 2 to 3s with a fade.
 - Enough stillness: holds after moves, not continuous motion. Nothing is shown so fast it cannot be followed (a list
   stepping row by row at key-repeat speed), and nothing drags (a long walk through content no one reads).
 
@@ -115,11 +125,11 @@ Remotion renders frames out of order in parallel, so anything not derived from t
   38px top and bottom at 1920x1080, SMPTE ST 2046-1) instead of inside the safe area or clearly bled off. It reads as a
   mistake. Minor when it is brief, major on a hold.
 - Effects spent everywhere: more than one push-in or highlight per beat, keycaps where the keyboard is not the story.
-  Each extra effect is a new way to crop, collide or rush, so flag overuse even when nothing has broken yet.
+  Each extra effect is a new way to crop, collide or rush, so flag overuse even when nothing has broken yet. A
+  highlight that fires on everything stops pointing at anything.
 - Text too small to read at the zoom used (UI text under about 18px on screen at 1080p).
 - A highlight or selection that disagrees with the UI's own active state mid-transition.
 - A crossfade that flashes dark or shows two layouts at once.
-- Highlights overused: an effect that fires on everything stops pointing at anything.
 
 ### Truthfulness
 
