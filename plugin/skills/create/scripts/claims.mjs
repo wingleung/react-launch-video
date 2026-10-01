@@ -28,13 +28,15 @@
 // Needs the reel's own node_modules and a Node that can import TypeScript (22.18 or later), because it imports the
 // curves rather than reimplementing them. A second copy of the timing would drift exactly where this has to be right.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { registerHooks } from "node:module";
+// The default export, because a named import of registerHooks is a SyntaxError on a Node without it, thrown before
+// a line of this file runs, and the version check in loadKit is the message that Node's user needs.
+import nodeModule from "node:module";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parse } from "./lib/cli.mjs";
 import { fixed } from "./lib/fmt.mjs";
 import { mark } from "./lib/report.mjs";
-import { main } from "./lib/run.mjs";
+import { main, stripsTypes } from "./lib/run.mjs";
 
 const SPEC = {
   positionals: ["src"],
@@ -62,20 +64,22 @@ const MEASURE = /opacity|blur|bright|dim\b|fade|dissolve/;
 const CUE_EXPRESSION = /^[A-Za-z0-9_.+\-*/() ]+$/;
 
 // Resolve the kit's extensionless relative imports the way a bundler would, so Node can import curves.ts in place.
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (/^\.{1,2}\//.test(specifier) && !/\.[cm]?[jt]sx?$|\.json$/.test(specifier)) {
-      for (const extension of [".ts", ".tsx"]) {
-        try {
-          return nextResolve(`${specifier}${extension}`, context);
-        } catch {
-          // fall through, so an import that resolves to nothing fails naming itself rather than a guess
+function resolveLikeABundler() {
+  nodeModule.registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (/^\.{1,2}\//.test(specifier) && !/\.[cm]?[jt]sx?$|\.json$/.test(specifier)) {
+        for (const extension of [".ts", ".tsx"]) {
+          try {
+            return nextResolve(`${specifier}${extension}`, context);
+          } catch {
+            // fall through, so an import that resolves to nothing fails naming itself rather than a guess
+          }
         }
       }
-    }
-    return nextResolve(specifier, context);
-  },
-});
+      return nextResolve(specifier, context);
+    },
+  });
+}
 
 async function loadKit(src) {
   const curves = join(src, "curves.ts");
@@ -83,6 +87,10 @@ async function loadKit(src) {
   for (const file of [curves, timeline]) {
     if (!existsSync(file)) throw new Error(`${relative(process.cwd(), file)} not found, so no claim can be checked`);
   }
+  if (!stripsTypes() || typeof nodeModule.registerHooks !== "function") {
+    throw new Error(`needs Node 22.18 or later to import the kit's TypeScript, this is ${process.version}`);
+  }
+  resolveLikeABundler();
   let modules;
   try {
     modules = await Promise.all([curves, timeline].map((file) => import(pathToFileURL(file).href)));
