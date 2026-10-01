@@ -2,8 +2,9 @@ import { assertReadingTime, assertStillWhileReading } from "./motion";
 import type { CameraKey, ReadingWindow } from "./motion";
 import { CUE } from "./timeline";
 
-// Camera keyframes: [seconds, focus x, focus y, zoom], in world coordinates on the 1920x1080 stage. The focus point
-// sits at the centre of the frame. smoothPath carries speed through the keys, so only equal neighbours stop the camera.
+// Camera keyframes: [seconds, focus x, focus y, zoom], in world coordinates on the stage, which is the composition's
+// width by height (1920x1080 unless Root.tsx says otherwise). The focus point sits at the centre of the frame.
+// smoothPath carries speed through the keys, so only equal neighbours stop the camera.
 export const CAMERA: CameraKey[] = [
   [CUE.productIn, 960, 640, 0.86],
   [CUE.productIn + 1.15, 960, 540, 1],
