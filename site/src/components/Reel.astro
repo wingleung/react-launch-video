@@ -34,6 +34,11 @@ const clips = [
 ];
 
 const pct = (value: number, of: number) => `${((value / of) * 100).toFixed(3)}%`;
+// The stripes are drawn for the eye only, so each beat's name says where it moves.
+const spoken = (moves: number[][]) => {
+  const spans = moves.map(([from, to]) => `${from!.toFixed(1)} to ${to!.toFixed(1)}s`);
+  return spans.length > 1 ? `${spans.slice(0, -1).join(", ")} and ${spans.at(-1)}` : spans[0];
+};
 const poster = await getImage({ src: posterSource, format: "webp", width: 1920 });
 ---
 
@@ -70,7 +75,11 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
         {
           clips.map((clip) => (
             <li class={clip.kind} style={`flex-grow: ${clip.end - clip.start}`}>
-              <button type="button" data-seek={clip.start} aria-label={`Jump to ${clip.label}`}>
+              <button
+                type="button"
+                data-seek={clip.start}
+                aria-label={`Jump to ${clip.label}, moves ${spoken(clip.moves)}, holds still otherwise`}
+              >
                 <span class="clip-label">{clip.label}</span>
                 <span class="moves" aria-hidden="true">
                   {clip.moves.map(([from, to]) => (
@@ -245,11 +254,12 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     z-index: 1;
   }
 
+  /* Black at 0.6 keeps a stripe at 3.48:1 on the title clip and 3.78:1 on the product clip, over WCAG's 3:1. */
   .moves span {
     position: absolute;
     bottom: 0;
     height: 18px;
-    background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.42) 0 3px, transparent 3px 6px);
+    background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.6) 0 3px, transparent 3px 6px);
   }
 
   .playhead {
@@ -288,7 +298,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
 
   .key.moving {
     background:
-      repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.42) 0 3px, transparent 3px 6px),
+      repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.6) 0 3px, transparent 3px 6px),
       var(--clip-product);
   }
 
