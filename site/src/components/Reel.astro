@@ -65,25 +65,27 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     </button>
     <output class="timecode" data-timecode aria-hidden="true">00:00:00:00</output>
 
-    <ol class="track" aria-label="Beats in this reel">
-      {
-        clips.map((clip) => (
-          <li class={clip.kind} style={`flex-grow: ${clip.end - clip.start}`}>
-            <button type="button" data-seek={clip.start} aria-label={`Jump to ${clip.label}`}>
-              <span class="clip-label">{clip.label}</span>
-              <span class="moves" aria-hidden="true">
-                {clip.moves.map(([from, to]) => (
-                  <span
-                    style={`left: ${pct(from - clip.start, clip.end - clip.start)}; width: ${pct(to - from, clip.end - clip.start)}`}
-                  />
-                ))}
-              </span>
-            </button>
-          </li>
-        ))
-      }
+    <div class="track">
+      <ol class="clips" aria-label="Beats in this reel">
+        {
+          clips.map((clip) => (
+            <li class={clip.kind} style={`flex-grow: ${clip.end - clip.start}`}>
+              <button type="button" data-seek={clip.start} aria-label={`Jump to ${clip.label}`}>
+                <span class="clip-label">{clip.label}</span>
+                <span class="moves" aria-hidden="true">
+                  {clip.moves.map(([from, to]) => (
+                    <span
+                      style={`left: ${pct(from - clip.start, clip.end - clip.start)}; width: ${pct(to - from, clip.end - clip.start)}`}
+                    />
+                  ))}
+                </span>
+              </button>
+            </li>
+          ))
+        }
+      </ol>
       <span class="playhead" data-playhead aria-hidden="true"></span>
-    </ol>
+    </div>
   </div>
 
   <figcaption>
@@ -199,6 +201,9 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
 
   .track {
     position: relative;
+  }
+
+  .clips {
     display: flex;
     gap: 2px;
     margin: 0;
@@ -206,7 +211,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     list-style: none;
   }
 
-  .track li {
+  .clips li {
     flex-basis: 0;
     min-width: 0;
   }
