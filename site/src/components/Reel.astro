@@ -5,8 +5,10 @@ import posterSource from "../../../docs/poster.png";
 
 // Beats and motion spans of docs/demo-relay-web.mp4, measured from the render rather than taken from its storyboard: a
 // frame-difference scan at 10 fps (ffmpeg scene score above 0.001), so every edge is within 0.1s. Re-measure when the
-// reel is replaced, because the timeline claims to show what this file does.
+// reel is replaced, because the timeline claims to show what this file does, and read its frame rate again for the
+// timecode (ffprobe r_frame_rate).
 const duration = 21.37;
+const fps = 60;
 const clips = [
   { label: "Title card", kind: "title", start: 0, end: 3.1, moves: [[0.2, 1.1]] },
   { label: "01 Inbox", kind: "product", start: 3.1, end: 7.2, moves: [[3.1, 4.3]] },
@@ -42,7 +44,7 @@ const spoken = (moves: number[][]) => {
 const poster = await getImage({ src: posterSource, format: "webp", width: 1920 });
 ---
 
-<figure class="reel" data-reel data-duration={duration}>
+<figure class="reel" data-reel data-duration={duration} data-fps={fps}>
   {/* Whatever led to the video, drawn attached to its top edge: on the page, the Claude Code prompt that asks for it. */}
   <slot name="above" />
   <div class="monitor">
@@ -124,7 +126,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     height: 100%;
   }
 
-  /* SMPTE ST 2046-1 action safe, the 3.5% inset edge-scan.mjs measures against. Section 4 points back at them. */
+  /* SMPTE ST 2046-1 action safe, the 3.5% inset edge-scan.mjs measures against. */
   .safe {
     position: absolute;
     inset: 3.5%;
@@ -329,7 +331,7 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     const timecode = figure.querySelector<HTMLOutputElement>("[data-timecode]")!;
     const playhead = figure.querySelector<HTMLElement>("[data-playhead]")!;
     const fallback = Number(figure.dataset.duration);
-    const fps = 60;
+    const fps = Number(figure.dataset.fps);
     const two = (n: number) => String(n).padStart(2, "0");
 
     const draw = () => {
