@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0
+
+The plugin is renamed from `product-reel` to **`react-launch-video`**, so the name says what it makes and the stack it
+makes it for. The method, the kit and the gates are unchanged.
+
+- **New install id and commands.** `react-launch-video@react-launch-video`, `/react-launch-video:create` and
+  `/react-launch-video:review`. An install of `product-reel` does not follow the rename: remove it with
+  `/plugin uninstall product-reel` and `/plugin marketplace remove product-reel`, then install the new name.
+- **Why this name.** It is named for the job, the way HyperFrames names its `product-launch-video` skill, with the
+  stack in front because that is the scope. "Remotion" is kept out of the name: Remotion publishes its own Claude Code
+  plugin, its terms reserve its marks, and a plugin directory holds names that read as someone else's brand.
+  `product-reel` also collided with an existing product-reel skill.
+- **Scope said up front.** The manifest, both descriptions and the README say React apps (and CLIs) in Remotion, and
+  name what it is not for. Plain HTML joins Vue, Svelte and Angular in the create skill's refusal, which
+  `references/frameworks.md` already applied to "any site with no React component at all".
+- **A product page** at wingleung.github.io/react-launch-video, built from `site/` and deployed by
+  `.github/workflows/pages.yml`, now the manifest's `homepage`.
+
 ## 1.5.0
 
 Three audits agreed the method was sound and that a stranger could not follow it to a finished reel. This release is

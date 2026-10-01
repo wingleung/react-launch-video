@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.3.0",
   "type": "module",
-  "description": "Relay: a small issue tracker. Test fixture for the product-reel plugin.",
+  "description": "Relay: a small issue tracker. Test fixture for the react-launch-video plugin.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

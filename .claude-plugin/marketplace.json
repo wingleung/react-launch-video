@@ -1,15 +1,15 @@
 {
-  "name": "product-reel",
-  "description": "Cinematic product reels rendered from a React app or CLI's real components in Remotion, with scripted quality gates.",
+  "name": "react-launch-video",
+  "description": "Launch videos of React apps, rendered in Remotion from their real components, with scripted quality gates.",
   "owner": {
     "name": "Wing Leung",
-    "url": "https://github.com/wingleung/product-reel"
+    "url": "https://github.com/wingleung/react-launch-video"
   },
   "plugins": [
     {
-      "name": "product-reel",
+      "name": "react-launch-video",
       "source": "./plugin",
-      "description": "Cinematic product reels of React apps and CLIs in Remotion, with a review counterpart."
+      "description": "Launch videos of React apps in Remotion, from their real components, with a review counterpart."
     }
   ]
 }

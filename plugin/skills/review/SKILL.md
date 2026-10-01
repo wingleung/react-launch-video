@@ -16,7 +16,7 @@ A reel is judged by a viewer who watches it once, at speed, without context. The
 viewer reading, following or trusting what is on screen. Default to flagging: a move that merely works but queues,
 stalls or hides something is a finding.
 
-The standards and their sources live in the authoring skill, `/product-reel:create`: read
+The standards and their sources live in the authoring skill, `/react-launch-video:create`: read
 `${CLAUDE_SKILL_DIR}/../create/references/pacing.md` for numbers and
 `${CLAUDE_SKILL_DIR}/../create/references/techniques.md` for the rendering pitfalls. Cite them in findings. UI
 micro-interaction budgets (sub-300ms and so on) do not apply to a video's holds and camera moves, so do not flag a 3s

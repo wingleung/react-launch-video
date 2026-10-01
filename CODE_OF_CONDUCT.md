@@ -7,7 +7,7 @@ In short: be respectful, assume good intent, keep criticism about the work rathe
 maintainers decide what ships. Harassment of any kind is not welcome here.
 
 Report unacceptable behaviour by opening a
-[private security advisory](https://github.com/wingleung/product-reel/security/advisories/new) on this repository,
+[private security advisory](https://github.com/wingleung/react-launch-video/security/advisories/new) on this repository,
 which only maintainers can read. GitHub has no direct messages, so that form is the private channel here.
 
 Reports are handled confidentially, and maintainers may remove comments, commits, issues or contributors that break

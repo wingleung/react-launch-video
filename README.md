@@ -1,7 +1,8 @@
-# Product Reel
+# React Launch Video
 
-A Claude Code plugin for cinematic product reels: short launch videos in the style of Linear, Vercel and Framer,
-rendered in [Remotion](https://www.remotion.dev) from your product's **real** components instead of a redrawn mockup.
+A Claude Code plugin for launch videos of your React app: short, cinematic videos in the style of Linear, Vercel and
+Framer launches, rendered in [Remotion](https://www.remotion.dev) from your app's **real** components instead of a
+redrawn mockup. It does CLIs too. It is not for Vue, Svelte, Angular or plain HTML.
 
 It gives Claude a proven method (storyboard first, reading-time holds, overlapping handoffs, a camera that moves then
 holds still), a starter kit of scene components and scripted quality gates that a render has to pass before it counts
@@ -10,27 +11,28 @@ as done. A second skill reviews a reel against the same standards.
 ![A reel of the Relay test fixture: title card, the inbox, the settings dialog and the end card](docs/demo.gif)
 
 That reel is built from `evals/fixtures/relay-web`, the small React app in this repo, and rendered by the plugin with
-no hand editing ([full quality MP4](docs/demo-relay-web.mp4)).
+no hand editing ([full quality MP4](docs/demo-relay-web.mp4)). The product page is
+[wingleung.github.io/react-launch-video](https://wingleung.github.io/react-launch-video).
 
 ## Install
 
 In Claude Code:
 
 ```
-/plugin marketplace add wingleung/product-reel
-/plugin install product-reel@product-reel
+/plugin marketplace add wingleung/react-launch-video
+/plugin install react-launch-video@react-launch-video
 ```
 
-That is `plugin@marketplace`, and both are called `product-reel`.
+That is `plugin@marketplace`, and both are called `react-launch-video`.
 
 You also need **Node.js 22.18 or later** and **ffmpeg** on your PATH. Ask Claude to run the doctor
-(`/product-reel:create run the doctor`) and it prints the install command for your OS when something is missing.
+(`/react-launch-video:create run the doctor`) and it prints the install command for your OS when something is missing.
 Remotion is installed per reel and downloads its own headless browser on the first render, so the first one is slower.
 
-| Skill                  | Use it for                                                                     |
-| ---------------------- | ------------------------------------------------------------------------------ |
-| `/product-reel:create` | Plan, build, render and verify a reel of your app or CLI                       |
-| `/product-reel:review` | Review an existing reel or Remotion project and get ranked findings with fixes |
+| Skill                        | Use it for                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `/react-launch-video:create` | Plan, build, render and verify a reel of your app or CLI                       |
+| `/react-launch-video:review` | Review an existing reel or Remotion project and get ranked findings with fixes |
 
 Claude also picks them up on its own when you ask for a promo video, launch reel or feature teaser.
 
@@ -40,13 +42,13 @@ Clone this repo and run the plugin against the fixture inside it. Nothing in you
 finished reel to judge the method by:
 
 ```bash
-git clone https://github.com/wingleung/product-reel && cd product-reel
+git clone https://github.com/wingleung/react-launch-video && cd react-launch-video
 ```
 
 Then, in Claude Code from that directory:
 
 ```
-/product-reel:create a reel of the Relay inbox and the settings dialog, in evals/fixtures/relay-web
+/react-launch-video:create a launch video of the Relay inbox and the settings dialog, in evals/fixtures/relay-web
 ```
 
 That takes **20 to 30 minutes**, most of it unattended. It is the cheapest way to decide whether the output is worth
@@ -57,7 +59,7 @@ the longer first run on a real codebase.
 Open Claude Code in your product's repo and ask for what you want:
 
 ```
-/product-reel:create a 20 second reel of our issue inbox and the command palette
+/react-launch-video:create a 20 second launch video of our issue inbox and the command palette
 ```
 
 Plain English works too ("make me a launch video of the settings page").
@@ -94,7 +96,7 @@ multiplies render time so it is not used during iteration.
 - **CLIs.** The terminal session is recreated from the CLI's own source: its strings, colours and prompts, traced
   through the code path that actually runs.
 
-Other stacks (Vue, Svelte, Angular, native apps) are out of scope for v1. The skill says so and stops, rather than
+Other stacks (Vue, Svelte, Angular, plain HTML, native apps) are out of scope for v1. The skill says so and stops, rather than
 redrawing your product by hand.
 
 ## What you get in a reel
@@ -154,8 +156,8 @@ a caption is held for less time than it takes to read.
 ## Updating and removing
 
 ```
-/plugin update product-reel
-/plugin uninstall product-reel
+/plugin update react-launch-video
+/plugin uninstall react-launch-video
 ```
 
 Installed copies only update when the version in `plugin/.claude-plugin/plugin.json` changes. See
@@ -163,7 +165,8 @@ Installed copies only update when the version in `plugin/.claude-plugin/plugin.j
 
 ## Licensing
 
-This plugin is MIT licensed (see [LICENSE](LICENSE)).
+This plugin is MIT licensed (see [LICENSE](LICENSE)). It is an independent project, not affiliated with or endorsed by
+Remotion or the React project. Remotion and React are trademarks of their owners.
 
 **Remotion has its own licence.** It is free for individuals, non-profits and for-profit organisations with up to 3
 employees. A for-profit company with more than 3 employees needs a Remotion Company License. Read the terms in

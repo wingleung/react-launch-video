@@ -221,7 +221,7 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
   `node scripts/edge-scan.mjs` (borders inside the action-safe margin, content off the edge to crop and judge) and
   `node scripts/easing-inventory.mjs src --storyboard storyboard.md` (storyboard easings match the code). A problem is
   fixed or shown not to be one, never accepted.
-- Finish with `/product-reel:review` on the timeline and the sheets.
+- Finish with `/react-launch-video:review` on the timeline and the sheets.
 
 ## 8b. Fonts and motion blur
 

@@ -2,7 +2,7 @@
   "_comment": [
     "The reel package's own manifest. Copy this directory to your reel package root, then copy the kit into src/.",
     "These versions are the ones the kit is tested against on every commit by scripts/kit-check.mjs in the",
-    "product-reel repo, so they are pins rather than suggestions. Keep remotion and every @remotion/* package on",
+    "react-launch-video repo, so they are pins rather than suggestions. Keep remotion and every @remotion/* package on",
     "the same exact version or the bundler and the renderer disagree in ways that surface as a blank frame rather",
     "than an error. Add @remotion/fonts when the product ships its own font files. The product's own dependencies",
     "still renders frame 480 on purpose. Frame 0 is the reel's fade from black, so a default still is a",

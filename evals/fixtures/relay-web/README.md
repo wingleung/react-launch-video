@@ -1,6 +1,6 @@
 # Relay
 
-Relay is a small issue tracker for product teams. This copy is a test fixture for the product-reel plugin: a real,
+Relay is a small issue tracker for product teams. This copy is a test fixture for the react-launch-video plugin: a real,
 runnable React app with the kinds of details a reel has to handle (a clock-based greeting, CSS transitions, a debounced
 search).
 

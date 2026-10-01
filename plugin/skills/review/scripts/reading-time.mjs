@@ -3,7 +3,7 @@
 //
 // Reads lines of `hold_seconds<TAB>text` from stdin or a file and prints the required hold for each one:
 // characters / 17 + 0.5 seconds, never under 0.8 seconds (Netflix children's reading speed plus a settle margin, see
-// product-reel create skill, references/pacing.md).
+// react-launch-video create skill, references/pacing.md).
 //
 // Put every character visible in the block into `text`, chapter numbers and labels included, joined with spaces. The
 // hold is from the moment the whole block is readable to the moment its exit starts. Holds with less than 0.2s of

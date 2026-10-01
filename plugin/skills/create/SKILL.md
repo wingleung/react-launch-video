@@ -8,7 +8,7 @@ description: >-
   and scripted quality gates. Use this whenever someone wants a video of their app, extension, website or CLI, asks how
   to time or pace a promo or demo video, wants a title card, end card or smoother intro or outro, or asks to make a
   Remotion video more cinematic, even if they never say Remotion or cinematic. React web apps and CLIs only:
-  not Vue, Svelte, Angular or native apps, not editing or cleaning up an existing screen recording, and not
+  not Vue, Svelte, Angular, plain HTML or native apps, not editing or cleaning up an existing screen recording, and not
   in-app UI animation code. For a reel that already exists, review it first.
 ---
 
@@ -20,12 +20,12 @@ starter kit for all three.
 
 If the `remotion-best-practices` and `motion-design` skills are installed, pair with them for Remotion API details
 and motion vocabulary. Neither ships with this plugin. When
-the reel is rendered, review it with `/product-reel:review`.
+the reel is rendered, review it with `/react-launch-video:review`.
 
 **Scope.** This works for two kinds of product: a React web app, whose real components render inside Remotion, and a
-CLI, whose terminal session is recreated from the CLI's own source. For anything else (Vue, Svelte, Angular, native
-mobile or desktop apps) say so before starting and stop: the method depends on rendering the real product, and redrawing
-it by hand is exactly what the method avoids.
+CLI, whose terminal session is recreated from the CLI's own source. For anything else (Vue, Svelte, Angular, plain
+HTML, native mobile or desktop apps) say so before starting and stop: the method depends on rendering the real product,
+and redrawing it by hand is exactly what the method avoids.
 
 "React web app" is not the whole question, because what has to render is a component called as a function in a browser
 with props you supply. React Server Components cannot be. Read `references/frameworks.md` before step 1b: it says which
@@ -184,7 +184,7 @@ The storyboard also fixes five things that are expensive to retrofit:
   what it becomes on screen: source px times the camera zoom. Under 18px at 1080p it cannot be read, and the fix is
   never a bigger zoom on the same shot, because that crops something else. It is showing less: a narrower crop, a
   larger source element, or a caption carrying the words instead. Decide it here. Found after three drafts it costs a
-  restructure, and `/product-reel:review` is the last line of defence rather than the first.
+  restructure, and `/react-launch-video:review` is the last line of defence rather than the first.
 
   The lever for both legibility and framing is the **width you render the product at**, not the zoom. A card grid has
   no safe place to put a frame edge: a 20px gutter leaves a border about 9px from the frame, which `edge-scan` fails,
@@ -333,7 +333,7 @@ ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: before, during
    (name the rule that allows it, for example "bleed, no line sliced, crop at frame 1140"). "Accepted", "known issue",
    "only for a moment" and "left for later" are not verdicts: they mean another pass. If you truly cannot fix it, say in
    the report that the reel is not finished and which gate fails, instead of presenting it as done.
-6. When the reel is close to done, run `/product-reel:review` on the timeline and sheets.
+6. When the reel is close to done, run `/react-launch-video:review` on the timeline and sheets.
 
 Send the rendered video to the user as soon as it exists: they judge motion in motion, not from a description. The final
 report pastes the last output of all six gate scripts.

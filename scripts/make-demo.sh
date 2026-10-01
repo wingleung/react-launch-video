@@ -15,7 +15,7 @@ poster=4.5
 width=720
 fps=12.5
 
-palette=$(mktemp -t product-reel-palette).png
+palette=$(mktemp -t react-launch-video-palette).png
 trap 'rm -f "$palette"' EXIT
 
 ffmpeg -v error -ss "$start" -i "$src" -vf "fps=$fps,scale=$width:-1:flags=lanczos,palettegen=stats_mode=diff" -y "$palette"

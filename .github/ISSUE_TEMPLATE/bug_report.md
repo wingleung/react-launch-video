@@ -10,7 +10,7 @@ labels: bug
 
 **What you expected**
 
-**Output of the doctor** (ask Claude: `/product-reel:create run the doctor`)
+**Output of the doctor** (ask Claude: `/react-launch-video:create run the doctor`)
 
 ```
 

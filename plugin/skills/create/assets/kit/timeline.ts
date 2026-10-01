@@ -20,7 +20,7 @@ const OUTRO = LAST_ACTION + 0.55;
 
 /**
  * Cue points in seconds. Every animation keys off these. Holds for text are reading time: characters / 17 + 0.5s,
- * never under 0.8s. See references/pacing.md in the product-reel create skill.
+ * never under 0.8s. See references/pacing.md in the react-launch-video create skill.
  */
 export const CUE = {
   // Intro: fade up from black, title reveals, holds to be read, recedes behind the product.
