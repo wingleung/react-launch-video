@@ -30,7 +30,10 @@ function luma(png) {
   });
 }
 
-/** Every remotion package on one exact version, and the comment that quotes it quoting the same one. */
+/**
+ * Every remotion package on one exact version. The comment names no version at all: Dependabot bumps the pins and
+ * cannot edit prose, so a quoted number would go stale and fail every Remotion update.
+ */
 function checkPins() {
   const manifest = JSON.parse(readFileSync(join(scaffold, "package.json"), "utf8"));
   const pins = { ...manifest.dependencies, ...manifest.devDependencies };
@@ -40,9 +43,8 @@ function checkPins() {
       throw new Error(`scaffold pins ${name} to ${version} but remotion to ${pins.remotion}`);
     }
   }
-  for (const quoted of manifest._comment.join(" ").match(/\d+\.\d+\.\d+/g) ?? []) {
-    if (quoted !== pins.remotion) throw new Error(`scaffold comment quotes ${quoted} but remotion is ${pins.remotion}`);
-  }
+  const quoted = manifest._comment.join(" ").match(/\d+\.\d+\.\d+/);
+  if (quoted) throw new Error(`scaffold comment quotes ${quoted[0]}: say "the version remotion is pinned to" instead`);
 }
 
 function check(root) {

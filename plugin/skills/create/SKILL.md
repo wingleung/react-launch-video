@@ -279,9 +279,10 @@ the scene files this reel does not use: `easing-inventory.mjs` reports every unu
 call, so an unused `Keys.tsx` is a gate failure rather than dead weight. Then adapt:
 
 - `@remotion/fonts` already ships in the scaffold, pinned, for a product with its own font files. Add any other
-  `@remotion/*` package exact at the pinned version (`npm i -E @remotion/<name>@4.0.525`): a plain install writes a
-  caret range and every render prints a version mismatch. The pinned `remotion` and `@remotion/*` versions in the
-  scaffold's `package.json` are the ones this kit is tested against, so change them together or not at all
+  `@remotion/*` package exact at the scaffold's `remotion` version (`npm i -E @remotion/<name>@<version>`): a plain
+  install writes a caret range and every render prints a version mismatch. The pinned `remotion` and `@remotion/*`
+  versions in the scaffold's `package.json` are the ones this kit is tested against, so change them together or not at
+  all
 - `remotion.config.ts`: aliases and a user agent matching the audience's platform. The product path is already set
   from step 1b and the public dir follows it (`public/` inside the product)
 - the product's own theme, at three sites: `GLOW` in `Reel.tsx`, the `gradientClass` passed to `Lockup` and `Captions`

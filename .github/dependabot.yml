@@ -8,6 +8,13 @@ updates:
     directory: /evals/fixtures/relay-web
     schedule:
       interval: monthly
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
   - package-ecosystem: npm
     directory: /site
     schedule:
@@ -23,3 +30,10 @@ updates:
         patterns:
           - remotion
           - "@remotion/*"
+      # react and react-dom must match exactly, or the reel and the product end up on two copies of React.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
