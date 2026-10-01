@@ -8,6 +8,6 @@ labels: method
 
 **What should change**
 
-**Evidence** (a citable source, a measurement, or a rendered before and after. One of the three is required.)
+**Evidence** (a citable source, a measurement or a rendered before and after. One of the three is required.)
 
 **What it would break** (storyboard template, kit line citations, existing reels)

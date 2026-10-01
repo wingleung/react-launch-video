@@ -16,4 +16,6 @@ labels: bug
 
 ```
 
-**Versions**: Claude Code, Node, ffmpeg, and your OS.
+**Plugin version** (`/plugin` shows it, or read `version` in the installed `plugin.json`)
+
+**Versions**: Claude Code, Node, ffmpeg and your OS.

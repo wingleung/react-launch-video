@@ -6,20 +6,20 @@ and `plugin/skills/review` (review one). It is also its own marketplace (`.claud
 - GitHub issues are the backlog. There is no `tasks/` directory here: no `todo.md` and no `lessons.md`. A lesson worth
   keeping goes into the skill's `references/` with the evidence that bought it, which is where a reader will look.
 - Nothing private goes in this repo: no employer or client material, and no absolute home paths. Examples use the
-  fictional product "Relay". `./scripts/check.sh` fails on a home path and on any pattern listed in `.private-names`,
-  which is ignored so the patterns themselves never ship.
+  fictional product "Relay". `./scripts/check.sh` fails on a home path and on any name listed in `.private-names`
+  (matched literally, ignoring case), which is ignored so the names themselves never ship.
 - Every rule in the skills is sourced or measured. Change the method with evidence (a reference, a render, a before and
   after), not taste.
 - Paths inside SKILL.md use `${CLAUDE_SKILL_DIR}`. The review skill reaches the create skill's files through
   `${CLAUDE_SKILL_DIR}/../create/`.
-- Kit changes: format with `npx prettier@3.9.8 --write "plugin/skills/create/assets/kit/**/*.{ts,tsx}"` (printWidth 120),
-  then run `./scripts/check.sh`, which typechecks the kit and runs the easing check whose example table cites kit line
-  numbers.
+- Kit changes: format with `npx prettier@3.9.8 --write "plugin/skills/create/assets/kit/**/*.{ts,tsx}"`
+  (printWidth 120), then run `./scripts/check.sh`, which typechecks the kit and runs the easing check whose example
+  table cites kit declarations.
 - Release: bump `version` in `plugin/.claude-plugin/plugin.json`, add a CHANGELOG entry,
   `claude plugin validate --strict .`, then `claude plugin tag`.
 - **Testing a change against a real session means updating the installed copy first**, with
   `claude plugin marketplace update react-launch-video && claude plugin update react-launch-video@react-launch-video`.
-  Installed copies are cached per version under `~/.claude/plugins/cache/`, old versions are never pruned, and an agent
-  that goes looking for the skill's own files will happily read whichever one it finds. A refusal test failed exactly this way:
-  the agent quoted a table row from a cached 1.4.0 that predated the row being tested, and the conclusion looked like
-  a defect in the skill rather than a stale copy on disk.
+  Installed copies are cached per version under `~/.claude/plugins/cache/` and old versions are never pruned. An agent
+  that goes looking for the skill's own files will happily read whichever one it finds. A refusal test failed exactly
+  this way: the agent quoted a table row from a cached 1.4.0 that predated the row being tested, and the conclusion
+  looked like a defect in the skill rather than a stale copy on disk.

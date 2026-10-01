@@ -8,6 +8,8 @@ It does not upload, publish or send your product, your reel or your data anywher
 
 ## Reporting a vulnerability
 
-Please open a [private security advisory](https://docs.github.com/en/code-security/security-advisories) on this
-repository rather than a public issue. Include what you ran, what happened and what you expected. You can expect a
+Report it through this repository's
+[private vulnerability reporting form](https://github.com/wingleung/react-launch-video/security/advisories/new) rather
+than a public issue. Private vulnerability reporting is the channel for security reports here, and only maintainers
+can read what you send. Include what you ran, what happened and what you expected. You can expect a
 first reply within a week.
