@@ -1,7 +1,17 @@
 // What the gate scripts print, pinned. These ran for months with no tests, and two defects survived that way: the
 // bottom edge was never scanned, and nothing would have caught a JSON timestamp losing its ".0".
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -799,6 +809,58 @@ describe("render-motion-blur", () => {
     const { stderr, status } = gate(join(create, "render-motion-blur.mjs"), []);
     assert.equal(status, 1);
     assert.match(stderr, /usage: render-motion-blur\.mjs/);
+  });
+
+  test("refuses an id or a sample count it would have to pass on unchecked", () => {
+    const blur = (...args) => gate(join(create, "render-motion-blur.mjs"), args);
+    const id = blur("Reel&calc", "out.mp4");
+    assert.equal(id.status, 1);
+    assert.match(id.stderr, /composition id "Reel&calc"/);
+    const samples = blur("ReelBlur", "out.mp4", "--samples");
+    assert.equal(samples.status, 1);
+    assert.match(samples.stderr, /--samples needs a whole number/);
+  });
+
+  // A stand-in @remotion/cli that records what it was handed and fails, so the render step is under test and not
+  // Remotion. The scratch directory sits under a path with a space, the shape a Windows %TEMP% takes.
+  test("runs the reel's own remotion with its arguments intact, and cleans up when it fails", () => {
+    const reel = mkdtempSync(join(clips, "blur-reel-"));
+    const cli = join(reel, "node_modules", "@remotion", "cli");
+    mkdirSync(cli, { recursive: true });
+    writeFileSync(
+      join(cli, "package.json"),
+      JSON.stringify({
+        name: "@remotion/cli",
+        bin: { remotion: "cli.js" },
+        exports: { "./package.json": "./package.json" },
+      }),
+    );
+    writeFileSync(
+      join(cli, "cli.js"),
+      '#!/usr/bin/env node\nrequire("fs").writeFileSync(process.env.ARGV_LOG, JSON.stringify(process.argv.slice(2)));\nprocess.exit(3);\n',
+    );
+    // an executable npx bin link too, which the script used to run through
+    chmodSync(join(cli, "cli.js"), 0o755);
+    mkdirSync(join(reel, "node_modules", ".bin"));
+    symlinkSync(join(cli, "cli.js"), join(reel, "node_modules", ".bin", "remotion"));
+    const scratch = join(reel, "temp dir");
+    mkdirSync(scratch);
+    const log = join(reel, "argv.json");
+    const env = { ...process.env, TMPDIR: scratch, TMP: scratch, TEMP: scratch, ARGV_LOG: log };
+
+    const { status } = gate(join(create, "render-motion-blur.mjs"), ["ReelBlur", "out.mp4"], undefined, reel, env);
+    assert.equal(status, 3, "the render's own exit code");
+    const [command, id, intermediate] = JSON.parse(readFileSync(log, "utf8"));
+    assert.deepEqual([command, id], ["render", "ReelBlur"]);
+    assert.ok(intermediate.startsWith(scratch), `the path with a space survived: ${intermediate}`);
+    assert.deepEqual(readdirSync(scratch), [], "the scratch directory leaked");
+  });
+
+  test("says where to run it from when the reel's remotion is not installed", () => {
+    const empty = mkdtempSync(join(clips, "no-reel-"));
+    const { stderr, status } = gate(join(create, "render-motion-blur.mjs"), ["ReelBlur", "out.mp4"], undefined, empty);
+    assert.equal(status, 1);
+    assert.match(stderr, /@remotion\/cli is not installed here/);
   });
 });
 
