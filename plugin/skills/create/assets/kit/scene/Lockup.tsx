@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { rise } from "../curves";
+import { rise, WORD_STAGGER } from "../curves";
 
 export interface LockupWord {
   text: string;
@@ -9,8 +9,6 @@ export interface LockupWord {
    */
   gradient?: boolean;
 }
-
-const WORD_STAGGER = 0.09;
 
 /** The curve lives in curves.ts so a script can evaluate it. Settling takes REVEAL: count holds from there. */
 export function useRise(start: number, distance: number) {
