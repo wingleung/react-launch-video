@@ -1,9 +1,11 @@
 import { assertReadingTime, assertStillWhileReading } from "./motion";
 import type { CameraKey, ReadingWindow } from "./motion";
+import { settled } from "./curves";
 import { CUE } from "./timeline";
 
-// Camera keyframes: [seconds, focus x, focus y, zoom], in world coordinates on the 1920x1080 stage. The focus point
-// sits at the centre of the frame. smoothPath carries speed through the keys, so only equal neighbours stop the camera.
+// Camera keyframes: [seconds, focus x, focus y, zoom], in world coordinates on the stage, which is the composition's
+// width by height (1920x1080 unless Root.tsx says otherwise). The focus point sits at the centre of the frame.
+// smoothPath carries speed through the keys, so only equal neighbours stop the camera.
 export const CAMERA: CameraKey[] = [
   [CUE.productIn, 960, 640, 0.86],
   [CUE.productIn + 1.15, 960, 540, 1],
@@ -15,16 +17,18 @@ export const CAMERA: CameraKey[] = [
   [CUE.fadeOut + 0.7, 960, 540, 0.92],
 ];
 
-// Every window where text is being read, from fully settled to the start of its exit. Add one per caption.
+// Every window where text is being read, from fully settled to the start of its exit. Add one per caption. A lockup
+// settles when its last word has finished rising, so pass `settled` the number of words the Lockup is given.
 //
 // Give each window the `text` it shows and `assertReadingTime` checks the hold against reading time as well. The
 // timings below are placeholders: once you know the real copy, set the cues in timeline.ts from it rather than the
-// other way round, because a title hold of 1.0s is already too short for a title of more than about ten characters.
-//   { label: "title", from: CUE.titleWords + 0.9, to: CUE.titleExit, text: "Relay Issue Search" },
+// other way round. The placeholder title holds 0.82s, under the 1.0s that even a one-character title needs (the 0.8s
+// minimum plus 0.2s of margin), so real copy always moves TITLE_EXIT.
+//   { label: "title", from: settled(CUE.titleWords, 3), to: CUE.titleExit, text: "Relay Issue Search" },
 export const READING: ReadingWindow[] = [
-  { label: "title", from: CUE.titleWords + 0.9, to: CUE.titleExit },
+  { label: "title", from: settled(CUE.titleWords, 3), to: CUE.titleExit },
   // ...one per caption: { label: "01 ...", from: captionFrom + 0.96, to: captionTo, text: "01 Issue popup" },
-  { label: "end card", from: CUE.endCard + 0.9, to: CUE.fadeOut },
+  { label: "end card", from: settled(CUE.endCard, 3), to: CUE.fadeOut },
 ];
 
 // Both run when the composition loads, so a camera that drifts under text, or a caption held for less time than it

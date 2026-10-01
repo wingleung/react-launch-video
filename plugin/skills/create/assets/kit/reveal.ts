@@ -30,12 +30,34 @@ export function useReveal(root: RefObject<HTMLElement | null>, reveals: Reveal[]
     for (const { selector, at, delay, distance = 10 } of reveals) {
       root.current.querySelectorAll<HTMLElement>(selector).forEach((element, index) => {
         const progress = springAt(frame, fps, at + (delay?.(element, index) ?? 0), SMOOTH, 0.55 * fps);
-        element.style.opacity = String(progress);
-        element.style.transform = progress < 1 ? `translateY(${(1 - progress) * distance}px)` : "";
-        element.style.filter = progress < 1 ? `blur(${(1 - progress) * 4}px)` : "";
+        applyReveal(element, progress, distance);
       });
     }
   });
+}
+
+// Each element's own inline values from before any reveal touched it, so every frame starts from the product's styles.
+const untouched = new WeakMap<HTMLElement, Pick<CSSStyleDeclaration, "opacity" | "translate" | "filter">>();
+
+/**
+ * One frame of a reveal, composed with the element's own styles rather than written over them. The lift rides the
+ * individual `translate` property, so a component's `transform` (a popover centred with translate(-50%, -50%)) is
+ * never touched, and its own translate, opacity and filter carry through the reveal and are back once it ends.
+ */
+function applyReveal(element: HTMLElement, progress: number, distance: number) {
+  let own = untouched.get(element);
+  if (!own) {
+    own = { opacity: element.style.opacity, translate: element.style.translate, filter: element.style.filter };
+    untouched.set(element, own);
+  }
+  Object.assign(element.style, own);
+  if (progress >= 1) return;
+  const computed = getComputedStyle(element);
+  const [x = "0px", y = "0px", z] =
+    computed.translate === "none" ? [] : (computed.translate.match(/(?:[^\s(]+|\([^)]*\))+/g) ?? []);
+  element.style.opacity = String(Number(computed.opacity) * progress);
+  element.style.translate = [x, `calc(${y} + ${(1 - progress) * distance}px)`, z].filter(Boolean).join(" ");
+  element.style.filter = `${computed.filter === "none" ? "" : `${computed.filter} `}blur(${(1 - progress) * 4}px)`;
 }
 
 /**

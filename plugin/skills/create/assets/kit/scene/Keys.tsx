@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { SNAPPY, springAt, tween } from "../motion";
+import { READING_MARGIN, readingTime, SNAPPY, springAt, tween } from "../motion";
 
 export interface Combo {
   /** Use the viewer's platform labels: "Ctrl" for a Linux or Windows audience, not "⌘". */
@@ -8,12 +8,6 @@ export interface Combo {
   /** Held keys stay down until here. */
   release?: number;
 }
-
-/**
- * Keycaps are text the viewer must read. Each combo stays fully visible for at least this long after its press, or its
- * reading time if longer, however quickly the key is released.
- */
-export const KEYCAP_MIN_HOLD = 0.8;
 
 function Keycap({ label, down }: { label: string; down: number }) {
   return (
@@ -54,7 +48,9 @@ export function Keys({ combos, left, top }: { combos: Combo[]; left: number; top
     <>
       {combos.map(({ keys, press, release = press + 0.12 }) => {
         const enter = springAt(frame, fps, press - 0.3, SNAPPY);
-        const hold = Math.max(KEYCAP_MIN_HOLD, keys.join(" ").length / 17 + 0.5);
+        // Keycaps are text the viewer must read, so each combo stays up for its reading time after the press, with the
+        // same margin as a caption, however quickly the key is released.
+        const hold = readingTime(keys.join(" ")) + READING_MARGIN;
         const leaveAt = Math.max(release + 0.16, press + hold);
         const leave = tween(frame, fps, [leaveAt, leaveAt + 0.17], [0, 1]);
         if (frame < (press - 0.3) * fps || leave >= 1) return null;
@@ -73,8 +69,8 @@ export function Keys({ combos, left, top }: { combos: Combo[]; left: number; top
               transform: `translateY(${(1 - enter) * 30 + leave * 12}px)`,
             }}
           >
-            {keys.map((key) => (
-              <Keycap key={key} label={key} down={down} />
+            {keys.map((key, i) => (
+              <Keycap key={`${i}-${key}`} label={key} down={down} />
             ))}
           </div>
         );

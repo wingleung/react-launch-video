@@ -9,7 +9,7 @@ const GLOW: [string, string] = ["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255
 
 export function Reel() {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const seconds = frame / fps;
 
   const times = CAMERA.map(([time]) => time);
@@ -20,8 +20,9 @@ export function Reel() {
       CAMERA.map((key) => key[index]),
     );
   const [focusX, focusY, zoom] = [track(1), track(2), track(3)];
-  const cameraX = 960 - focusX * zoom;
-  const cameraY = 540 - focusY * zoom;
+  // The composition's own size, never 1920x1080 literals: a vertical or square cut changes it in Root.tsx alone.
+  const cameraX = width / 2 - focusX * zoom;
+  const cameraY = height / 2 - focusY * zoom;
 
   // Opacity and blur are their own curves in curves.ts, deliberately faster than the moves below: that split is what
   // keeps the stage lit through both handoffs, and curves.ts carries the reasoning and the measurements.
@@ -35,16 +36,16 @@ export function Reel() {
         {/* The backdrop moves a fraction of the camera: that parallax is what reads as depth. */}
         <Stage
           glow={GLOW}
-          offsetX={(cameraX - (960 - 960 * zoom)) * 0.12}
-          offsetY={(cameraY - (540 - 540 * zoom)) * 0.12}
+          offsetX={(cameraX - (width / 2) * (1 - zoom)) * 0.12}
+          offsetY={(cameraY - (height / 2) * (1 - zoom)) * 0.12}
           scale={1 + (zoom - 1) * 0.15}
         />
         {/* <TitleCard> goes here, under the camera layer, so the product rises in front of it. */}
         <div
           style={{
             position: "absolute",
-            width: 1920,
-            height: 1080,
+            width,
+            height,
             transformOrigin: "0 0",
             transform: `translate(${cameraX}px, ${cameraY}px) scale(${zoom})`,
           }}

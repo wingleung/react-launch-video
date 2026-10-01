@@ -14,16 +14,17 @@ export function MotionBlurComposition({
   fps,
   durationInFrames,
   samples = 4,
-  width = 1920,
-  height = 1080,
+  width,
+  height,
 }: {
   id: string;
   component: React.ComponentType;
   fps: number;
   durationInFrames: number;
   samples?: number;
-  width?: number;
-  height?: number;
+  /** The reel's own size from Root.tsx, required so a vertical cut cannot render its samples at 1920x1080. */
+  width: number;
+  height: number;
 }) {
   function ShutterSamples() {
     const frame = useCurrentFrame();

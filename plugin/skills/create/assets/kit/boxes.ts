@@ -1,7 +1,8 @@
 import type { Box } from "./motion";
 
 /**
- * Where things actually are on the 1920x1080 stage, in world coordinates, so `fitCamera` can frame them.
+ * Where things actually are on the stage (the composition's width by height, 1920x1080 by default), in world
+ * coordinates, so `fitCamera` can frame them.
  *
  * **Measure these, do not estimate them.** Step 1c of the skill renders a throwaway still that prints each element's
  * `getBoundingClientRect()` and you copy the numbers here. A guessed box is the single most expensive mistake

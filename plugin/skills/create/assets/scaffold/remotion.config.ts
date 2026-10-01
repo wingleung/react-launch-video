@@ -1,8 +1,13 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { Config } from "@remotion/cli/config";
 
 // The product the reel shows, as a sibling folder. Its components are imported, never copied.
 const product = path.resolve("../my-product");
+// A missing product still renders the empty stage and exits 0, so a wrong path would pass for a working one.
+if (!existsSync(product)) {
+  throw new Error(`No product at ${product}. Set the path in remotion.config.ts to the product's folder.`);
+}
 
 // Fonts, icons and logos come from the product's own public folder, so the reel cannot drift from what ships and
 // renders never fetch fonts over the network.

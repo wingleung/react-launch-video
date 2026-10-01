@@ -40,6 +40,10 @@ const FADE = fadeFor(LIGHTNESS);
 
 /** A word is readable once fully settled: its start plus REVEAL. Count holds from the last word's settle. */
 export const REVEAL = 0.9;
+/** The gap between one lockup word starting to rise and the next. */
+export const WORD_STAGGER = 0.09;
+/** When a lockup of `words` words that starts rising at `start` is readable: its last word's start plus REVEAL. */
+export const settled = (start: number, words: number) => start + (words - 1) * WORD_STAGGER + REVEAL;
 
 /** One part of a lockup rising out of its blur. `useRise` in scene/Lockup.tsx is this curve. */
 export const rise = (seconds: number, start: number) =>
