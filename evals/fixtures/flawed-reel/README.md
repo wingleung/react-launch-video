@@ -1,6 +1,7 @@
 # status-page-reel
 
-Promo reel for our internal status page. Remotion 4. Render with `npx remotion render StatusReel out/reel.mp4`.
+Promo reel for our internal status page. Remotion 4. Render with `npm install` and then `npm run render`, which writes
+`out/reel.mp4`.
 
 Storyboard: see `storyboard.md`.
 

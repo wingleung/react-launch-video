@@ -1,6 +1,7 @@
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { Captions } from "./scene/Captions";
 import { Dashboard } from "./scene/Dashboard";
+import { Title } from "./scene/Title";
 import { CUE } from "./timeline";
 
 const CAMERA_TIMES = [
@@ -41,6 +42,7 @@ export function StatusReel() {
       <AbsoluteFill style={{ transform: `translateX(${960 - focusX * zoom}px) scale(${zoom})`, opacity: enter }}>
         <Dashboard />
       </AbsoluteFill>
+      <Title />
       <Captions />
       {t > CUE.endCard && t < CUE.cut && (
         <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", color: "white", fontSize: 96 }}>
