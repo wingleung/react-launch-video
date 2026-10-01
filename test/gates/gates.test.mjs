@@ -371,6 +371,34 @@ describe("contact-sheet", () => {
     const { status } = gate(join(create, "contact-sheet.mjs"), [demo, "out.jpeg", "1", "2", "3"]);
     assert.equal(status, 1);
   });
+
+  test("crops one frame at full resolution", () => {
+    const out = join(clips, "crop.png");
+    const { stdout, status } = gate(join(create, "contact-sheet.mjs"), [demo, "--crop", out, "4.5", "100:60:0:0"]);
+    assert.equal(status, 0);
+    assert.equal(stdout.trim(), out);
+    const size = execFileSync(
+      "ffprobe",
+      ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", out],
+      { encoding: "utf8" },
+    ).trim();
+    assert.equal(size, "100,60");
+  });
+
+  // Both used to print the output path and exit 0 having written nothing, which reads exactly like a crop to look at.
+  test("refuses a moment the reel does not have", () => {
+    const past = join(clips, "past.png");
+    const crop = gate(join(create, "contact-sheet.mjs"), [demo, "--crop", past, "99", "100:100:0:0"]);
+    assert.equal(crop.status, 1);
+    assert.match(crop.stderr, /99s is past the end of the reel \(21\.37s\)/);
+    assert.equal(crop.stdout, "");
+
+    const tiles = (...frames) => gate(join(create, "contact-sheet.mjs"), [demo, join(clips, "bad.jpeg"), ...frames]);
+    const negative = tiles("-5", "300", "500", "700", "900", "1100");
+    assert.equal(negative.status, 1);
+    assert.match(negative.stderr, /frame -5 is outside the reel's frames 0 to 1281/);
+    assert.equal(tiles("100", "300", "500", "700", "900", "99999").status, 1);
+  });
 });
 
 describe("reading-time", () => {
