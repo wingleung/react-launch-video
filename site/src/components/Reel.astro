@@ -42,12 +42,13 @@ const spoken = (moves: number[][]) => {
   return spans.length > 1 ? `${spans.slice(0, -1).join(", ")} and ${spans.at(-1)}` : spans[0];
 };
 const poster = await getImage({ src: posterSource, format: "webp", width: 1920 });
+const attached = Astro.slots.has("above");
 ---
 
 <figure class="reel" data-reel data-duration={duration} data-fps={fps}>
   {/* Whatever led to the video, drawn attached to its top edge: on the page, the Claude Code prompt that asks for it. */}
   <slot name="above" />
-  <div class="monitor">
+  <div class:list={["monitor", { attached }]}>
     <video
       muted
       playsinline
@@ -118,6 +119,13 @@ const poster = await getImage({ src: posterSource, format: "webp", width: 1920 }
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--stage);
+  }
+
+  /* Whatever sits above draws the top edge, so the video's own top corners give way to it. */
+  .monitor.attached {
+    border-color: var(--border-strong);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   video {

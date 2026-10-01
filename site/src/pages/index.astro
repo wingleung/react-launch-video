@@ -327,7 +327,7 @@ const tone = (line: string) =>
 
   /*
    * The Claude Code prompt, joined to the top of the video so the two read as one session: the ask, then what came
-   * back. The video's own top corners and border give way to it.
+   * back. Reel squares off the video's top corners to meet it.
    */
   .session {
     display: grid;
@@ -361,12 +361,6 @@ const tone = (line: string) =>
   .session-prompt code {
     color: var(--playhead);
     font-size: inherit;
-  }
-
-  .hero-reel :global(.monitor) {
-    border-color: var(--border-strong);
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
   }
 
   .hero-install {
