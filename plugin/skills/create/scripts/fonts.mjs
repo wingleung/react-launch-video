@@ -73,15 +73,38 @@ const GENERIC = new Set([
   "noto color emoji",
 ]);
 
-/** Families a stylesheet asks for by name, which something then has to load. */
+// Words that name a cut of a family rather than the family, so Relay-Bold.woff2 provides Relay and the variable
+// package's "Inter Variable" is Inter. Matching on whole names after dropping them is what keeps Interstate from
+// passing because Inter is loaded.
+const CUT = new Set(
+  (
+    "variable vf regular normal italic oblique thin hairline extralight ultralight light book medium semibold " +
+    "demibold bold extrabold ultrabold black heavy"
+  ).split(" "),
+);
+
+/** The family a name refers to, as a key both sides of a comparison can share. */
+function familyKey(name) {
+  return name
+    .toLowerCase()
+    .split(/[\s_-]+/)
+    .filter((word) => word && !CUT.has(word) && !/^\d+$/.test(word))
+    .join(" ");
+}
+
+/** Families a stylesheet or a JSX style object asks for by name, which something then has to load. */
 function requested(file, text) {
   const rows = [];
-  for (const found of text.matchAll(/font-family\s*:\s*([^;}\n]+)/gi)) {
-    for (const part of found[1].split(",")) {
+  const stacks = [
+    ...[...text.matchAll(/font-family\s*:\s*([^;}\n]+)/gi)].map((found) => [found[1], found.index]),
+    ...[...text.matchAll(/fontFamily\s*:\s*(["'`])((?:(?!\1).)*)\1/g)].map((found) => [found[2], found.index]),
+  ];
+  for (const [stack, index] of stacks) {
+    for (const part of stack.split(",")) {
       const name = part.trim().replace(/^["']|["']$/g, "");
       const key = name.toLowerCase();
       if (!name || GENERIC.has(key) || key.startsWith("var(") || name.includes("$")) continue;
-      rows.push({ file, line: lineOf(text, found.index), family: name, key });
+      rows.push({ file, line: lineOf(text, index), family: name, key });
     }
   }
   return rows;
@@ -110,6 +133,8 @@ const lineOf = (text, index) => text.slice(0, index).split("\n").length;
 function family(reference) {
   const fontsource = /@fontsource(?:-variable)?\/([^/"'`]+)/.exec(reference);
   if (fontsource) return fontsource[1].replace(/-/g, " ");
+  const google = /@remotion\/google-fonts\/(\w+)/.exec(reference);
+  if (google) return google[1].replace(/([a-z])([A-Z])/g, "$1 $2");
   const file = /([^/\\"']+)\.(?:woff2?|ttf|ttc|otf|otc|eot|pfb)/i.exec(reference);
   if (file) return file[1].replace(/[-_](?:variable|regular|\d+|italic|normal).*$/i, "").replace(/[-_]/g, " ");
   const query = /family=([^&"')]+)/.exec(reference);
@@ -118,8 +143,8 @@ function family(reference) {
 }
 
 /**
- * Every font reference in one file: package imports, @font-face sources, stylesheet links and the file paths handed
- * to @remotion/fonts. Each becomes one row with the origin it implies.
+ * Every font reference in one file: package imports, @font-face sources, stylesheet links, the file paths handed to
+ * @remotion/fonts and @remotion/google-fonts loaders. Each becomes one row with the origin it implies.
  */
 function references(file, text) {
   const rows = [];
@@ -127,6 +152,8 @@ function references(file, text) {
     rows.push({ file, line: lineOf(text, index), reference, origin, family: family(reference) });
 
   for (const found of text.matchAll(/@fontsource(?:-variable)?\/[^"'`\s]+/g)) add(found[0], found.index, "package");
+  // A package, but not a font package: its loadFont() fetches the files from Google's servers while rendering.
+  for (const found of text.matchAll(/@remotion\/google-fonts\/\w+/g)) add(found[0], found.index, "network");
   for (const found of text.matchAll(/url\(\s*["']?([^"')]+\.(?:woff2?|ttf|ttc|otf|otc|eot|pfb)[^"')]*)["']?\s*\)/gi)) {
     add(found[1], found.index, origin(found[1]));
   }
@@ -173,12 +200,12 @@ main("fonts", () => {
   }
 
   // A named family nothing loads renders in the fallback and looks fine, which is why it needs a gate and not an eye.
-  const loaded = new Set([...seen.keys()]);
+  const loaded = new Set([...seen.keys()].map(familyKey));
   const already = new Set();
   for (const ask of asked) {
     if (already.has(ask.key)) continue;
     already.add(ask.key);
-    const has = [...loaded].some((name) => name.includes(ask.key) || ask.key.includes(name));
+    const has = loaded.has(familyKey(ask.key));
     const where = `${relative(process.cwd(), ask.file)}:${ask.line}`;
     console.log(`${mark(has)}  ${where}  ${ask.family} is asked for`);
     if (!has)

@@ -594,6 +594,40 @@ describe("fonts", () => {
     assert.match(stdout, /asks for S\u00f6hne but nothing loads it/);
   });
 
+  // Each of the next three passed under --strict, with one loaded font beside it to satisfy the strict check.
+  test("compares whole family names, so a family that merely contains a loaded one is not loaded", () => {
+    const inter = 'import "@fontsource/inter/400.css";\n';
+    const near = fonts("App.tsx", `${inter}const css = "body { font-family: 'Interstate', sans-serif; }";\n`, [
+      "--strict",
+    ]);
+    assert.equal(near.status, 1, near.stdout);
+    assert.match(near.stdout, /asks for Interstate but nothing loads it/);
+    // and the names the gate has to keep matching: a weight in the file name, the variable package's own family
+    assert.equal(
+      fonts("reel.css", '@font-face { src: url("/fonts/Relay-Bold.woff2"); }\nh1 { font-family: Relay; }\n').status,
+      0,
+    );
+    const variable = 'import "@fontsource-variable/inter";\nconst css = "p { font-family: \'Inter Variable\'; }";\n';
+    assert.equal(fonts("App.tsx", variable, ["--strict"]).status, 0);
+  });
+
+  test("reads a family named in a JSX style object", () => {
+    const body =
+      'import "@fontsource/inter/400.css";\nexport const T = () => <h1 style={{ fontFamily: "S\u00f6hne, sans-serif" }} />;\n';
+    const { stdout, status } = fonts("Title.tsx", body, ["--strict"]);
+    assert.equal(status, 1, stdout);
+    assert.match(stdout, /asks for S\u00f6hne but nothing loads it/);
+  });
+
+  test("fails a font loaded through @remotion/google-fonts, which fetches it at render time", () => {
+    const { stdout, status } = fonts(
+      "Fonts.ts",
+      'import { loadFont } from "@remotion/google-fonts/RobotoMono";\nloadFont();\n',
+    );
+    assert.equal(status, 1, stdout);
+    assert.match(stdout, /loads Roboto Mono from the network/);
+  });
+
   test("lets a stack fall back to whatever the machine has", () => {
     const { status } = fonts("reel.css", "body { font-family: ui-sans-serif, system-ui, sans-serif; }\n");
     assert.equal(status, 0);
