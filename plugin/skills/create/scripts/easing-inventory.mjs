@@ -3,6 +3,7 @@
 //
 //     node easing-inventory.mjs src/                         prints file:line, helper and easing for every motion call
 //     node easing-inventory.mjs src/ --storyboard story.md   also checks the storyboard's easing table against the code
+//     node easing-inventory.mjs src/ --strict                 and fails when there is no motion call at all
 //
 // Finds tween, springAt, interpolate, spring, smoothPath and direct calls of named easings, resolves `Easing.bezier`
 // constants to their numbers and applies the kit defaults (tween eases out with easeOut, springAt uses SMOOTH,
@@ -20,7 +21,10 @@ import { main } from "./lib/run.mjs";
 
 const SPEC = {
   positionals: ["src"],
-  options: [{ flag: "--storyboard", dest: "storyboard", metavar: "STORYBOARD", default: undefined }],
+  options: [
+    { flag: "--storyboard", dest: "storyboard", metavar: "STORYBOARD", default: undefined },
+    { flag: "--strict", dest: "strict", store: true, default: false, help: "finding no motion call is a failure" },
+  ],
 };
 
 const DEPTH = { "(": 1, "[": 1, "{": 1, ")": -1, "]": -1, "}": -1 };
@@ -234,6 +238,12 @@ main("easing-inventory", () => {
     console.log(`${where} ${entry.helper.padEnd(12)} ${entry.easing.padEnd(46)} ${entry.code}`);
   }
 
+  // An empty inventory agrees with an empty easing table, so a reel with no motion passed. That is fine for a kit
+  // file checked on its own and not for a finished reel, which is what the runner checks with --strict.
+  if (args.strict && !listed.length) {
+    console.log(`FAIL  no motion call anywhere under ${args.src}, so there is no easing to check`);
+    return 1;
+  }
   if (args.storyboard === undefined) return 0;
 
   // Only the easing table's rows are citations. The storyboard template also asks for a determinism table and a

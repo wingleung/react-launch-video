@@ -826,6 +826,30 @@ describe("gates runner on a finished reel", () => {
     assert.match(stdout, /All 6 gates passed\./);
   });
 
+  // Four gates can be satisfied by doing less. Each change below removes one piece of work and nothing else.
+  test("fails a reel with no motion in it, rather than passing an empty inventory", () => {
+    const { stdout, status } = finished({
+      "src/motion.ts": null,
+      "src/Panel.tsx": FINISHED["src/Panel.tsx"].replace(/^.*tween.*\n/gm, ""),
+      "storyboard.md": FINISHED["storyboard.md"].replace(/\n\|[\s\S]*$/, "\n"),
+    });
+    assert.equal(status, 1);
+    assert.match(stdout, /FAILED: easing-inventory$/m);
+  });
+
+  test("fails a reel that claims nothing, and one with no signal to claim about", () => {
+    const unclaimed = FINISHED["src/Panel.tsx"].replace(/^\/\/ \[measured.*\n/m, "");
+    const silent = finished({ "src/Panel.tsx": unclaimed });
+    assert.equal(silent.status, 1);
+    assert.match(silent.stdout, /FAILED: claims$/m);
+
+    const curves = FINISHED["src/curves.ts"].replace(/= \{\n.*\n\};/s, "= {};");
+    const empty = finished({ "src/curves.ts": curves, "src/Panel.tsx": unclaimed });
+    assert.equal(empty.status, 1);
+    assert.match(empty.stdout, /curves\.ts exports no signals/);
+    assert.match(empty.stdout, /FAILED: claims$/m);
+  });
+
   // A version manager can put node on an interactive shell's PATH and nowhere else, so the runner runs its gates on
   // the Node that is already running it.
   test("runs every gate when node is not on the PATH", () => {

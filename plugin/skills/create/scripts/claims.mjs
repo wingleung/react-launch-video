@@ -4,6 +4,7 @@
 //     node claims.mjs src/                                check every [measured: ...] claim in the source
 //     node claims.mjs src/ --doc references/pacing.md     check a reference doc too, repeatable
 //     node claims.mjs src/ --values cues                  print every signal at every cue, to write a claim from
+//     node claims.mjs src/ --strict                       and fail when there is no claim, or no signal to claim
 //
 // Six wrong numbers shipped in kit comments before this existed. Every one was written as a justification for a
 // timing choice and never looked at again after the timing moved, so each read as documentation while being a defect
@@ -41,6 +42,7 @@ const SPEC = {
     { flag: "--doc", dest: "docs", metavar: "FILE", append: true, help: "a reference doc to check as well" },
     { flag: "--values", dest: "values", metavar: "MOMENTS", help: "print every signal at these moments, or at `cues`" },
     { flag: "--as", dest: "as", metavar: "DIR", help: "report src paths as if it were this directory" },
+    { flag: "--strict", dest: "strict", store: true, default: false, help: "checking no claim at all is a failure" },
   ],
 };
 
@@ -314,7 +316,16 @@ main("claims", async () => {
   }
   for (const line of untagged) console.log(`${mark(false)}  ${line}`);
 
-  const failed = rows.filter((row) => !row.ok).length + untagged.length;
+  // Zero claims re-derive perfectly, so a reel that wrote none passed. Under --strict, which is how the runner calls
+  // this, a finished reel has to say something checkable about its own timing.
+  const hollow = [];
+  if (args.strict && !Object.keys(kit.signals).length)
+    hollow.push("curves.ts exports no signals, so nothing can be claimed");
+  else if (args.strict && !rows.length)
+    hollow.push("no [measured: ...] claim anywhere, so nothing about the timing was checked");
+  for (const line of hollow) console.log(`${mark(false)}  ${line}`);
+
+  const failed = rows.filter((row) => !row.ok).length + untagged.length + hollow.length;
   const summary = `${rows.length} claim${rows.length === 1 ? "" : "s"} re-derived from curves.ts`;
   console.log(failed ? `\nclaims check FAILED (${failed})` : `\nclaims check passed: ${summary}`);
   return failed ? 1 : 0;
