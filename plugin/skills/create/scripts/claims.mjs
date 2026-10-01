@@ -48,8 +48,9 @@ const SPEC = {
   ],
 };
 
-// A percentage claim is written to a tenth, pixels to a tenth, and a crossing lands on a frame.
-const DEFAULT_TOLERANCE = { "%": 0.5, px: 0.1, s: 0.02 };
+// A percentage claim is written to a tenth and pixels to a tenth. A crossing lands on a frame, so its default is one
+// frame at the composition's own rate (see crossingTolerance), which a fixed figure is only at one rate.
+const DEFAULT_TOLERANCE = { "%": 0.5, px: 0.1 };
 const TOLERANCE = String.raw`(?:\s*(?:±|\+\/-)\s*([\d.]+))?`;
 const OVER = new RegExp(String.raw`^(min|max)\s+(.+?)\s+over\s+(.+?)\.\.(.+?)\s+is\s+(-?[\d.]+)\s*(%|px)${TOLERANCE}$`);
 const AT = new RegExp(String.raw`^(.+?)\s+at\s+(.+?)\s+is\s+(-?[\d.]+)\s*(%|px)${TOLERANCE}$`);
@@ -162,7 +163,7 @@ function parseClaim(text) {
   const crosses = CROSSES.exec(text);
   if (crosses) {
     const [, name, threshold, unit, after, value, tolerance] = crosses;
-    const bound = Number(tolerance ?? DEFAULT_TOLERANCE.s);
+    const bound = tolerance === undefined ? undefined : Number(tolerance);
     return { form: "crosses", name, threshold: Number(threshold), unit, after, value: Number(value), tolerance: bound };
   }
   const at = AT.exec(text);
@@ -192,6 +193,9 @@ function derive(claim, kit) {
   const seconds = moment(claim.when, kit.cue);
   return { actual: sample(signal, seconds), unit: claim.unit, note: `at ${fixed(seconds, 3)}s` };
 }
+
+/** One frame, plus the half millisecond a time written to three decimals can be rounded by. */
+const crossingTolerance = (fps) => 1 / fps + 0.0005;
 
 function lineOf(text, index) {
   return text.slice(0, index).split("\n").length;
@@ -281,15 +285,17 @@ main("claims", async () => {
           const parsed = parseClaim(claim[1]);
           const found = derive(parsed, kit);
           const off = Math.abs(found.actual - parsed.value);
-          const ok = off <= parsed.tolerance;
+          const tolerance = parsed.tolerance ?? crossingTolerance(kit.fps);
+          const ok = off <= tolerance;
+          const places = found.unit === "s" ? 3 : 2;
           rows.push({
             ok,
             at,
             text: claim[1],
-            actual: `${fixed(found.actual, found.unit === "s" ? 3 : 2)}${found.unit}`,
+            actual: `${fixed(found.actual, places)}${found.unit}`,
             off: ok
               ? found.note
-              : `off by ${fixed(off, 2)}, outside the ${fixed(parsed.tolerance, 2)} this claim allows`,
+              : `off by ${fixed(off, places)}, outside the ${fixed(tolerance, places)} this claim allows`,
           });
         } catch (error) {
           rows.push({ ok: false, at, text: claim[1], actual: "", off: error.message });

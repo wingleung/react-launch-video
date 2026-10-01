@@ -401,6 +401,23 @@ describe("claims", () => {
     assert.equal(status, 0, stdout);
   });
 
+  // The ramp crosses 50% on frame 60 at 60fps and frame 30 at 30fps, both 1.000s. A crossing written one frame late
+  // is within the default either way, and two frames late is not, at whichever rate the composition runs.
+  test("allows a crossing one frame of the composition's own rate either side", () => {
+    const slow = join(clips, "claims-kit-30");
+    mkdirSync(slow, { recursive: true });
+    writeFileSync(join(slow, "curves.ts"), readFileSync(join(kit, "curves.ts")));
+    writeFileSync(join(slow, "timeline.ts"), readFileSync(join(kit, "timeline.ts"), "utf8").replace("60", "30"));
+    const at = (dir, seconds) => {
+      writeFileSync(join(dir, "Demo.ts"), `// [measured: product opacity crosses 50% after start at ${seconds}s]\n`);
+      return gate(join(create, "claims.mjs"), [dir]).status;
+    };
+    assert.equal(at(slow, "1.033"), 0, "one frame late at 30fps");
+    assert.equal(at(slow, "1.067"), 1, "two frames late at 30fps");
+    assert.equal(at(kit, "1.017"), 0, "one frame late at 60fps");
+    assert.equal(at(kit, "1.033"), 1, "two frames late at 60fps");
+  });
+
   test("rejects a signal the curves do not export, and lists the ones they do", () => {
     const { stdout, status } = claim("[measured: title opacity at endCard is 100%]");
     assert.equal(status, 1);
