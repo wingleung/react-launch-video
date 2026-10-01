@@ -69,7 +69,7 @@ export function Lockup({
         }}
       >
         {words.map((word, i) => (
-          <Word key={word.text} {...word} gradientClass={gradientClass} start={wordsAt + i * WORD_STAGGER} />
+          <Word key={`${i}-${word.text}`} {...word} gradientClass={gradientClass} start={wordsAt + i * WORD_STAGGER} />
         ))}
       </h1>
       {children}

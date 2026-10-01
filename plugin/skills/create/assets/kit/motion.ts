@@ -90,6 +90,8 @@ export function beatsAt(bpm: number): (n: number) => number {
 const CHARS_PER_SECOND = 17;
 const SETTLE = 0.5;
 const MINIMUM = 0.8;
+/** Slack on top of reading time, so a hold that passes by a few hundredths survives a neighbour being retimed. */
+export const READING_MARGIN = 0.2;
 
 /** The hold a block of text needs: its characters at reading speed plus a settle margin. See references/pacing.md. */
 export function readingTime(text: string): number {
@@ -101,7 +103,7 @@ export function readingTime(text: string): number {
  * load, so a caption that is a few frames short fails in seconds rather than surviving to a review that has to measure
  * it by hand. Windows with no `text` are skipped.
  */
-export function assertReadingTime(windows: ReadingWindow[], margin = 0.2): void {
+export function assertReadingTime(windows: ReadingWindow[], margin = READING_MARGIN): void {
   for (const { label, from, to, text } of windows) {
     if (text === undefined) continue;
     const needed = readingTime(text) + margin;
