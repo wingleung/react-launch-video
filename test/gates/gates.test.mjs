@@ -462,6 +462,25 @@ describe("reading-time", () => {
     assert.match(stdout, /^ {2}1\.00 {3}1\.38 {2}SHORT {6}15 {2}Retry 🚀 uploads$/m);
   });
 
+  // A hold with nothing to read needs only the minimum, so a row that lost its text passed and checked nothing.
+  test("rejects a row with no text after the hold", () => {
+    const { stderr, status } = gate(join(review, "reading-time.mjs"), [], "9\n");
+    assert.equal(status, 1);
+    assert.match(stderr, /the row "9" has no text/);
+  });
+
+  test("prints its usage for --help and names a file it cannot read", () => {
+    const help = gate(join(review, "reading-time.mjs"), ["--help"]);
+    assert.equal(help.status, 0);
+    assert.match(help.stdout, /^usage: reading-time\.mjs \[FILE\]/);
+    const missing = gate(join(review, "reading-time.mjs"), [join(clips, "no-such-holds.tsv")]);
+    assert.equal(missing.status, 2);
+    assert.match(
+      missing.stderr,
+      /^usage: reading-time\.mjs \[FILE\]\nreading-time\.mjs: error: cannot read .*no-such-holds\.tsv/,
+    );
+  });
+
   // An empty table above exit 0 reads exactly like a pass, which is the shape of silent success.
   test("fails when handed nothing rather than reporting an empty pass", () => {
     const { stderr, status } = gate(join(review, "reading-time.mjs"), [], "");
