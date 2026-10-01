@@ -18,6 +18,36 @@ makes it for. The method, the kit and the gates are unchanged.
 - **A product page** at wingleung.github.io/react-launch-video, built from `site/` and deployed by
   `.github/workflows/pages.yml`, now the manifest's `homepage`.
 
+### Fixed in a review before publishing
+
+A six-part review (security, scripts, kit, docs, site and evals) ran before the repository went public. Every finding
+below was reproduced first, and each script fix has a regression test.
+
+- **Gates.** The runner passes a reel that is not 16:9 (it handed `--width` to `edge-scan`, which rejected it) and
+  fails a hollow package with no motion or no claims, which used to pass all six. `edge-scan` scales its faint-border
+  threshold per frame, so a bright moment elsewhere no longer hides a resting border. `fonts` compares whole family
+  names, reads JSX `fontFamily` and treats `@remotion/google-fonts` as a network font. Duration comes from the video
+  stream, not the container. `add-music` pads a short track instead of cutting the video. The runner and
+  `render-motion-blur` use the running Node directly and no shell, so neither needs `node` or `npx` on the PATH and a
+  Windows path with a space cannot split. Old Node gets the version message instead of a stack trace.
+- **Kit.** A vertical or square cut frames on its own centre. Overlapping captions cross-fade instead of popping. The
+  title hold counts from the last word settling. Reveals keep an element's own transform. Unordered camera keys and
+  impossible fits throw. Keycaps use the shared reading time. The scaffold restores the note that the product's
+  dependencies are not copied, ships `@remotion/fonts` pinned and throws when the product path does not exist.
+  `kit-check` now renders the assembled package and cleans up its temp project, which it used to leave behind at 250MB
+  a run.
+- **Docs.** The skills match the kit's real numbers (easeOut, exit blur, keycap minimum, the 0.05s product lead), list
+  `gates.mjs`, say where the product path is set and give `reading-time.mjs` its real input. The README says what a
+  run costs up front. `SECURITY.md` and `CODE_OF_CONDUCT.md` link this repository's private reporting form.
+- **Listing.** The marketplace entry no longer overrides `plugin.json`'s description in `/plugin`, and `release-check`
+  now asserts that instead of only counting characters.
+- **Site.** Every Copy button has its own name and announces the copy. The timeline's stripes meet 3:1 and each beat
+  says where it moves. Phones get a 720p hero reel (616KB instead of 4MB). Pages write access is scoped to the deploy
+  job and every action is pinned to a commit.
+- **Evals.** Runs stage the fixture outside the repo so they cannot read their own assertions. The fixtures describe
+  the product rather than the traps. The flawed reel renders every flaw its assertions grade. The web fixture's Vite
+  moves to 7.3.6 for its dev-server advisories, and the CLI fixture uses `relay.example`.
+
 ## 1.5.0
 
 Three audits agreed the method was sound and that a stranger could not follow it to a finished reel. This release is
