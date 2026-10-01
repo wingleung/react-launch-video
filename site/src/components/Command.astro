@@ -7,11 +7,14 @@ interface Props {
 }
 
 const { lines, label, prose = false } = Astro.props;
+// A command that scrolls has to take focus, or outside Chromium a keyboard cannot scroll it.
+const scrollable = prose ? {} : { role: "group", "aria-label": "Command", tabindex: 0 };
 ---
 
-<div class:list={["command", { prose }]}>
-  <pre aria-label={label}><code>{lines.join("\n")}</code></pre>
-  <button type="button" data-copy={lines.join("\n")}>Copy</button>
+<div class:list={["command", { prose }]} role="group" aria-label={label}>
+  <pre {...scrollable}><code>{lines.join("\n")}</code></pre>
+  <button type="button" data-copy={lines.join("\n")} aria-label={`Copy: ${label}`}>Copy</button>
+  <span class="sr-only" role="status" data-copy-status></span>
 </div>
 
 <style>
@@ -54,15 +57,27 @@ const { lines, label, prose = false } = Astro.props;
 </style>
 
 <script>
-  for (const button of document.querySelectorAll<HTMLButtonElement>("button[data-copy]")) {
+  for (const command of document.querySelectorAll<HTMLElement>(".command")) {
+    const button = command.querySelector<HTMLButtonElement>("button[data-copy]")!;
+    const status = command.querySelector<HTMLElement>("[data-copy-status]")!;
+    let reset: ReturnType<typeof setTimeout> | undefined;
+
     button.addEventListener("click", async () => {
+      clearTimeout(reset);
+      // Emptied first, so a second click that lands on the same words is still announced.
+      status.textContent = "";
       try {
         await navigator.clipboard.writeText(button.dataset.copy ?? "");
-        button.textContent = "Copied";
+        button.textContent = status.textContent = "Copied";
       } catch {
-        button.textContent = "Select and copy";
+        getSelection()?.selectAllChildren(command.querySelector("pre")!);
+        button.textContent = "Selected";
+        status.textContent = "Could not copy. The command is selected, copy it from the keyboard.";
       }
-      setTimeout(() => (button.textContent = "Copy"), 1600);
+      reset = setTimeout(() => {
+        button.textContent = "Copy";
+        status.textContent = "";
+      }, 1600);
     });
   }
 </script>
