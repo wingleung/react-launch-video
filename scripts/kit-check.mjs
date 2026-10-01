@@ -1,11 +1,12 @@
 // Checks the starter kit the way a reel package would: copy it into a temp project with Remotion, typecheck it with
-// tsc, then import its camera so the kit's own assertStillWhileReading actually runs.
+// tsc, render it, then import its camera so the kit's own assertStillWhileReading actually runs.
 //
-// The second half exists because the first half is not enough. The assertion only fires when a composition loads, so
-// a typecheck will happily pass a kit whose example camera drifts through the end card, and that is exactly what
-// shipped once. An example that fails its own gate is worse than no example.
+// The import exists because the typecheck is not enough. The assertion only fires when a composition loads, so a
+// typecheck will happily pass a kit whose example camera drifts through the end card, and that is exactly what
+// shipped once. An example that fails its own gate is worse than no example. The render exists for the same reason
+// one level up: nothing else here bundles the kit, so a package that typechecks and cannot render would pass.
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -22,11 +23,36 @@ function run(command, args, options = {}) {
   }
 }
 
+/** A PNG as one byte of luma per pixel, through the system ffmpeg the gates already need. */
+function luma(png) {
+  return execFileSync("ffmpeg", ["-v", "error", "-i", png, "-f", "rawvideo", "-pix_fmt", "gray", "-"], {
+    maxBuffer: 1 << 26,
+  });
+}
+
+/** Every remotion package on one exact version, and the comment that quotes it quoting the same one. */
+function checkPins() {
+  const manifest = JSON.parse(readFileSync(join(scaffold, "package.json"), "utf8"));
+  const pins = { ...manifest.dependencies, ...manifest.devDependencies };
+  for (const [name, version] of Object.entries(pins)) {
+    if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`scaffold pins ${name} to ${version}, not an exact version`);
+    if ((name === "remotion" || name.startsWith("@remotion/")) && version !== pins.remotion) {
+      throw new Error(`scaffold pins ${name} to ${version} but remotion to ${pins.remotion}`);
+    }
+  }
+  for (const quoted of manifest._comment.join(" ").match(/\d+\.\d+\.\d+/g) ?? []) {
+    if (quoted !== pins.remotion) throw new Error(`scaffold comment quotes ${quoted} but remotion is ${pins.remotion}`);
+  }
+}
+
 function check(root) {
-  // A reel package is the scaffold at the root with the kit as its src/, which is exactly what the skill tells a user
-  // to assemble. Building it the same way here means the pins and the tsconfig under test are the ones that ship,
-  // rather than a second copy of them that can drift.
+  checkPins();
+
+  // A reel package is the scaffold at the root with the kit as its src/, next to the product it shows, which is
+  // exactly what the skill tells a user to assemble. Building it the same way here means the pins, the tsconfig and
+  // the config under test are the ones that ship, rather than a second copy of them that can drift.
   const dir = join(root, "reel");
+  mkdirSync(join(root, "my-product", "public"), { recursive: true });
   cpSync(scaffold, dir, { recursive: true });
   cpSync(kit, join(dir, "src"), { recursive: true });
 
@@ -45,6 +71,43 @@ function check(root) {
     .flatMap((name) => ["--doc", join(references, name)]);
   run("node", ["plugin/skills/create/scripts/claims.mjs", join(dir, "src"), "--as", kit, ...docs]);
 
+  // The scaffold's own `still` script, the proof of life step 1b hands a user. It must not be black: frame 0 was,
+  // and a black still looks the same whether the toolchain works or not.
+  run("npm", ["run", "still", "--", "--log=error"], { cwd: dir });
+  const still = luma(join(dir, "outputs", "still.png"));
+  const mean = still.reduce((sum, value) => sum + value, 0) / still.length;
+  if (mean < 4) throw new Error(`the scaffold's still is black: mean luma ${mean.toFixed(2)} of 255`);
+  console.log(`kit renders: the scaffold's still has mean luma ${mean.toFixed(2)} of 255`);
+
+  // A vertical cut must frame like a wide one. A box drawn round the camera's focus has to land dead centre whatever
+  // the frame size, and it sat 420px right and 135px high at 1080x1350 while Reel.tsx centred on 960, 540.
+  const reel = join(dir, "src", "Reel.tsx");
+  const slot = "{/* Popovers and the cursor live here too, so they zoom with the product. */}";
+  const source = readFileSync(reel, "utf8");
+  if (!source.includes(slot)) throw new Error(`Reel.tsx no longer has the slot this check draws into: ${slot}`);
+  const marker =
+    "<div style={{ position: 'absolute', left: focusX - 100, top: focusY - 100, " +
+    "width: 200, height: 200, background: 'white' }} />";
+  writeFileSync(reel, source.replace(slot, marker));
+  const [width, height] = [1080, 1350];
+  const portrait = join(dir, "outputs", "portrait.png");
+  const size = [`--width=${width}`, `--height=${height}`];
+  run("npx", ["remotion", "still", "src/index.ts", "Reel", portrait, "--frame=480", ...size, "--log=error"], {
+    cwd: dir,
+  });
+  const pixels = luma(portrait);
+  let [left, top, right, bottom] = [width, height, -1, -1];
+  pixels.forEach((value, index) => {
+    if (value < 200) return;
+    const [x, y] = [index % width, Math.floor(index / width)];
+    [left, top, right, bottom] = [Math.min(left, x), Math.min(top, y), Math.max(right, x), Math.max(bottom, y)];
+  });
+  const centre = [(left + right + 1) / 2, (top + bottom + 1) / 2];
+  if (right < 0 || Math.abs(centre[0] - width / 2) > 2 || Math.abs(centre[1] - height / 2) > 2) {
+    throw new Error(`at ${width}x${height} the camera's focus lands at ${centre}, not the frame centre`);
+  }
+  console.log(`kit frames a ${width}x${height} cut on the camera's focus`);
+
   // A bundler resolves `./motion` for Remotion, Node does not, so spell the extensions out in this throwaway copy.
   // camera.ts reaches only .ts files, which is why it carries no JSX.
   for (const name of readdirSync(join(dir, "src")).filter((file) => file.endsWith(".ts"))) {
@@ -61,8 +124,9 @@ function check(root) {
     [
       'import assert from "node:assert/strict";',
       "try {",
-      '  await import("./src/camera.ts");',
+      '  const camera = await import("./src/camera.ts");',
       '  const kit = await import("./src/motion.ts");',
+      '  const curves = await import("./src/curves.ts");',
       "",
       "  // safeArea generalises the constant rather than replacing it, so the two must agree on the default frame",
       "  assert.deepEqual(kit.safeArea(), kit.ACTION_SAFE);",
@@ -82,6 +146,16 @@ function check(root) {
       "    kit.fitCamera(box, offCentre)[0],",
       "  );",
       "",
+      "  // a safe area narrower than its two margins has no zoom that fits, and used to return a negative one",
+      "  const sliver = { x: 0, y: 0, width: 40, height: 400 };",
+      "  assert.throws(() => kit.fitCamera(box, sliver), /cannot fit a 1200x700 box in a 40x400 safe area/);",
+      "",
+      "  // smoothPath reads keys in array order, so an unsorted key interpolated silently and a repeated time cut",
+      "  const still = [0, 960, 540, 1];",
+      "  assert.throws(() => kit.assertCameraKeys([[2, 960, 540, 1], still]), /comes after key 0/);",
+      "  assert.throws(() => kit.assertCameraKeys([still, [0, 960, 540, 2]]), /both at 0\\.00s/);",
+      "  kit.assertCameraKeys(camera.CAMERA);",
+      "",
       '  assert.equal(kit.readingTime("Short"), 0.8);',
       '  assert.equal(Math.round(kit.readingTime("Command palette Search by name") * 100) / 100, 2.26);',
       "  assert.equal(kit.beatsAt(94)(4), (4 * 60) / 94);",
@@ -91,6 +165,12 @@ function check(root) {
       "  assert.throws(() => kit.assertReadingTime(short), /holds 1\\.00s but needs 2\\.46s/);",
       '  kit.assertReadingTime([{ label: "caption", from: 0, to: 3, text: "Command palette Search by name" }]);',
       '  kit.assertReadingTime([{ label: "no text", from: 0, to: 0.1 }]);',
+      "",
+      "  // a lockup is readable once its LAST word has risen, which camera.ts counts from, and its comment quotes",
+      "  assert.equal(Math.round(curves.settled(0.55, 3) * 100) / 100, 1.63);",
+      '  const title = camera.READING.find(({ label }) => label === "title");',
+      "  assert.equal(Math.round((title.to - title.from) * 100) / 100, 0.82);",
+      '  assert.throws(() => kit.assertReadingTime([{ ...title, text: "R" }]), /needs 1\\.00s/);',
       "} catch (error) {",
       "  console.error(`kit: ${error.message}`);",
       "  process.exit(1);",
