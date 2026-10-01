@@ -408,13 +408,16 @@ const tone = (line: string) =>
     font-variant-numeric: tabular-nums;
   }
 
+  th {
+    text-align: left;
+  }
+
   thead th {
     padding: 0 0 0.75rem;
     border-bottom: 1px solid var(--border-strong);
     color: var(--muted);
     font-size: var(--text-sm);
     font-weight: 600;
-    text-align: left;
   }
 
   tbody th,
@@ -426,7 +429,6 @@ const tone = (line: string) =>
 
   tbody th {
     font-weight: 400;
-    text-align: left;
   }
 
   .beat {
@@ -443,8 +445,7 @@ const tone = (line: string) =>
     white-space: nowrap;
   }
 
-  .num,
-  thead .num {
+  .num {
     width: 5.5rem;
     text-align: right;
   }
