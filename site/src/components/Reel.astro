@@ -1,0 +1,375 @@
+---
+import { getImage } from "astro:assets";
+import reel from "../../../docs/demo-relay-web.mp4?url";
+import posterSource from "../../../docs/poster.png";
+
+// Beats and motion spans of docs/demo-relay-web.mp4, measured from the render rather than taken from its storyboard: a
+// frame-difference scan at 10 fps (ffmpeg scene score above 0.001), so every edge is within 0.1s. Re-measure when the
+// reel is replaced, because the timeline claims to show what this file does.
+const duration = 21.37;
+const clips = [
+  { label: "Title card", kind: "title", start: 0, end: 3.1, moves: [[0.2, 1.1]] },
+  { label: "01 Inbox", kind: "product", start: 3.1, end: 7.2, moves: [[3.1, 4.3]] },
+  {
+    label: "02 Focus mode",
+    kind: "product",
+    start: 7.2,
+    end: 17.3,
+    moves: [
+      [7.2, 8.7],
+      [9.5, 9.6],
+      [12.4, 13.8],
+    ],
+  },
+  {
+    label: "End card",
+    kind: "title",
+    start: 17.3,
+    end: duration,
+    moves: [
+      [17.3, 18.6],
+      [20.7, duration],
+    ],
+  },
+];
+
+const pct = (value: number, of: number) => `${((value / of) * 100).toFixed(3)}%`;
+const poster = await getImage({ src: posterSource, format: "webp", width: 1920 });
+---
+
+<figure class="reel" data-reel data-duration={duration}>
+  {/* Whatever led to the video, drawn attached to its top edge: on the page, the Claude Code prompt that asks for it. */}
+  <slot name="above" />
+  <div class="monitor">
+    <video
+      muted
+      playsinline
+      loop
+      preload="metadata"
+      poster={poster.src}
+      width="1920"
+      height="1080"
+      aria-label="A reel of Relay, a small issue tracker: a title card, the inbox, focus mode turned on in settings and an end card"
+    >
+      <source src={reel} type="video/mp4" />
+    </video>
+    <div class="safe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="transport">
+    <button type="button" class="play" data-play aria-label="Play reel">
+      <svg viewBox="0 0 16 16" aria-hidden="true"
+        ><path class="icon-play" d="M4 2.5v11l9-5.5z"></path><path class="icon-pause" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"
+        ></path></svg
+      >
+    </button>
+    <output class="timecode" data-timecode aria-hidden="true">00:00:00:00</output>
+
+    <ol class="track" aria-label="Beats in this reel">
+      {
+        clips.map((clip) => (
+          <li class={clip.kind} style={`flex-grow: ${clip.end - clip.start}`}>
+            <button type="button" data-seek={clip.start} aria-label={`Jump to ${clip.label}`}>
+              <span class="clip-label">{clip.label}</span>
+              <span class="moves" aria-hidden="true">
+                {clip.moves.map(([from, to]) => (
+                  <span
+                    style={`left: ${pct(from - clip.start, clip.end - clip.start)}; width: ${pct(to - from, clip.end - clip.start)}`}
+                  />
+                ))}
+              </span>
+            </button>
+          </li>
+        ))
+      }
+      <span class="playhead" data-playhead aria-hidden="true"></span>
+    </ol>
+  </div>
+
+  <figcaption>
+    <span class="legend"><i class="key moving"></i>Moving</span>
+    <span class="legend"><i class="key"></i>Holding still while you read</span>
+    <span class="made">Rendered in Remotion from the real components of the test app in the repo. No hand edits.</span>
+  </figcaption>
+</figure>
+
+<style>
+  .reel {
+    margin: 0;
+  }
+
+  .monitor {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--stage);
+  }
+
+  video {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* SMPTE ST 2046-1 action safe, the 3.5% inset edge-scan.mjs measures against. Section 4 points back at them. */
+  .safe {
+    position: absolute;
+    inset: 3.5%;
+    pointer-events: none;
+  }
+
+  .safe i {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border: 0 solid rgb(255 255 255 / 0.3);
+  }
+
+  .safe i:nth-child(1) {
+    top: 0;
+    left: 0;
+    border-width: 1px 0 0 1px;
+  }
+
+  .safe i:nth-child(2) {
+    top: 0;
+    right: 0;
+    border-width: 1px 1px 0 0;
+  }
+
+  .safe i:nth-child(3) {
+    bottom: 0;
+    left: 0;
+    border-width: 0 0 1px 1px;
+  }
+
+  .safe i:nth-child(4) {
+    right: 0;
+    bottom: 0;
+    border-width: 0 1px 1px 0;
+  }
+
+  .transport {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .play {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .play:hover {
+    border-color: var(--text);
+  }
+
+  .play svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+
+  .play .icon-pause,
+  .reel.playing .play .icon-play {
+    display: none;
+  }
+
+  .reel.playing .play .icon-pause {
+    display: inline;
+  }
+
+  .timecode {
+    min-width: 11ch;
+    font: 500 0.9rem var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--playhead);
+  }
+
+  .track {
+    position: relative;
+    display: flex;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .track li {
+    flex-basis: 0;
+    min-width: 0;
+  }
+
+  .track button {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 44px;
+    padding: 6px 8px 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 4px;
+    color: #111;
+    font: 600 0.75rem var(--body);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .title button {
+    background: var(--clip-title);
+  }
+
+  .product button {
+    background: var(--clip-product);
+  }
+
+  .clip-label {
+    position: relative;
+    z-index: 1;
+  }
+
+  .moves span {
+    position: absolute;
+    bottom: 0;
+    height: 18px;
+    background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.42) 0 3px, transparent 3px 6px);
+  }
+
+  .playhead {
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    left: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--playhead);
+    pointer-events: none;
+  }
+
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1.25rem;
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+
+  .legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .key {
+    width: 22px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--clip-product);
+  }
+
+  .key.moving {
+    background:
+      repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.42) 0 3px, transparent 3px 6px),
+      var(--clip-product);
+  }
+
+  .made {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .transport {
+      grid-template-columns: auto 1fr;
+    }
+
+    .track {
+      grid-column: 1 / -1;
+    }
+
+    .clip-label {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  for (const figure of document.querySelectorAll<HTMLElement>("[data-reel]")) {
+    const video = figure.querySelector("video")!;
+    const play = figure.querySelector<HTMLButtonElement>("[data-play]")!;
+    const timecode = figure.querySelector<HTMLOutputElement>("[data-timecode]")!;
+    const playhead = figure.querySelector<HTMLElement>("[data-playhead]")!;
+    const fallback = Number(figure.dataset.duration);
+    const fps = 60;
+    const two = (n: number) => String(n).padStart(2, "0");
+
+    const draw = () => {
+      const t = video.currentTime;
+      const length = video.duration || fallback;
+      const frames = Math.floor(t * fps);
+      timecode.value = `00:${two(Math.floor(frames / fps / 60))}:${two(Math.floor(frames / fps) % 60)}:${two(frames % fps)}`;
+      playhead.style.left = `${Math.min(t / length, 1) * 100}%`;
+    };
+
+    const loop = () => {
+      draw();
+      if (!video.paused) requestAnimationFrame(loop);
+    };
+
+    // Who paused it. The page pauses the reel when it scrolls away and resumes it on the way back, but never resumes a
+    // reel the reader paused themselves.
+    let theirs = false;
+
+    video.addEventListener("play", () => {
+      figure.classList.add("playing");
+      play.setAttribute("aria-label", "Pause reel");
+      loop();
+    });
+    video.addEventListener("pause", () => {
+      figure.classList.remove("playing");
+      play.setAttribute("aria-label", "Play reel");
+      draw();
+    });
+    video.addEventListener("seeked", draw);
+
+    play.addEventListener("click", () => {
+      theirs = !video.paused;
+      if (video.paused) video.play();
+      else video.pause();
+    });
+
+    for (const button of figure.querySelectorAll<HTMLButtonElement>("[data-seek]")) {
+      button.addEventListener("click", () => {
+        theirs = false;
+        video.currentTime = Number(button.dataset.seek);
+        video.play();
+      });
+    }
+
+    // Muted autoplay is allowed everywhere, but someone who asked for less motion gets a still poster and a play button.
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      new IntersectionObserver(
+        ([entry]) => {
+          if (!entry || theirs) return;
+          if (entry.isIntersecting) video.play().catch(() => {});
+          else video.pause();
+        },
+        { threshold: 0.4 },
+      ).observe(video);
+    }
+  }
+</script>

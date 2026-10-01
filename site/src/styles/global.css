@@ -1,0 +1,145 @@
+@import "@fontsource-variable/gabarito/wght.css";
+@import "@fontsource-variable/hanken-grotesk/wght.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+/*
+ * Two grounds. The page is a neutral grey with no hue, the way a grading suite paints its walls so nothing tints the
+ * picture (ITU-R BT.2035). The bands that hold a reel are black, so the reel's own dark stage runs into the page.
+ * The only colours are the timeline's, taken from the reel.
+ *
+ * A modest type scale: 1.2 at the small end, 1.25 at the large. Louder than that reads as an advert, and the reels
+ * are the loud thing here.
+ */
+:root {
+  color-scheme: dark;
+  --ground: #1a1b1d;
+  --stage: #000;
+  --panel: #232427;
+  --border: rgb(255 255 255 / 0.12);
+  --border-strong: rgb(255 255 255 / 0.24);
+  --text: #eeeef0;
+  --muted: #a3a5aa;
+  --playhead: #f2b544;
+  --clip-title: #8b7cf0;
+  --clip-product: #3fa7a0;
+
+  --display: "Gabarito Variable", system-ui, sans-serif;
+  --body: "Hanken Grotesk Variable", system-ui, sans-serif;
+  --mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --text-sm: 0.875rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --tracking-display: -0.02em;
+
+  --width: 72rem;
+  --gutter: 1rem;
+  --radius: 10px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--ground);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--display);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 0.25em;
+}
+
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 0.88em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--playhead);
+  outline-offset: 3px;
+}
+
+.wrap {
+  box-sizing: content-box;
+  max-width: var(--width);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.band {
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.band-stage {
+  background: var(--stage);
+}
+
+.section-title {
+  max-width: 24ch;
+  margin-bottom: 1.25rem;
+  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.lede {
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: var(--text-lg);
+  line-height: 1.5;
+}
+
+.caption {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

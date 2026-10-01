@@ -1,0 +1,47 @@
+name: Pages
+
+# The site reads the manifest, the README, the skills and the reels in docs/ at build time, so any of them changing
+# means the published page is stale.
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - docs/**
+      - plugin/**
+      - README.md
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and a running one is allowed to finish: cancelling mid-deploy can leave Pages half published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: withastro/action@v6
+        with:
+          path: ./site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

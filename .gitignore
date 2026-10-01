@@ -3,6 +3,8 @@ out/
 evals/results/
 .DS_Store
 dist/
+# Astro's generated types for site/.
+.astro/
 
 # Patterns the leak gate should also catch on this machine, never in the repo.
 .private-names

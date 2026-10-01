@@ -8,3 +8,7 @@ updates:
     directory: /evals/fixtures/relay-web
     schedule:
       interval: monthly
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: monthly

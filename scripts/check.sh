@@ -24,9 +24,12 @@ patterns='/Users/|/home/[a-z]|C:\\Users\\'
 if [ -f .private-names ]; then
   patterns="$patterns|$(tr '\n' '|' < .private-names | sed 's/|*$//')"
 fi
+# Lockfile integrity hashes are dropped: they are random base64, so a short pattern matched case-insensitively turns
+# up in one sooner or later. A lockfile's `resolved` URLs are still scanned, since that is where a private registry
+# host would leak.
 if grep -rniE --binary-files=without-match "$patterns" . \
-  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=renders \
-  --exclude=check.sh --exclude=ci.yml --exclude=.private-names; then
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=renders --exclude-dir=.astro \
+  --exclude=check.sh --exclude=ci.yml --exclude=.private-names | grep -vE '"integrity": "sha(1|256|384|512)-'; then
   echo "FAIL: the matches above must not ship"
   note
 else
@@ -54,6 +57,10 @@ node plugin/skills/create/scripts/fonts.mjs plugin/skills/create/assets/kit || n
 step "gate scripts"
 node plugin/skills/create/scripts/doctor.mjs || note
 node --test test/gates/*.test.mjs || note
+
+step "site builds"
+# The site imports the manifest, README and skills, so a change to any of them can break it.
+(cd site && npm ci --silent && npm run build --silent) || note
 
 step "fixtures build"
 (cd evals/fixtures/relay-web && npm ci --silent && npm run build --silent) || note
