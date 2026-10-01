@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "relay: sync local drafts with your Relay issue tracker. Test fixture for the react-launch-video plugin.",
+  "description": "relay: sync local drafts with your Relay issue tracker.",
   "bin": {
     "relay": "src/cli.js"
   },
