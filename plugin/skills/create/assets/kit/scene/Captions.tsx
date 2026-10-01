@@ -60,8 +60,8 @@ function ChapterCaption({
 }
 
 /**
- * Numbered feature names, bottom left, one at a time. While a caption is up, frame the product inside CAPTION_SAFE
- * (use fitCamera) so the caption never sits on product content, blurred or not, and check it on a contact sheet.
+ * Numbered feature names, bottom left. While a caption is up, frame the product inside CAPTION_SAFE (use fitCamera)
+ * so the caption never sits on product content, blurred or not, and check it on a contact sheet.
  * Easing: emphasized decelerate in over 0.8s with 80ms stagger, emphasized accelerate out over 0.4s.
  */
 export function Captions({
@@ -74,9 +74,12 @@ export function Captions({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const seconds = frame / fps;
-  const current = chapters.findIndex(({ from, to }) => seconds >= from && seconds <= to + 0.4);
-  if (current === -1) return null;
-  const { from, to } = chapters[current]!;
+  // Every caption whose window covers this frame, not just the first: when the next one starts before the last has
+  // finished leaving, the two cross, and each fades itself. Picking one made the next pop in halfway through its rise.
+  const current = chapters
+    .map((chapter, index) => ({ ...chapter, index }))
+    .filter(({ from, to }) => seconds >= from && seconds <= to + 0.4);
+  if (current.length === 0) return null;
 
   return (
     <AbsoluteFill>
@@ -86,10 +89,17 @@ export function Captions({
           position: "absolute",
           inset: 0,
           background: "radial-gradient(ellipse 45% 40% at 0% 100%, rgba(0,0,0,0.75), transparent 70%)",
-          opacity: tween(frame, fps, [from, from + 0.5], [0, 1]) * (1 - tween(frame, fps, [to, to + 0.4], [0, 1])),
+          opacity: Math.max(
+            ...current.map(
+              ({ from, to }) =>
+                tween(frame, fps, [from, from + 0.5], [0, 1]) * (1 - tween(frame, fps, [to, to + 0.4], [0, 1])),
+            ),
+          ),
         }}
       />
-      <ChapterCaption index={current} {...chapters[current]!} gradientClass={gradientClass} />
+      {current.map((chapter) => (
+        <ChapterCaption key={chapter.index} {...chapter} gradientClass={gradientClass} />
+      ))}
     </AbsoluteFill>
   );
 }
