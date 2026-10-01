@@ -143,7 +143,7 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
     overscanned, so this is a composition rule rather than a delivery one: a window border resting a few pixels from the
     edge reads as a mistake. Either frame it inside or bleed it well off, and never slice a line of text. Measured on
     real renders: borders at 5 to 16px from the edge and rows sliced during a push-in were the edge problems reviewers
-    caught, and `node scripts/edge-scan.mjs` finds both **when the border has contrast to find**. It thresholds on
-    Sobel magnitude, so a dark theme's own borders (a `#232833` line on `#0b0d12` peaks around 8 to 12) can sit below
+    caught, and the skill's `scripts/edge-scan.mjs` finds both **when the border has contrast to find**. It thresholds
+    on Sobel magnitude, so a dark theme's own borders (a `#232833` line on `#0b0d12` peaks around 8 to 12) can sit below
     it. The threshold now scales down for low-contrast strips, but on a dark UI check the margins by eye on a
     full-resolution crop rather than treating a clean scan as proof.

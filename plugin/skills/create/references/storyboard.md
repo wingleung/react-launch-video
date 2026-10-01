@@ -30,9 +30,10 @@ Every animated element, not only the big moves. If it changes over time, it has 
 `File.tsx:line` or `File.tsx:first-last`) and names the easing that code really applies, by constant name or numbers.
 Helper defaults count: the kit's `tween` eases out with `easeOut` when no easing is passed, `springAt` uses `SMOOTH` and
 a bare `interpolate` is linear. Prefer `File.tsx#symbol`, naming the declaration that owns the call, so
-`const productEnter = (s) => tween(...)` is cited as `curves.ts#productEnter`: a line number is invalidated by any edit above it and a name
-is not. Line and range citations still work. Generate the list with `node scripts/easing-inventory.mjs src`, and before
-the final render check the table with `--storyboard`. Delete kit components the reel does not use.
+`const productEnter = (s) => tween(...)` is cited as `curves.ts#productEnter`: a line number is invalidated by any edit
+above it and a name is not. Line and range citations still work. Generate the list with the skill's
+`scripts/easing-inventory.mjs` on `src` (SKILL.md step 6 has the absolute command), and before the final render check
+the table with `--storyboard`. Delete kit components the reel does not use.
 
 | Element                  | Property                  | Easing                                                                | Duration               | Code                                                                                                                              |
 | ------------------------ | ------------------------- | --------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |

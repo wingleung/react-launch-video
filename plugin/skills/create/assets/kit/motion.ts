@@ -186,7 +186,7 @@ export function safeArea(frame: Size = FRAME, inset = 0.035): Box {
 
 /**
  * SMPTE ST 2046-1 safe action area: 93% of the frame, 3.5% in from each edge. A window border resting between it and
- * the frame edge reads as a mistake: keep it inside or bleed it clearly off. node scripts/edge-scan.mjs checks renders.
+ * the frame edge reads as a mistake: keep it inside or bleed it clearly off. edge-scan.mjs checks renders.
  * For any frame other than 1920x1080, call `safeArea(frame)` instead.
  */
 export const ACTION_SAFE: Box = { x: 67, y: 38, width: 1786, height: 1004 };

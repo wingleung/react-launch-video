@@ -47,8 +47,8 @@ found after the storyboard is not.
 - **Root-relative URLs built at runtime return 404.** `Config.setPublicDir` is necessary and not sufficient: Remotion
   serves that folder under `/public/`, not at `/`. Any path the product assembles while running, an image path inside
   its data or a CSS custom property a theme loader sets, has to go through `staticFile`.
-- **In a monorepo, resolve from the app.** Point `resolve.modules` at the app's own `node_modules` and alias React to one
-  copy so hooks find their provider. Point the TypeScript types at the product's `@types/react`. Put the reel
+- **In a monorepo, resolve from the app.** Point `resolve.modules` at the app's own `node_modules` and alias React to
+  one copy so hooks find their provider. Point the TypeScript types at the product's `@types/react`. Put the reel
   package outside the workspace globs too, or the user's task runner and CI pick up a Remotion package nobody meant to
   ship.
 - **Build-time CSS extraction has to cover the reel as well.** The utility CSS rule in section 2 is not only about
@@ -209,18 +209,18 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
 ## 8. Verification
 
 - Typecheck the reel and the product after every structural change.
-- Render the full video (JPEG frames render fast), then pull frames at cue points with `node scripts/contact-sheet.mjs`:
-  just before a move, mid-move, on arrival, mid-hold and mid-handoff. Read the sheets. Look for: empty or near-empty
-  frames, content cropped by the frame edge, text rising over the product, overlapping captions or keycaps,
-  mid-transition mismatches (a highlight and an active row disagreeing), text that is too small, a state swap that
-  flashes.
+- Render the full video (JPEG frames render fast), then pull frames at cue points with the skill's
+  `scripts/contact-sheet.mjs`: just before a move, mid-move, on arrival, mid-hold and mid-handoff. Read the sheets. Look
+  for: empty or near-empty frames, content cropped by the frame edge, text rising over the product, overlapping captions
+  or keycaps, mid-transition mismatches (a highlight and an active row disagreeing), text that is too small, a state
+  swap that flashes.
 - Confirm small effects (a beam around a 32px icon) with a full-resolution crop: a half-scale sheet hides them.
 - After a timing change, re-check the frames around every cue that moved, not only the one you meant to change.
 - An unchanged-looking result deserves suspicion: confirm the change landed with a frame that must differ.
-- Run the gates, all exiting 0: `node scripts/check-video.mjs` (resolution, length, fades, no empty stage),
-  `node scripts/edge-scan.mjs` (borders inside the action-safe margin, content off the edge to crop and judge) and
-  `node scripts/easing-inventory.mjs src --storyboard storyboard.md` (storyboard easings match the code). A problem is
-  fixed or shown not to be one, never accepted.
+- Run the gates with the skill's `scripts/gates.mjs` (SKILL.md step 6 has the absolute command), all exiting 0. It
+  runs `check-video` (resolution, length, fades, no empty stage), `edge-scan` (borders inside the action-safe margin,
+  content off the edge to crop and judge), `easing-inventory` (storyboard easings match the code) and the other three.
+  A problem is fixed or shown not to be one, never accepted.
 - Finish with `/react-launch-video:review` on the timeline and the sheets.
 
 ## 8b. Fonts and motion blur
@@ -232,9 +232,10 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
   weights and axes and record the substitution. `references/frameworks.md` has the table.
 - **Motion blur**: `@remotion/motion-blur` CameraMotionBlur stacks translucent copies in the browser. On a real reel it
   banded dark gradients (column jitter nearly doubled) and rendered about 6x slower. Instead register
-  `MotionBlurComposition` (kit) with the reel's `width` and `height` from `Root.tsx` and run `scripts/render-motion-blur.mjs`, which renders 4 samples per frame over a 180°
-  shutter and averages them in ffmpeg at 16 bits. Remotion's bundled ffmpeg lacks `tmix`, so this needs a system ffmpeg.
-  Keep a draft render script without blur for iteration.
+  `MotionBlurComposition` (kit) with the reel's `width` and `height` from `Root.tsx` and run the skill's
+  `scripts/render-motion-blur.mjs`, which renders 4 samples per frame over a 180° shutter and averages them in ffmpeg at
+  16 bits. Remotion's bundled ffmpeg lacks `tmix`, so this needs a system ffmpeg. Keep a draft render script without
+  blur for iteration.
 
 ## 9. Environment and hand-off
 

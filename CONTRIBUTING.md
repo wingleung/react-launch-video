@@ -44,11 +44,11 @@ not convert the MP4 by hand: both start after the title card has risen, because 
 frame 0 is the only frame a thumbnail ever shows.
 
 The CLI reel has its own pair, `docs/demo-relay-cli.mp4` and `docs/poster-relay-cli.png`, which the site imports and
-`make-demo.sh` does not touch. The site also serves a 720p copy of the web reel for phones, `site/src/assets/demo-relay-web-720p.mp4`.
-Replace `docs/demo-relay-web.mp4` and that copy has to be re-encoded too, with the command `site/README.md` points
-to.
+`make-demo.sh` does not touch. The site also serves a 720p copy of the web reel for phones,
+`site/src/assets/demo-relay-web-720p.mp4`. Replace `docs/demo-relay-web.mp4` and that copy has to be re-encoded too,
+with the command `site/README.md` points to.
 
 ## Scope
 
-This plugin covers React web apps and CLIs. Support for other stacks is a real piece of work, not a tweak: open an issue first
-so we can agree what "rendering the real product" means there.
+This plugin covers React web apps and CLIs. Support for other stacks is a real piece of work, not a tweak: open an issue
+first so we can agree what "rendering the real product" means there.

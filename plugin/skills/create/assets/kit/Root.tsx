@@ -10,8 +10,9 @@ import "./reel.css";
  * with it. A hardcoded frame count is the classic way to end up with a second of black after the fade, or with the
  * end card cut off, and neither shows up until someone watches the very end.
  *
- * Change `width` and `height` for a vertical or square cut, and pass the same numbers to `check-video.mjs` and
- * `edge-scan.mjs`, which default to 1920x1080 and will otherwise fail a correct render.
+ * Change `width` and `height` for a vertical or square cut, and pass the same numbers to `gates.mjs` (it hands them
+ * to `check-video.mjs`, which defaults to 1920x1080 and will otherwise fail a correct render). `edge-scan.mjs` needs
+ * neither: its safe margin is a share of whatever frame it reads.
  */
 export function RemotionRoot() {
   return (

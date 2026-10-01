@@ -22,8 +22,8 @@ component can be called as a function in a browser with props you supply.
 | Astro, Eleventy or any site with no React component at all  | **No**   | There is nothing props-driven to import, so every pixel would be redrawn from scratch, which is the one thing this method refuses. Say so and stop. The honest alternatives are a screen recording, or extracting the piece worth showing into a React island first and reeling that |
 | Vue, Svelte, Angular, native mobile or desktop              | **No**   | Out of scope for this skill. Say so and stop                                                                                                                                                                                                                                         |
 
-`next/*` components in a reel: replace `next/image` with a plain `<img>` inside the display-only view and `next/link` with
-an `<a>`, and read `useRouter` state from props instead. Record each substitution in the storyboard's truthfulness
+`next/*` components in a reel: replace `next/image` with a plain `<img>` inside the display-only view and `next/link`
+with an `<a>`, and read `useRouter` state from props instead. Record each substitution in the storyboard's truthfulness
 table, because the reel is then showing something very slightly different from what ships.
 
 ## Styling
