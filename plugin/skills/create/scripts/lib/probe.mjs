@@ -2,7 +2,11 @@
 // shared with contact-sheet, which tolerated the trailing comma differently. Both tolerances are kept here.
 import { runText } from "./run.mjs";
 
-/** Width, height and duration of the first video stream. */
+/**
+ * Width, height and duration of the first video stream. The container's duration is only the fallback, for formats
+ * that record none per stream: a container is as long as its longest stream, so a score that runs past the last frame
+ * would otherwise set the reel's length.
+ */
 export function probeGeometry(video) {
   const raw = runText("ffprobe", [
     "-v",
@@ -10,7 +14,7 @@ export function probeGeometry(video) {
     "-select_streams",
     "v:0",
     "-show_entries",
-    "stream=width,height:format=duration",
+    "stream=width,height,duration:format=duration",
     "-of",
     "json",
     video,
@@ -18,7 +22,9 @@ export function probeGeometry(video) {
   const probe = JSON.parse(raw);
   const stream = probe.streams?.[0];
   if (!stream) throw new Error(`${video} has no video stream`);
-  return { width: stream.width, height: stream.height, duration: Number(probe.format.duration) };
+  const own = Number(stream.duration);
+  const duration = Number.isFinite(own) && own > 0 ? own : Number(probe.format.duration);
+  return { width: stream.width, height: stream.height, duration };
 }
 
 /** Frames per second. ffprobe prints a rational ("60/1") and sometimes a trailing comma. */

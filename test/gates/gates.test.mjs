@@ -150,6 +150,15 @@ describe("check-video", () => {
     assert.match(stdout, /^FAIL {2}no near-empty stage mid-reel \(FOUND 2\.00s to 2\.08s\)$/m);
   });
 
+  // A container is as long as its longest stream, so a score that runs past the last frame used to set the length.
+  test("measures the video stream, not a longer audio track muxed beside it", () => {
+    const long = join(clips, "long-audio.mp4");
+    ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=30", "-c:a", "aac", join(clips, "tone30.m4a"));
+    ffmpeg("-i", demo, "-i", join(clips, "tone30.m4a"), "-map", "0:v", "-map", "1:a", "-c", "copy", long);
+    const { stdout } = gate(join(create, "check-video.mjs"), [long]);
+    assert.match(stdout, /duration 15 to 30s \(is 21\.37s\)/);
+  });
+
   test("formats the duration bounds the way %g does", () => {
     const { stdout } = gate(join(create, "check-video.mjs"), ["--min", "17.5", "--max", "1234567", demo]);
     assert.match(stdout, /duration 17\.5 to 1\.23457e\+06s \(is 21\.37s\)/);
