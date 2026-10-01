@@ -5,7 +5,7 @@
       "id": 1,
       "name": "relay-web-focus-mode",
       "skill": "create",
-      "prompt": "Make a ~20s cinematic promo reel of Relay's Focus mode: in Settings you turn it on and the inbox then only shows your team's issues. The app is in evals/fixtures/relay-web (React). Our users are on Linux and Windows laptops. Remotion is not installed: create the reel as its own package and install exact-pinned remotion and @remotion/* versions with npm. Put the deliverables in outputs/: reel.mp4, storyboard.md and the frames you reviewed.",
+      "prompt": "Make a ~20s cinematic promo reel of Relay's Focus mode: in Settings you turn it on and the inbox then only shows your team's issues. The app is in ./relay-web (React). Our users are on Linux and Windows laptops. Remotion is not installed: create the reel as its own package and install exact-pinned remotion and @remotion/* versions with npm. Put the deliverables in outputs/: reel.mp4, storyboard.md and the frames you reviewed.",
       "files": ["evals/fixtures/relay-web"],
       "expected_output": "A 15 to 30s 1920x1080 reel rendered from Relay's real components, showing the inbox before and after Focus mode, with a storyboard whose easings match the code and all three gate scripts passing.",
       "assertions": [
@@ -38,7 +38,7 @@
       "id": 2,
       "name": "relay-cli-sync",
       "skill": "create",
-      "prompt": "Make a short cinematic promo reel for our CLI `relay` showing `relay sync`: it compares local drafts with the server, you choose what to push, it pushes and prints a summary. The CLI source is in evals/fixtures/relay-cli. Our users are on Linux and Windows laptops. Remotion is not installed: create the reel as its own package and install exact-pinned remotion and @remotion/* versions with npm. Put the deliverables in outputs/: reel.mp4, storyboard.md and the frames you reviewed.",
+      "prompt": "Make a short cinematic promo reel for our CLI `relay` showing `relay sync`: it compares local drafts with the server, you choose what to push, it pushes and prints a summary. The CLI source is in ./relay-cli. Our users are on Linux and Windows laptops. Remotion is not installed: create the reel as its own package and install exact-pinned remotion and @remotion/* versions with npm. Put the deliverables in outputs/: reel.mp4, storyboard.md and the frames you reviewed.",
       "files": ["evals/fixtures/relay-cli"],
       "expected_output": "A 15 to 30s reel of a terminal recreated from the CLI source, with the sync prompt shown as the code path renders it.",
       "assertions": [
@@ -63,20 +63,20 @@
         "Every UI element on screen exists in the product as it ships: nothing the product hides or disables is drawn as real, and anything drawn for the reel is flagged as a placeholder",
         "Any problem the run rules 'not a problem' cites a rule that covers it and a premise that holds in the product's own code (a claim about how a library renders is traced through the code path that runs)",
         "Every on-screen CLI line that is not in the CLI source is flagged as placeholder",
-        "The multi-select is shown as the sync path renders it: no key help line (sync passes showHelp: false) and unselected rows in the light grey 252, because sync never asks for the background colour (only the spinner does)"
+        "The multi-select is shown as the sync path renders it: no key help line (sync passes showHelp: false) and, if any row is shown deselected, that row in the light grey 252, because sync never asks for the background colour (only the spinner does)"
       ]
     },
     {
       "id": 3,
       "name": "review-flawed-reel",
       "skill": "review",
-      "prompt": "Can you review our status page promo reel before we do the final render? The project is in evals/fixtures/flawed-reel. Write your review to review.md.",
+      "prompt": "Can you review our status page promo reel before we do the final render? The project is in ./flawed-reel. Write your review to review.md.",
       "files": ["evals/fixtures/flawed-reel"],
       "expected_output": "A severity-ranked review that finds the seeded flaws in the fixture.",
       "assertions": [
         "Flags the Command palette caption held about 1.2s as far below its reading time",
         "Flags the gap between the title leaving (about 2.6s) and the product entering (3.2s) as an empty or queued handoff",
-        "Flags the 27s arrow-key walk at 0.08s steps as both too long and too fast to follow, and the 41s total as too long",
+        "Flags the 27s arrow-key walk at 0.08s steps as both too long and too fast to follow, and the 40s total as too long",
         "Flags the end card as too short and ending in a hard cut with no fade",
         "Flags the camera as stop-go: interpolate with ease-in-out across many keyframes stops at every key",
         "Flags the product entrance using an ease-in curve on an arrival",
