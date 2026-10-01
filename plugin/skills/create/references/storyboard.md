@@ -38,9 +38,9 @@ the final render check the table with `--storyboard`. Delete kit components the 
 | ------------------------ | ------------------------- | --------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Title words              | opacity, y, blur          | emphasizedIn `0.05, 0.7, 0.1, 1`, 90ms stagger                        | 0.9s                   | `curves.ts#rise`                                                                                                                  |
 | Title exit               | scale, y, blur / opacity  | emphasizedOut `0.3, 0, 0.8, 0.15` / easeOut                           | 0.7s / 0.45s           | `curves.ts#titleRecede` `curves.ts#titleGone`                                                                                     |
-| Product entrance / exit  | y, rotateX, scale, blur   | emphasizedIn / emphasizedOut, opacity out easeInOut, blur out easeOut | 1.0s / 0.8s, blur 0.4s | `curves.ts#productEnter` `curves.ts#productArrived` `curves.ts#productRecede` `curves.ts#productGone` `curves.ts#productDissolve` |
+| Product entrance / exit  | y, rotateX, scale, blur   | emphasizedIn / emphasizedOut, opacity out easeInOut, blur out easeOut | 1.0s / 0.8s, blur 0.3s | `curves.ts#productEnter` `curves.ts#productArrived` `curves.ts#productRecede` `curves.ts#productGone` `curves.ts#productDissolve` |
 | Camera                   | focus, zoom               | `smoothPath` monotone cubic through keys                              | per key                | `Reel.tsx#track`                                                                                                                  |
-| Product parts build      | opacity, y                | spring SMOOTH `damping 200`, 0.55s                                    | 0.55s                  | `reveal.ts:32`                                                                                                                    |
+| Product parts build      | opacity, y                | spring SMOOTH `damping 200`, 0.55s                                    | 0.55s                  | `reveal.ts#progress`                                                                                                              |
 | Captions in / out, scrim | opacity, y, blur          | emphasizedIn 0.8s, 80ms stagger / emphasizedOut 0.4s, scrim easeOut   |                        | `Captions.tsx#enter` `Captions.tsx#leave` `Captions.tsx#current`                                                                  |
 | Keycaps                  | y, opacity / press, leave | spring SNAPPY `damping 22, stiffness 260, mass 0.7` / easeOut         |                        | `Keys.tsx#enter` `Keys.tsx#leave` `Keys.tsx#down`                                                                                 |
 | Cursor                   | x / y / click / fade      | easeInOut / settleY `0.3, 0.9, 0.3, 1` / linear / easeOut             |                        | `Cursor.tsx#previous` `Cursor.tsx#press`                                                                                          |
@@ -48,7 +48,7 @@ the final render check the table with `--storyboard`. Delete kit components the 
 | Ambient glow drift       | backdrop glow position    | sine                                                                  | continuous             | `scene/Stage.tsx`                                                                                                                 |
 | Fade from and to black   | opacity                   | easeInOut `0.65, 0, 0.35, 1`                                          | 0.8s / 0.6s            | `curves.ts#reelFade`                                                                                                              |
 
-The line numbers above are the kit's. Yours move as you edit, so regenerate before the final check.
+The citations above name the kit's own declarations. Yours change as you edit, so regenerate before the final check.
 
 ## Effect budget
 
@@ -119,7 +119,7 @@ the review skill will raise again from scratch.
 ## Worked example (a 26s reel of a browser extension)
 
 0. Fade from black 0.8s. Logo and "Relay Issue Search" rise word by word (90ms stagger), hold to 2.45s, recede.
-1. Browser rises 0.15s into the title exit (1.0s, emphasized decelerate), URL types, page wireframe builds.
+1. Browser rises 0.05s into the title exit (1.0s, emphasized decelerate), URL types, page wireframe builds.
 2. Cursor arcs to the toolbar icon while a border beam laps it once, click with ripple.
 3. Real popup opens loading, grows to the real linked issue (measured heights), camera pushes to 1.7x with a slight pull
    back first, card border beam, cursor rests on a link, hold 3s. Caption "01 Issue popup".

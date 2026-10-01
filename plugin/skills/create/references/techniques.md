@@ -40,15 +40,15 @@ found after the storyboard is not.
 
 - **A Vite product bundles fine unless it uses Vite's own features.** Grep for them before assuming a fight:
   `grep -rE "import\.meta\.(glob|env)|\.ya?ml"" src`. `import.meta.glob` has no webpack equivalent and needs a small
-  pre-loader that expands it into real imports, `import.meta.env` needs a `DefinePlugin`, and any import the product's
+  pre-loader that expands it into real imports. `import.meta.env` needs a `DefinePlugin` and any import the product's
   plugins handle (yaml, and anything else non-standard) needs its own loader. Root-relative `url()` in CSS resolves
   only once `resolve.roots` points at the product's public folder. A plain Vite app with none of these needs one
   alias.
 - **Root-relative URLs built at runtime return 404.** `Config.setPublicDir` is necessary and not sufficient: Remotion
   serves that folder under `/public/`, not at `/`. Any path the product assembles while running, an image path inside
   its data or a CSS custom property a theme loader sets, has to go through `staticFile`.
-- **In a monorepo, resolve from the app.** Point `resolve.modules` at the app's own `node_modules`, alias React to one
-  copy so hooks find their provider, and point the TypeScript types at the product's `@types/react`. Put the reel
+- **In a monorepo, resolve from the app.** Point `resolve.modules` at the app's own `node_modules` and alias React to one
+  copy so hooks find their provider. Point the TypeScript types at the product's `@types/react`. Put the reel
   package outside the workspace globs too, or the user's task runner and CI pick up a Remotion package nobody meant to
   ship.
 - **Build-time CSS extraction has to cover the reel as well.** The utility CSS rule in section 2 is not only about
@@ -95,7 +95,7 @@ found after the storyboard is not.
 
   This is worth its own line because of how it fails. The component renders, the render exits 0, the layout is right
   and the utility classes work, so it looks like a success. What is wrong is typography: links come back
-  browser-default blue and underlined, headings take the user agent's margins, and buttons lose their reset. It reads
+  browser-default blue and underlined, headings take the user agent's margins and buttons lose their reset. It reads
   as "slightly off brand" rather than as a broken render, which is exactly the kind of thing that ships. Measured on a
   real extension, the fix was one import line and it changed nothing else.
 
@@ -129,7 +129,7 @@ Reels of CLIs and library-driven UI keep getting this wrong in the same way: rea
 drawing what the file says, instead of what the product's call path selects.
 
 - **Start at the product's call site and follow the calls.** Example from a Go CLI built on huh v2.0.3 (a terminal forms
-  library): the CLI's own prompt helper calls `huh.NewMultiSelect(...).Run()`, `Run` calls `huh.Run`, and `huh.Run`
+  library): the CLI's own prompt helper calls `huh.NewMultiSelect(...).Run()`, `Run` calls `huh.Run` and `huh.Run`
   builds the form `WithShowHelp(false)`: so no help line, whatever the field's own help would say. What the call path
   sets wins over the library's defaults.
 - **Environment choices are only made if the code asks for them.** Dark or light background, terminal width and colour
@@ -160,7 +160,7 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
 
 - Heights and positions of real UI depend on data. Measure them in a `useLayoutEffect` (runs before capture) and write
   styles directly: `offsetHeight`, and `boxWithin(element, container)` in the kit for positions that ignore transforms.
-- To animate between two states (loading to loaded), render BOTH as real DOM (one hidden if needed), measure both, and
+- To animate between two states (loading to loaded), render BOTH as real DOM (one hidden if needed), measure both and
   interpolate a shared panel's height. One panel background with crossfading contents avoids a dark flash, which a
   second opaque panel on top causes.
 - When a value really must be a constant, measure it once with a throwaway composition that prints the measurement as
@@ -232,7 +232,7 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
   weights and axes and record the substitution. `references/frameworks.md` has the table.
 - **Motion blur**: `@remotion/motion-blur` CameraMotionBlur stacks translucent copies in the browser. On a real reel it
   banded dark gradients (column jitter nearly doubled) and rendered about 6x slower. Instead register
-  `MotionBlurComposition` (kit) and run `scripts/render-motion-blur.mjs`, which renders 4 samples per frame over a 180°
+  `MotionBlurComposition` (kit) with the reel's `width` and `height` from `Root.tsx` and run `scripts/render-motion-blur.mjs`, which renders 4 samples per frame over a 180°
   shutter and averages them in ffmpeg at 16 bits. Remotion's bundled ffmpeg lacks `tmix`, so this needs a system ffmpeg.
   Keep a draft render script without blur for iteration.
 

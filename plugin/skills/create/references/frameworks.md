@@ -22,7 +22,7 @@ component can be called as a function in a browser with props you supply.
 | Astro, Eleventy or any site with no React component at all  | **No**   | There is nothing props-driven to import, so every pixel would be redrawn from scratch, which is the one thing this method refuses. Say so and stop. The honest alternatives are a screen recording, or extracting the piece worth showing into a React island first and reeling that |
 | Vue, Svelte, Angular, native mobile or desktop              | **No**   | Out of scope for this skill. Say so and stop                                                                                                                                                                                                                                         |
 
-`next/*` components in a reel: replace `next/image` with a plain `<img>` inside the display-only view, `next/link` with
+`next/*` components in a reel: replace `next/image` with a plain `<img>` inside the display-only view and `next/link` with
 an `<a>`, and read `useRouter` state from props instead. Record each substitution in the storyboard's truthfulness
 table, because the reel is then showing something very slightly different from what ships.
 
@@ -42,7 +42,7 @@ has to be told the reel's own sources exist, or the render succeeds and the prod
 
 ## Fonts
 
-The rule is that a font comes from the product or from a licensed package, never from a system font folder, and never
+The rule is that a font comes from the product or from a licensed package, never from a system font folder and never
 over the network at render time. Three of the four common setups fit it directly:
 
 - **Self-hosted in `public/`**: the designed path, through `Config.setPublicDir` and `@remotion/fonts`.

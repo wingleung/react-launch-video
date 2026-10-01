@@ -5,10 +5,10 @@ description: >-
   video, animated walkthrough, motion graphics showcase) of a React web app or a CLI, in the style of Linear, Vercel or
   Framer launch videos. Renders the product's real components in Remotion (or recreates a CLI's terminal from its
   source) with a storyboard, sourced reading-time holds, title and end cards, feature captions, a still-holding camera
-  and scripted quality gates. Use this whenever someone wants a video of their app, extension, website or CLI, asks how
-  to time or pace a promo or demo video, wants a title card, end card or smoother intro or outro, or asks to make a
+  and scripted quality gates. Use this whenever someone wants a video of their app, extension, website or CLI, wants a
+  title card, end card or smoother intro or outro, asks how to time or pace a promo or demo video or asks to make a
   Remotion video more cinematic, even if they never say Remotion or cinematic. React web apps and CLIs only:
-  not Vue, Svelte, Angular, plain HTML or native apps, not editing or cleaning up an existing screen recording, and not
+  not Vue, Svelte, Angular, plain HTML or native apps, not editing or cleaning up an existing screen recording and not
   in-app UI animation code. For a reel that already exists, review it first.
 ---
 
@@ -29,7 +29,7 @@ and redrawing it by hand is exactly what the method avoids.
 
 "React web app" is not the whole question, because what has to render is a component called as a function in a browser
 with props you supply. React Server Components cannot be. Read `references/frameworks.md` before step 1b: it says which
-rendering models, styling systems and font setups work, which need setup, and which to refuse.
+rendering models, styling systems and font setups work, which need setup and which to refuse.
 
 Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
 
@@ -40,47 +40,48 @@ Paths below are relative to this skill's folder, `${CLAUDE_SKILL_DIR}`.
 - `references/storyboard.md`: the beat sheet template with reading-time columns and a worked example.
 - `references/techniques.md`: how to render real components frame by frame and every pitfall hit doing it. Read the
   section you need when you reach that step.
-- `assets/kit/`: copy-in source. `motion.ts` (easings, `tween`, `smoothPath` camera curve), `reveal.ts` (`useReveal`,
-  `boxWithin`), `reel.css`, `timeline.ts`, `curves.ts` (every opacity and blur curve, as plain functions so a script
-  can evaluate one), `camera.ts`, `Reel.tsx` and `Root.tsx` skeletons, and `scene/`
-  components:
-  `Stage` (drifting glow backdrop), `Lockup` and `Titles` (title and end card), `Captions`, `Keys` (keycaps), `Cursor`,
-  `Ring` (border beam and selection ring).
-- `node ${CLAUDE_SKILL_DIR}/scripts/doctor.mjs`: checks Node and ffmpeg (with the filters the gates use) and prints
-  install hints for this
-  OS. Step 1b runs it first, before anything is installed.
-- `node ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: tiles six frames of a render into a review sheet, or crops one
-  at full resolution.
+- `references/frameworks.md`: which rendering models, styling systems and font setups render inside Remotion. Read it
+  before step 1b.
+- `references/customise.md`: every placeholder the kit leaves open, with where to set it from. Work down it once the
+  package is copied.
+- `assets/scaffold/`: the reel package root (`package.json` with pinned versions, `tsconfig.json`,
+  `remotion.config.ts`).
+- `assets/kit/`: copy-in source for the package's `src/`. `motion.ts` (easings, `tween`, `smoothPath` camera curve),
+  `reveal.ts` (`useReveal`, `boxWithin`), `reel.css`, `timeline.ts`, `curves.ts` (every opacity and blur curve, as
+  plain functions so a script can evaluate one), `camera.ts`, the `Reel.tsx` and `Root.tsx` skeletons and the `scene/`
+  components: `Stage` (drifting glow backdrop), `Lockup` and `Titles` (title and end card), `Captions`, `Keys`
+  (keycaps), `Cursor` and `Ring` (border beam and selection ring).
+- `node ${CLAUDE_SKILL_DIR}/scripts/gates.mjs`: runs all six gates below on a render and its source in one command,
+  after a preflight that refuses a reel still wearing the kit's placeholders. This is the one step 6 runs. The six
+  can also run on their own:
 - `node ${CLAUDE_SKILL_DIR}/scripts/check-video.mjs`: hard gates on a render (resolution, duration range, fade from and
-  to black, no
-  near-empty stage mid-reel, which is what a queued handoff looks like). Exits non-zero when a gate fails. Pass
-  `--width` and `--height` for a cut that is not 16:9.
+  to black, no near-empty stage mid-reel, which is what a queued handoff looks like). Exits non-zero when a gate
+  fails. Pass `--width` and `--height` for a cut that is not 16:9.
 - `node ${CLAUDE_SKILL_DIR}/scripts/edge-scan.mjs`: finds borders resting inside the action-safe margin (fails) and
-  content running off the
-  frame edge (ranges to crop and judge). Once a range has been cropped and judged deliberate, list it in
-  `--accept "top:7.8-13.0"` so later renders stop reporting it.
+  content running off the frame edge (ranges to crop and judge). Once a range has been cropped and judged deliberate,
+  list it in `--accept "top:7.8-13.0"` so later renders stop reporting it.
 - `node ${CLAUDE_SKILL_DIR}/scripts/easing-inventory.mjs`: lists every motion call with the easing the code really
-  applies and checks the
-  storyboard's easing table against it.
+  applies and checks the storyboard's easing table against it.
 - `node ${CLAUDE_SKILL_DIR}/scripts/claims.mjs`: re-derives every number a comment or a doc claims about the reel's
-  timing from
-  `curves.ts`, and fails prose that puts a percentage or a pixel figure beside a signal without one. Write a
-  measurement as `[measured: product blur at endCard is 14.0px]` and it stays true or the gate says so. Run
+  timing from `curves.ts`, and fails prose that puts a percentage or a pixel figure beside a signal without one. Write
+  a measurement as `[measured: product blur at endCard is 14.0px]` and it stays true or the gate says so. Run
   `--values cues` to print every signal at every cue, which is where the number in a claim comes from.
 - `node ${CLAUDE_SKILL_DIR}/scripts/fonts.mjs`: lists every font the reel loads with where it comes from, and fails a
-  font taken from a
-  machine's font folder, one fetched over the network at render time, or a family named in a stack that nothing
-  loads. That last one renders in the fallback and looks plausible, so nobody catches it by eye.
+  font taken from a machine's font folder or fetched over the network at render time (an `@remotion/google-fonts`
+  loader counts as network), and a family named in a stack or a JSX `fontFamily` that nothing loads. That last one
+  renders in the fallback and looks plausible, so nobody catches it by eye.
 - `node ${CLAUDE_SKILL_DIR}/scripts/lightness.mjs`: checks the `LIGHTNESS` in `curves.ts` against the product that
-  actually rendered, by
-  finding the product's own background in the frame. Catches the shipped default left on a pale product, which needs
-  no action to happen and which no other gate sees.
-- `${CLAUDE_SKILL_DIR}/scripts/render-motion-blur.mjs` with `assets/kit/MotionBlur.tsx`: optional band-free motion blur
-  for the final
-  render.
+  actually rendered, by finding the product's own background in the frame. Catches the shipped default left on a pale
+  product, which needs no action to happen and which no other gate sees.
+- `node ${CLAUDE_SKILL_DIR}/scripts/doctor.mjs`: checks Node and ffmpeg (with the filters the gates use) and prints
+  install hints for this OS. Step 1b runs it first, before anything is installed.
+- `node ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: tiles six frames of a render into a review sheet, or crops one
+  at full resolution.
+- `node ${CLAUDE_SKILL_DIR}/scripts/render-motion-blur.mjs` with `assets/kit/MotionBlur.tsx`: optional band-free
+  motion blur for the final render.
 - `node ${CLAUDE_SKILL_DIR}/scripts/add-music.mjs`: puts a track on a finished reel by copying the video stream, never
-  re-encoding it.
-  Taking a reel through an editor to add music re-encodes it, and these gradients band when that happens.
+  re-encoding it. Taking a reel through an editor to add music re-encodes it, and these gradients band when that
+  happens. A track shorter than the reel is padded with silence, so every frame is kept.
 
 ## Workflow
 
@@ -109,16 +110,23 @@ Then stand up the reel package. It is a copy, not something to write from scratc
 ```
 mkdir -p reel && cp -R ${CLAUDE_SKILL_DIR}/assets/scaffold/. reel/
 mkdir -p reel/src && cp -R ${CLAUDE_SKILL_DIR}/assets/kit/. reel/src/
-cd reel && npm install && npm run still
 ```
 
 The scaffold is the package root (`package.json` with pinned versions and the `studio`, `render` and `still` scripts,
-`tsconfig.json`, `remotion.config.ts`) and the kit is its `src/`. That writes `outputs/still.png`: a dim drifting
-gradient with nothing on it, which is the kit's empty stage and is what proves the toolchain before the product is
-involved. It renders frame 480 rather than frame 0, because frame 0 is the fade from black and a black image looks
-the same whether Remotion works or not. Now point it at the product: import its most important component
-unchanged into `src/Reel.tsx` with hand-written props and run `npm run still` again. Do not split anything yet, and do
-not style the reel: this package is the one step 4 builds on, so the work is not thrown away.
+`tsconfig.json`, `remotion.config.ts`) and the kit is its `src/`. Before the first still, set the product's path in
+`reel/remotion.config.ts`, which ships pointing at `../my-product`. The config throws until it names a real folder,
+because a missing product still renders the empty stage and exits 0, which would pass for a working toolchain. Then:
+
+```
+cd reel && npm install && npm run still
+```
+
+That writes `outputs/still.png`: a dim drifting gradient with nothing on it, which is the kit's empty stage and is
+what proves the toolchain before the product is involved. It renders frame 480 rather than frame 0, because frame 0
+is the fade from black and a black image looks the same whether Remotion works or not. Now bring in the product:
+import its most important component unchanged into `src/Reel.tsx` with hand-written props and run `npm run still`
+again. Do not split anything yet, and do not style the reel: this package is the one step 4 builds on, so the work is
+not thrown away.
 
 Read the still. A command that exits 0 is not a pass: a component that renders a loading skeleton, an unstyled block,
 the wrong theme or an overlay drawn outside the frame has failed this gate as surely as one that threw.
@@ -183,7 +191,7 @@ The storyboard also fixes five things that are expensive to retrofit:
 - **Legibility at the zoom you chose.** For each framing, write down the smallest UI text that has to be readable and
   what it becomes on screen: source px times the camera zoom. Under 18px at 1080p it cannot be read, and the fix is
   never a bigger zoom on the same shot, because that crops something else. It is showing less: a narrower crop, a
-  larger source element, or a caption carrying the words instead. Decide it here. Found after three drafts it costs a
+  larger source element or a caption carrying the words instead. Decide it here. Found after three drafts it costs a
   restructure, and `/react-launch-video:review` is the last line of defence rather than the first.
 
   The lever for both legibility and framing is the **width you render the product at**, not the zoom. A card grid has
@@ -213,8 +221,8 @@ The storyboard also fixes five things that are expensive to retrofit:
   function, not a library function with arguments you chose. `references/techniques.md` section 2b has the method.
 - **The story, not just the screens**: if the feature changes something (a setting that filters a page), show the before
   and the after.
-- **Tempo, if there will be music.** Decide the BPM with the user before any timing, write the hit points as beat
-  numbers, and build the cues from `beatsAt(bpm)` in `motion.ts` rather than from seconds. Retiming a reel that was
+- **Tempo, if there will be music.** Decide the BPM with the user before any timing. Write the hit points as beat
+  numbers and build the cues from `beatsAt(bpm)` in `motion.ts` rather than from seconds. Retiming a reel that was
   written in seconds to land on a beat means moving every reading-time hold and camera window by hand, and pace is
   usually the thing a user asks to change most. Leave a little air at a shared boundary: an exit and the next camera
   move on the exact same beat is legal but reads as a collision. Add the track at the end with
@@ -228,12 +236,13 @@ collide or rush. Decide up front, in the storyboard, which you spend:
 - **One push-in per beat at most**, and its zoom always comes from `fitCamera` on the measured bounds of what it frames,
   inside `CAPTION_SAFE` while a caption is up. Never pick a zoom by eye.
 - **Highlights are optional.** At most one border beam per beat, only where the viewer would otherwise miss the point.
-- **Keycaps only when the keyboard is the story**, each fully visible for at least 0.8s (the kit enforces this) and
-  placed outside the product's on-screen bounds.
+- **Keycaps only when the keyboard is the story**, each up for its reading time plus margin after the press (the kit's
+  `Keys` holds every combo for `readingTime` plus `READING_MARGIN`, so never under 1.0s) and placed outside the
+  product's on-screen bounds.
 - **Captions never overlap product content**, blurred or not. Frame the product away from them instead.
 - **Readable text never lands on readable product.** Handoffs cross as a dissolve, so measure it: where text sits, at
   the first frame the text is over 50% opacity, the product under it is below 10%. Faint over faint is a dissolve and is
-  fine, a settled headline over a legible window is not, and neither is a gap (see the empty-stage gate). The kit's
+  fine. A settled headline over a legible window is not, and neither is a gap (see the empty-stage gate). The kit's
   timings hold to this: read the comments in `assets/kit/timeline.ts` before moving `productIn` or `endCard`.
 - **Edges are either clear or clearly bled.** A window or card border rests inside the action-safe area (3.5% in from
   each edge, `ACTION_SAFE`) or runs well off the frame. A bleed never slices a text line, table row or control: if a
@@ -265,16 +274,19 @@ Take the package from step 1b, which already renders one real component, and mak
 are already in place, so this step is adaptation rather than setup. Keep `index.ts`, `Root.tsx`, `reel.css`,
 `timeline.ts`, `motion.ts` and `curves.ts` whatever the reel does: they are the package, not scene components, and
 `boxes.ts` is filled in by step 1c rather than imported. `references/customise.md` is the full list of about twenty
-things the kit leaves open, including three separate theme-colour sites that no gate can check. Work down it.
-Delete the scene files this reel does not use:
-`easing-inventory.mjs` reports every unused kit file as an uncited motion call, so an unused `Keys.tsx` is a gate
-failure rather than dead weight. Then adapt:
+things the kit leaves open, including three separate theme-colour sites that no gate can check. Work down it. Delete
+the scene files this reel does not use: `easing-inventory.mjs` reports every unused kit file as an uncited motion
+call, so an unused `Keys.tsx` is a gate failure rather than dead weight. Then adapt:
 
-- add `@remotion/fonts` when the product ships its own font files. The pinned `remotion` and `@remotion/*` versions in
-  the scaffold's `package.json` are the ones this kit is tested against, so change them together or not at all
-- `remotion.config.ts`: public dir pointing at the product, aliases, a user agent matching the audience's platform
-- the product's own theme: `GLOW` in `Reel.tsx` and the `gradientClass` passed to `Lockup` and `Captions` come from its
-  design tokens, so the reel looks like the product and not like the kit
+- `@remotion/fonts` already ships in the scaffold, pinned, for a product with its own font files. Add any other
+  `@remotion/*` package exact at the pinned version (`npm i -E @remotion/<name>@4.0.525`): a plain install writes a
+  caret range and every render prints a version mismatch. The pinned `remotion` and `@remotion/*` versions in the
+  scaffold's `package.json` are the ones this kit is tested against, so change them together or not at all
+- `remotion.config.ts`: aliases and a user agent matching the audience's platform. The product path is already set
+  from step 1b and the public dir follows it (`public/` inside the product)
+- the product's own theme, at three sites: `GLOW` in `Reel.tsx`, the `gradientClass` passed to `Lockup` and `Captions`
+  and the beam and ring `from` and `to` colours in `scene/Ring.tsx` all come from its design tokens, so the reel looks
+  like the product and not like the kit
 - `LIGHTNESS` in `curves.ts`, from 0 for a dark product UI to 1 for a white one. Read it off the product's surface
   token, so `#0d0f16` is about 0.05 and `#ffffff` is 1. It sets how fast the product leaves at the outro and how much
   it blooms, because the two ends fail in opposite ways: a dark product can empty the stage as it blurs out, and a
@@ -284,7 +296,11 @@ failure rather than dead weight. Then adapt:
 
 ### 5. Build the scenes on the timeline
 
-Keep one `CUE` object of cue points in seconds, each beat anchored on the one before, so a retime is one edit. Then:
+Keep one `CUE` object of cue points in seconds, each beat anchored on the one before, so a retime is one edit. Set
+the cues from the real copy rather than the other way round. A lockup is readable from `settled(start, words)` in
+`curves.ts`, its last word's start (`WORD_STAGGER` apart) plus its rise, so `TITLE_EXIT` is that plus the title's
+reading time and margin. The kit's placeholder title holds 0.82s, which fails any real title, so it always moves.
+Then:
 
 - **Frame determinism is non-negotiable.** Every value comes from the frame: no CSS transitions (the kit's `reel.css`
   kills them), no randomness, no clock, no state carried between frames. Remotion renders out of order.
@@ -295,8 +311,9 @@ Keep one `CUE` object of cue points in seconds, each beat anchored on the one be
   `READING` in `assets/kit/camera.ts`, one per caption plus the title and end card. The `assertStillWhileReading` call
   at the foot of that file throws when the camera moves inside one, so the render fails in seconds instead of after an
   hour. Give each window the `text` it shows and `assertReadingTime` checks the hold against reading time in the same
-  place, which is cheaper than measuring it off a contact sheet later. Pull back fully before the page under it
-  changes.
+  place, which is cheaper than measuring it off a contact sheet later. Keys run strictly forward in time: the kit
+  throws on a key out of order or two keys at one time (a hold is two equal keys at different times), and `fitCamera`
+  throws on a box it cannot fit. Pull back fully before the page under it changes.
 - **Measure, don't guess**: heights, positions and cursor targets come from the DOM (`offsetHeight`, `boxWithin`) or a
   rendered still.
 - **Spend only the effect budget from the storyboard** (see Restraint above).
@@ -306,10 +323,10 @@ Keep one `CUE` object of cue points in seconds, each beat anchored on the one be
 Rendering is the only proof. After each change:
 
 1. Typecheck the reel (and the product if you touched it).
-2. Render, then build contact sheets at the cue points that moved with `node
-${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: before, during
-   and after each move, in the middle of each hold and at the midpoint of every handoff (title to product, page changes,
-   product to end card). Crop small effects at full resolution.
+2. Render, then build contact sheets at the cue points that moved with
+   `node ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: before, during and after each move, in the middle of each
+   hold and at the midpoint of every handoff (title to product, page changes, product to end card). Crop small
+   effects at full resolution.
 3. Read the sheets and fix what you see before reporting. Common catches: an empty frame while the camera is zoomed on
    something that just left, a caption overlapping the product, text rising over the product in a handoff, a push-in
    slicing a table row or long line, keycaps flashing by or sitting on the product, a state swap that flashes dark, a
@@ -321,12 +338,15 @@ ${CLAUDE_SKILL_DIR}/scripts/contact-sheet.mjs`: before, during
    ```
 
    It refuses to start when the reel is not finished enough to gate (no storyboard, the template unedited, the kit's
-   placeholder colours still in place), which takes a moment rather than a render. Then it runs all six and exits
-   non-zero naming the ones that failed. Pass `--min` and `--max` when the brief asked for a length outside 15 to
-   30s, `--width` and `--height` for a cut that is not 16:9, and `--accept` for an edge range already judged
-   deliberate, which also goes in the storyboard's frame review log. Crop every CROSSES range edge-scan lists and
-   look at it before deciding. Every timing figure you write in a comment or the storyboard goes in as a claim: an
-   unchecked one reads as documentation while being a defect report, which is how six of them shipped.
+   placeholder colours still in place, `remotion.config.ts` still on `../my-product`), which takes a moment rather
+   than a render. Then it runs all six and exits non-zero naming the ones that failed. It runs `easing-inventory`,
+   `claims`, `fonts` and `lightness` with `--strict`, so a package with no motion call, no claim, no loaded font or a
+   product it cannot find in the frame fails instead of passing with nothing checked. Pass `--min` and `--max` when
+   the brief asked for a length outside 15 to 30s and `--width` and `--height` for a cut that is not 16:9 (only
+   `check-video` takes them: `edge-scan` reads the size from the file). Pass `--accept` for an edge range already
+   judged deliberate, which also goes in the storyboard's frame review log. Crop every CROSSES range edge-scan lists
+   and look at it before deciding. Every timing figure you write in a comment or the storyboard goes in as a claim,
+   because an unchecked figure reads as documentation while nothing proves it is still true.
 
 5. Write what each sheet, crop and gate showed in the storyboard's frame review log, with a verdict per problem. A
    problem has two possible verdicts: **fixed** (name the change and the render that shows it) or **not a problem**
@@ -344,13 +364,14 @@ report pastes the last output of all six gate scripts.
   yourself in the user's interactive shell first.
 - README: beats, pacing choices with their sources, placeholders to replace, render time.
 - Motion blur multiplies render time: offer it for the final render, not during iteration, and use `MotionBlur.tsx` with
-  `render-motion-blur.mjs` rather than `@remotion/motion-blur`, which bands dark gradients.
+  `render-motion-blur.mjs` rather than `@remotion/motion-blur`, which bands dark gradients. Register
+  `MotionBlurComposition` with the reel's own `width` and `height` from `Root.tsx`.
 
 ## Writing the timeline, an example
 
 ```ts
 const TITLE_EXIT = 2.45;
-const PRODUCT = TITLE_EXIT + 0.15; // overlap: the product rises while the title is still leaving
+const PRODUCT = TITLE_EXIT + 0.05; // overlap: the product rises while the title is still leaving
 const at = (s: number) => PRODUCT + s;
 
 export const CUE = {

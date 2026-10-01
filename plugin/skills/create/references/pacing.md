@@ -35,8 +35,8 @@ and the caption starting to leave. A title "Relay Issue Search" (18 characters) 
 0.9s rise is readable at 0.09 + 0.9 = 0.99s after its first word starts, and then needs 18 ÷ 17 + 0.5 = 1.56s, plus
 margin, before its exit.
 
-Keycaps are text too: "Ctrl K" is 6 characters, so it needs the 0.8s minimum after it is fully visible, however quickly
-the key itself is released.
+Keycaps are text too: "Ctrl K" is 6 characters, so it needs 6 ÷ 17 + 0.5 = 0.85s, just over the 0.8s minimum, plus
+margin after it is fully visible, however quickly the key itself is released.
 
 UI micro-interaction budgets (under 300ms and so on) do not apply to a video's holds and camera moves. They still apply
 to the product's own components inside the reel (a popover opening, a keypress response).
@@ -46,7 +46,7 @@ to the product's own components inside the reel (a popover opening, a keypress r
 | Use                                                         | Curve                                                                                                      | Source                                                                                                                                                                                   |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Large things arriving (title, product, cards)               | `cubic-bezier(0.05, 0.7, 0.1, 1)`, Material 3 emphasized decelerate                                        | [MotionTokens.kt](https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MotionTokens.kt) |
-| Strong ease-out for smaller UI                              | `cubic-bezier(0.23, 1, 0.32, 1)`                                                                           | [Emil Kowalski](https://github.com/emilkowalski/skills/blob/main/skills/emil-design-eng/SKILL.md)                                                                                        |
+| Strong ease-out for smaller UI                              | `cubic-bezier(0.16, 1, 0.3, 1)`, easeOutExpo, the kit's `easeOut`                                          | [easings.net](https://easings.net/#easeOutExpo)                                                                                                                                          |
 | Large things leaving (title receding, product pulling away) | `cubic-bezier(0.3, 0, 0.8, 0.15)` (Material 3) or `cubic-bezier(0.4, 0.14, 1, 1)` (Carbon expressive exit) | MotionTokens.kt, [Carbon](https://github.com/carbon-design-system/carbon/blob/main/packages/motion/src/tokens.ts)                                                                        |
 | On-screen move or morph                                     | `cubic-bezier(0.4, 0.14, 0.3, 1)` (Carbon expressive standard) or `cubic-bezier(0.77, 0, 0.175, 1)`        | Carbon. Ease-in-out for things already on screen ([animations.dev](https://animations.dev/learn/animation-theory/the-easing-blueprint))                                                  |
 | Spring without overshoot                                    | Remotion `{ damping: 200 }`                                                                                | [Remotion spring](https://www.remotion.dev/docs/spring)                                                                                                                                  |
@@ -72,8 +72,8 @@ extra length rather than a hold nobody can read, and say so in the storyboard.
 
    Those two halves fight each other, and which way you resolve it depends on the handoff. The kit's title handoff has
    a middle. Wait 0.15s and the title is alone on a stage with [measured: title opacity at titleExit + 0.15 is 9.7%]
-   left on it, wait none at all and a bright product rises under text that is still being read, and at the 0.05s the
-   kit uses neither happens: [measured: min brightest over titleExit..productIn + 1.0 is 26.1%].
+   left on it. Wait none at all and a bright product rises under text that is still being read. At the 0.05s the kit
+   uses neither happens: [measured: min brightest over titleExit..productIn + 1.0 is 26.1%].
 
    The outro has no such middle. Search the whole timing space and there is none, because the product must fall under
    the opacity threshold before the card is readable, which guarantees a dim frame between them. Blur is what makes
