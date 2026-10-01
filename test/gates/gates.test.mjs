@@ -14,10 +14,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, win32 } from "node:path";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { stripsTypes } from "../../plugin/skills/create/scripts/lib/run.mjs";
+import { citesFile } from "../../plugin/skills/create/scripts/lib/paths.mjs";
 import { blurFilter } from "../../plugin/skills/create/scripts/render-motion-blur.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -276,6 +277,45 @@ describe("easing-inventory", () => {
     const missing = gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]);
     assert.equal(missing.status, 1);
     assert.match(missing.stdout, /cites Panel\.tsx#nosuch but no motion call is there/);
+  });
+
+  test("matches a cited file on a path boundary, so Captions.tsx does not cite MyCaptions.tsx", () => {
+    const src = join(clips, "cite-src");
+    mkdirSync(join(src, "scene"), { recursive: true });
+    writeFileSync(
+      join(src, "motion.ts"),
+      'import { Easing, interpolate } from "remotion";\n' +
+        "export const emphasizedIn = Easing.bezier(0.05, 0.7, 0.1, 1);\n" +
+        "export function tween(frame: number, range: number[], to: number[], easing = emphasizedIn) {\n" +
+        "  return interpolate(frame, range, to, { easing });\n}\n",
+    );
+    const component = (name) =>
+      `import { emphasizedIn, tween } from "../motion";\nexport const ${name} = ({ frame }: { frame: number }) => {\n` +
+      "  const slide = tween(frame, [0, 30], [0, 1], emphasizedIn);\n  return slide;\n};\n";
+    writeFileSync(join(src, "scene", "Captions.tsx"), component("Captions"));
+    writeFileSync(join(src, "scene", "MyCaptions.tsx"), component("MyCaptions"));
+    const board = join(clips, "cite-board.md");
+    const rows = (...cites) =>
+      "| Beat | Code | Easing |\n| --- | --- | --- |\n" +
+      cites.map((cite) => `| Slide | \`${cite}\` | emphasizedIn \`0.05, 0.7, 0.1, 1\` |\n`).join("");
+
+    writeFileSync(board, rows("Captions.tsx:3"));
+    const one = gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]);
+    assert.equal(one.status, 1);
+    assert.match(one.stdout, /scene\/MyCaptions\.tsx:3 .* is cited by no storyboard row/);
+
+    writeFileSync(board, rows("scene/Captions.tsx#slide", "MyCaptions.tsx:3"));
+    const both = gate(join(create, "easing-inventory.mjs"), [src, "--storyboard", board]);
+    assert.equal(both.status, 0, both.stdout);
+  });
+
+  // relative() returns backslashes on Windows, and a storyboard writes forward slashes everywhere.
+  test("matches a forward-slash citation against a Windows path", () => {
+    const file = win32.relative("C:\\reel\\src", "C:\\reel\\src\\scene\\Captions.tsx");
+    assert.equal(file, "scene\\Captions.tsx");
+    assert.equal(citesFile(file, "scene/Captions.tsx"), true);
+    assert.equal(citesFile(file, "Captions.tsx"), true);
+    assert.equal(citesFile(win32.relative("C:\\reel\\src", "C:\\reel\\src\\MyCaptions.tsx"), "Captions.tsx"), false);
   });
 
   test("fails a reel whose motion is not in its storyboard", () => {

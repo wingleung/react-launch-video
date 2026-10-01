@@ -17,6 +17,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { parse } from "./lib/cli.mjs";
 import { sliceChars } from "./lib/fmt.mjs";
+import { citesFile, posix } from "./lib/paths.mjs";
 import { main } from "./lib/run.mjs";
 
 const SPEC = {
@@ -160,7 +161,7 @@ main("easing-inventory", () => {
 
   const entries = [];
   for (const [file, text] of texts) {
-    const rel = relative(args.src, file);
+    const rel = posix(relative(args.src, file));
     const lines = text.split(LINE_BREAK);
     // The nearest declaration before the call owns it: `const enter = tween(...)` is owned by `enter`, and a call
     // inside a component with no closer declaration is owned by the component. Citing that name instead of a line
@@ -281,8 +282,8 @@ main("easing-inventory", () => {
       const low = Number(start);
       const high = Number(end ?? start);
       const cited = symbol
-        ? listed.filter((entry) => entry.file.endsWith(file) && entry.owner === symbol)
-        : listed.filter((entry) => entry.file.endsWith(file) && low <= entry.line && entry.line <= high);
+        ? listed.filter((entry) => citesFile(entry.file, file) && entry.owner === symbol)
+        : listed.filter((entry) => citesFile(entry.file, file) && low <= entry.line && entry.line <= high);
       const shown = symbol ? `${file}#${symbol}` : `${file}:${start}${end ? `-${end}` : ""}`;
       if (!cited.length) failures.push(`cites ${shown} but no motion call is there`);
       for (const entry of cited) {
