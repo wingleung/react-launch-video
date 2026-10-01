@@ -1,6 +1,6 @@
 // What the gate scripts print, pinned. These ran for months with no tests, and two defects survived that way: the
 // bottom edge was never scanned, and nothing would have caught a JSON timestamp losing its ".0".
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -17,20 +17,17 @@ const demo = join(root, "docs/demo-relay-web.mp4");
 
 let clips;
 
-/** Run a gate and return its stdout and exit code rather than throwing, since a failing gate is the thing under test. */
+/** Run a gate and return its output and exit code rather than throwing, since a failing gate is the thing under test. */
 function gate(script, args, input, cwd, env) {
-  try {
-    const stdout = execFileSync(process.execPath, [script, ...args], {
-      encoding: "utf8",
-      input,
-      cwd,
-      env,
-      maxBuffer: 64 * 1024 * 1024,
-    });
-    return { stdout, stderr: "", status: 0 };
-  } catch (error) {
-    return { stdout: error.stdout ?? "", stderr: error.stderr ?? "", status: error.status };
-  }
+  const result = spawnSync(process.execPath, [script, ...args], {
+    encoding: "utf8",
+    input,
+    cwd,
+    env,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.error) throw result.error;
+  return { stdout: result.stdout, stderr: result.stderr, status: result.status };
 }
 
 const ffmpeg = (...args) => execFileSync("ffmpeg", ["-loglevel", "error", "-y", ...args]);
@@ -288,6 +285,35 @@ describe("add-music", () => {
       { encoding: "utf8" },
     ).trim();
     assert.equal(audio, "aac");
+  });
+
+  // -shortest stopped at whichever stream ended first, so a short track cut the reel and its end card with it.
+  test("keeps every frame when the track is shorter than the reel, and says so", () => {
+    const silent = join(clips, "silent-short.mp4");
+    const scored = join(clips, "scored-short.mp4");
+    ffmpeg("-t", "4", "-i", demo, "-c:v", "copy", silent);
+    ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=1.5", "-c:a", "aac", join(clips, "short.m4a"));
+    const { stderr, status } = gate(join(create, "add-music.mjs"), [silent, join(clips, "short.m4a"), scored]);
+    assert.equal(status, 0, stderr);
+    assert.match(stderr, /the track ends at 1\.5\ds, before the reel's last frame at 4\.0\ds/);
+    const stream = (file, kind, entry) =>
+      execFileSync(
+        "ffprobe",
+        [
+          "-v",
+          "error",
+          "-count_frames",
+          "-select_streams",
+          kind,
+          "-show_entries",
+          `stream=${entry}`,
+          "-of",
+          "csv=p=0",
+        ].concat(file),
+        { encoding: "utf8" },
+      ).trim();
+    assert.equal(stream(scored, "v:0", "nb_read_frames"), stream(silent, "v:0", "nb_read_frames"));
+    assert.ok(Number(stream(scored, "a:0", "duration")) >= 3.9, "the audio should be padded to the reel's length");
   });
 });
 

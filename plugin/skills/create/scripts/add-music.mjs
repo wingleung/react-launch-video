@@ -11,7 +11,7 @@
 import { parse } from "./lib/cli.mjs";
 import { fixed } from "./lib/fmt.mjs";
 import { probeGeometry } from "./lib/probe.mjs";
-import { main, runInherit } from "./lib/run.mjs";
+import { main, runInherit, runText } from "./lib/run.mjs";
 
 const SPEC = {
   positionals: ["video", "music", "out"],
@@ -31,8 +31,19 @@ main("add-music", () => {
   const args = parse("add-music.mjs", SPEC, process.argv.slice(2));
   const { duration } = probeGeometry(args.video);
   const fade = Math.max(0, Math.min(args.fadeOut, duration));
-  // The reel ends on black, so the music has to end with it rather than being cut off mid-note.
-  const filter = fade > 0 ? ["-af", `afade=t=out:st=${fixed(duration - fade, 3)}:d=${fixed(fade, 3)}`] : [];
+  const track = Number(
+    runText("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", args.music]).trim(),
+  );
+  if (track < duration) {
+    console.error(
+      `add-music: the track ends at ${fixed(track, 2)}s, before the reel's last frame at ${fixed(duration, 2)}s,` +
+        " so the rest of the reel is silent. Every frame is kept.",
+    );
+  }
+  // Padded to the reel's length so a short track can never set the output's: the reel ends on black, and the music
+  // has to end with it rather than taking the end card with it.
+  const filters = [`apad=whole_dur=${fixed(duration, 3)}`];
+  if (fade > 0) filters.push(`afade=t=out:st=${fixed(duration - fade, 3)}:d=${fixed(fade, 3)}`);
 
   runInherit("ffmpeg", [
     "-y",
@@ -52,9 +63,11 @@ main("add-music", () => {
     "aac",
     "-b:a",
     "192k",
-    ...filter,
-    // Stop at the reel's last frame even when the track is longer.
-    "-shortest",
+    "-af",
+    filters.join(","),
+    // Stop at the reel's last frame when the track is longer.
+    "-t",
+    fixed(duration, 3),
     "-movflags",
     "+faststart",
     args.out,
