@@ -77,11 +77,6 @@ export interface ReadingWindow {
   text?: string;
 }
 
-/**
- * Throws when the camera moves while text is being read. A zoom or pan that creeps through a hold rescales the text
- * every frame, which viewers see as wobble, so every hold is two equal keys. Call it beside the CAMERA array: it runs
- * when the composition loads, so the render fails before it costs an hour.
- */
 /** Seconds of beat `n` at `bpm`. Anchor cues on beats when the reel is cut to music, so every hit lands with it. */
 export function beatsAt(bpm: number): (n: number) => number {
   return (n) => (n * 60) / bpm;
@@ -118,7 +113,31 @@ export function assertReadingTime(windows: ReadingWindow[], margin = READING_MAR
   }
 }
 
+/**
+ * Throws unless the camera keys run strictly forward in time. smoothPath reads them in array order, so a key out of
+ * order interpolates without complaint, and two keys at one time make a hard cut instead of a hold.
+ */
+export function assertCameraKeys(camera: CameraKey[]): void {
+  for (let i = 1; i < camera.length; i++) {
+    const [before, at] = [camera[i - 1]![0], camera[i]![0]];
+    if (at > before) continue;
+    throw new Error(
+      at === before
+        ? `Camera keys ${i - 1} and ${i} are both at ${at.toFixed(2)}s, which cuts rather than moves. ` +
+            `A hold is two equal keys at different times.`
+        : `Camera key ${i} at ${at.toFixed(2)}s comes after key ${i - 1} at ${before.toFixed(2)}s in the array. ` +
+            `Keep CAMERA in time order.`,
+    );
+  }
+}
+
+/**
+ * Throws when the camera moves while text is being read. A zoom or pan that creeps through a hold rescales the text
+ * every frame, which viewers see as wobble, so every hold is two equal keys. Call it beside the CAMERA array: it runs
+ * when the composition loads, so the render fails before it costs an hour. It checks the keys' order first.
+ */
 export function assertStillWhileReading(camera: CameraKey[], windows: ReadingWindow[], fps = 60): void {
+  assertCameraKeys(camera);
   const times = camera.map(([time]) => time);
   const track = (index: 1 | 2 | 3, at: number) =>
     smoothPath(
@@ -193,7 +212,14 @@ export function fitCamera(
   maxZoom = 2,
   frame: Size = FRAME,
 ): [number, number, number] {
-  const zoom = Math.min(maxZoom, (safe.width - 2 * margin) / box.width, (safe.height - 2 * margin) / box.height);
+  const [roomX, roomY] = [safe.width - 2 * margin, safe.height - 2 * margin];
+  if (roomX <= 0 || roomY <= 0 || box.width <= 0 || box.height <= 0) {
+    throw new Error(
+      `fitCamera cannot fit a ${box.width}x${box.height} box in a ${safe.width}x${safe.height} safe area with ` +
+        `${margin}px of margin on every side. Measure the box again, or pass a smaller margin.`,
+    );
+  }
+  const zoom = Math.min(maxZoom, roomX / box.width, roomY / box.height);
   const safeCenterX = safe.x + safe.width / 2;
   const safeCenterY = safe.y + safe.height / 2;
   return [
