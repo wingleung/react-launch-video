@@ -17,7 +17,7 @@ import Reel from "../components/Reel.astro";
 import cliReel from "../../../docs/demo-relay-cli.mp4?url";
 import cliPosterSource from "../../../docs/poster-relay-cli.png";
 import posterSource from "../../../docs/poster.png";
-import { install, plugin, repoUrl } from "../lib/repo";
+import { cloneDir, install, plugin, repoUrl } from "../lib/repo";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 // The try-it prompt from the README. The hero video is that same test app, the inbox and then the settings dialog, so
@@ -192,7 +192,11 @@ const tone = (line: string) =>
               <h3>Already have a launch video?</h3>
               <p class="body">The review skill checks it against the same rules and ranks the fixes by severity.</p>
             </div>
-            <Command lines={["/react-launch-video:review the video in ./reel and tell me what to fix"]} prose label="Ask for a review" />
+            <Command
+              lines={[`/${plugin.name}:review the video in ./reel and tell me what to fix`]}
+              prose
+              label="Ask for a review"
+            />
           </div>
         </div>
       </section>
@@ -210,7 +214,7 @@ const tone = (line: string) =>
           <ol class="ask-steps">
             <li>
               <p>In a terminal</p>
-              <Command lines={[`git clone ${plugin.repository} && cd react-launch-video`]} label="Clone the repo" />
+              <Command lines={[`git clone ${plugin.repository} && cd ${cloneDir}`]} label="Clone the repo" />
             </li>
             <li>
               <p>In Claude Code, from that folder</p>
