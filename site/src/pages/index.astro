@@ -183,7 +183,8 @@ const tone = (line: string) =>
             Six scripted gates check every render, from the safe area to the fonts. A failing gate means another pass.
           </p>
           <figure class="picture">
-            <pre class="terminal"><code>{gateRun.map((line) => <span class={tone(line)}>{`${line}\n`}</span>)}</code></pre>
+            <pre class="terminal" tabindex="0" role="region" aria-label="Gate output"
+              ><code>{gateRun.map((line) => <span class={tone(line)}>{`${line}\n`}</span>)}</code></pre>
             <figcaption class="caption">Two of the gates, run on the video at the top.</figcaption>
           </figure>
 
