@@ -90,7 +90,7 @@ describe("check-video", () => {
     assert.equal(
       stdout,
       "ok    resolution 1920x1080\n" +
-        "ok    duration 15 to 30s (is 21.37s)\n" +
+        "ok    duration 15 to 30s (is 24.53s)\n" +
         "ok    opens from black\n" +
         "ok    ends on black\n" +
         "ok    no near-empty stage mid-reel\n",
@@ -165,12 +165,12 @@ describe("check-video", () => {
     ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=30", "-c:a", "aac", join(clips, "tone30.m4a"));
     ffmpeg("-i", demo, "-i", join(clips, "tone30.m4a"), "-map", "0:v", "-map", "1:a", "-c", "copy", long);
     const { stdout } = gate(join(create, "check-video.mjs"), [long]);
-    assert.match(stdout, /duration 15 to 30s \(is 21\.37s\)/);
+    assert.match(stdout, /duration 15 to 30s \(is 24\.53s\)/);
   });
 
   test("formats the duration bounds the way %g does", () => {
     const { stdout } = gate(join(create, "check-video.mjs"), ["--min", "17.5", "--max", "1234567", demo]);
-    assert.match(stdout, /duration 17\.5 to 1\.23457e\+06s \(is 21\.37s\)/);
+    assert.match(stdout, /duration 17\.5 to 1\.23457e\+06s \(is 24\.53s\)/);
   });
 });
 
@@ -178,7 +178,7 @@ describe("edge-scan", () => {
   test("reports content crossing the edge without failing the run", () => {
     const { stdout, status } = gate(join(create, "edge-scan.mjs"), [demo]);
     assert.equal(status, 0);
-    assert.match(stdout, /1920x1080, 21\.37s, sampled every 0\.2s, action safe is 67px left and right, 38px top/);
+    assert.match(stdout, /1920x1080, 24\.53s, sampled every 0\.2s, action safe is 67px left and right, 38px top/);
     assert.equal(stdout.match(/CROSSES/g).length, 2);
   });
 
@@ -430,13 +430,13 @@ describe("contact-sheet", () => {
     const past = join(clips, "past.png");
     const crop = gate(join(create, "contact-sheet.mjs"), [demo, "--crop", past, "99", "100:100:0:0"]);
     assert.equal(crop.status, 1);
-    assert.match(crop.stderr, /99s is past the end of the reel \(21\.37s\)/);
+    assert.match(crop.stderr, /99s is past the end of the reel \(24\.53s\)/);
     assert.equal(crop.stdout, "");
 
     const tiles = (...frames) => gate(join(create, "contact-sheet.mjs"), [demo, join(clips, "bad.jpeg"), ...frames]);
     const negative = tiles("-5", "300", "500", "700", "900", "1100");
     assert.equal(negative.status, 1);
-    assert.match(negative.stderr, /frame -5 is outside the reel's frames 0 to 1281/);
+    assert.match(negative.stderr, /frame -5 is outside the reel's frames 0 to 1471/);
     assert.equal(tiles("100", "300", "500", "700", "900", "99999").status, 1);
   });
 });
