@@ -115,6 +115,13 @@ Restart Claude Code after an update to apply it. Installed copies only update wh
 `react-launch-video` marketplace in place (`/plugin marketplace remove react-launch-video` removes it) and leaves any
 `reel/` package it built in your product, which is yours to keep or delete.
 
+## Built on Remotion
+
+[Remotion](https://www.remotion.dev) does the rendering: it turns React components into frames and frames into an MP4,
+in a headless browser. This plugin is a method, a starter kit and quality gates on top of it, and could not exist
+without it. To prompt a video from scratch rather than from your product's components, start with Remotion's own
+[Agent Skills](https://www.remotion.dev/docs/ai/coding-agents).
+
 ## Licensing
 
 This plugin is MIT licensed (see [LICENSE](LICENSE)). It is an independent project, not affiliated with or endorsed by

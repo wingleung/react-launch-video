@@ -6,6 +6,7 @@ import reel from "../../../docs/demo-relay-web.mp4?url";
 // -crf 26 -pix_fmt yuv420p -movflags +faststart -an site/src/assets/demo-relay-web-720p.mp4
 import reelSmall from "../assets/demo-relay-web-720p.mp4?url";
 import posterSource from "../../../docs/poster.png";
+import { remotion } from "../lib/repo";
 
 // Beats and motion spans of docs/demo-relay-web.mp4. Clip edges are the cue starts in demo/reel/storyboard.md (the
 // reel's source). Motion spans are measured from the render, not taken from the storyboard: a frame-difference scan at
@@ -128,7 +129,7 @@ const attached = Astro.slots.has("above");
   <figcaption>
     <span class="legend"><i class="key moving"></i>Moving</span>
     <span class="legend"><i class="key"></i>Holding still while you read</span>
-    <span class="made">Rendered in Remotion from the real components of the test app in the repo. No hand edits.</span>
+    <span class="made">Rendered in <a href={remotion.home}>Remotion</a> from the real components of the test app in the repo. No hand edits.</span>
   </figcaption>
 </figure>
 

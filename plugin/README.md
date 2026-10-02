@@ -32,6 +32,12 @@ install command for anything missing.
 - **Sends nothing.** Your product, the reel and your data are never uploaded anywhere. Remotion itself reports render
   usage to remotion.pro only when a Remotion license key is configured, which the plugin never does.
 
+## Built on Remotion
+
+[Remotion](https://www.remotion.dev) does all the rendering, from React components to an MP4. This plugin adds a
+method, a starter kit and quality gates on top of it. To prompt a video from scratch rather than from your product,
+start with Remotion's own [Agent Skills](https://www.remotion.dev/docs/ai/coding-agents).
+
 ## Licensing
 
 The plugin is MIT licensed. Remotion has its own licence: free for individuals, non-profits and companies with up to 3
