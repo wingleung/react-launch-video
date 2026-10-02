@@ -8,10 +8,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 src=docs/demo-relay-web.mp4
-# The title lockup is fully settled by 0.75s and the product rises at 3.25s, measured with signalstats YMAX.
-start=0.8
-# The caption is up and the product is framed, which is the frame worth putting on a card.
-poster=4.5
+# The title lockup is fully settled by 1.29s and the product rises at 3.05s (the cues in demo/reel/storyboard.md).
+start=1.3
+# Caption 01 settled at 4.86s and the whole inbox framed, which is the frame worth putting on a card.
+poster=5.5
 width=720
 fps=12.5
 
