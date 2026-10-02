@@ -8,6 +8,12 @@ updates:
     directory: /evals/fixtures/relay-web
     schedule:
       interval: monthly
+    # npm majors are a migration rather than a merge (a new Remotion, React or TypeScript means reworking the kit), so
+    # they start from a deliberate decision instead of a standing PR. Actions majors still come: they mostly move to a
+    # newer Node runtime, and ignoring them means CI breaks on the day GitHub retires the old one.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       react:
         patterns:
@@ -19,11 +25,17 @@ updates:
     directory: /site
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   # The reel package every user installs. No lockfile here, which Dependabot handles by bumping package.json alone.
   - package-ecosystem: npm
     directory: /plugin/skills/create/assets/scaffold
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       # The scaffold needs remotion and every @remotion/* package on one exact version, so they move together.
       remotion:
