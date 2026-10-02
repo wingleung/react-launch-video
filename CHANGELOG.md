@@ -45,6 +45,11 @@ below was reproduced first, and each script fix has a regression test.
   the plugin runs, fetches and changes. One description is shared by both manifests, the site and the repository. Line
   endings are left to Git, since the directory refuses a `.gitattributes` that rewrites file contents, and prettier
   accepts either ending instead. A 1280x640 card is the repository's social preview and the site's share image.
+- **Docs an assistant can use.** A test with fresh Claude sessions answering twelve user questions scored 12 of 12 from
+  the site's `llms.txt` but 6 of 12 from the README, which never linked the skill docs and called `edge-scan`'s
+  `CROSSES` a failure (it exits 0). The README is now half the length and links three new guides in `docs/` (quality
+  gates, troubleshooting, other frame sizes) plus the skills and references. `llms.txt` lists them in reading order,
+  `llms-full.txt` serves every document in one file and the page declares its `llms.txt` with `rel="describedby"`.
 - **Site.** Every Copy button has its own name and announces the copy. The timeline's stripes meet 3:1 and each beat
   says where it moves. Phones get a 720p hero reel (616KB instead of 4MB). Pages write access is scoped to the deploy
   job and every action is pinned to a commit.
