@@ -122,7 +122,10 @@ const tone = (line: string) =>
   <body>
     <div class="band-stage">
       <header class="wrap bar">
-        <a class="wordmark" href={`${base}/`}>{title}</a>
+        <!-- The icon, not the name: the headline says what this is and the prompt under it shows the name. -->
+        <a class="mark" href={`${base}/`} aria-label={title}>
+          <img src={`${base}/favicon.svg`} alt="" width="32" height="32" />
+        </a>
         <a class="quiet-link" href={repoUrl()}>GitHub</a>
       </header>
     </div>
@@ -306,7 +309,7 @@ const tone = (line: string) =>
 
     <footer class="footer-band">
       <div class="wrap footer">
-        <span class="wordmark small">{title}</span>
+        <span class="wordmark">{title}</span>
         <span>v{plugin.version}</span>
         <a class="quiet-link" href={repoUrl("README.md")}>README</a>
         <a class="quiet-link" href={repoUrl("CHANGELOG.md")}>Changelog</a>
@@ -324,16 +327,17 @@ const tone = (line: string) =>
     padding-block: 1rem;
   }
 
-  .wordmark {
-    font-family: var(--display);
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: var(--tracking-display);
-    text-decoration: none;
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
-  .wordmark.small {
+  .wordmark {
+    font-family: var(--display);
     font-size: var(--text-lg);
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
   }
 
   .quiet-link {
