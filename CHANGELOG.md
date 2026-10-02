@@ -45,6 +45,10 @@ below was reproduced first, and each script fix has a regression test.
   the plugin runs, fetches and changes. One description is shared by both manifests, the site and the repository. Line
   endings are left to Git, since the directory refuses a `.gitattributes` that rewrites file contents, and prettier
   accepts either ending instead. A 1280x640 card is the repository's social preview and the site's share image.
+- **A demo reel that passes its own rule, with its source.** The old demo sliced a line of text at the top edge during
+  a pull-back, which the skill's own edge rule fails. It was re-made by following the create skill on the bundled test
+  app, with every `CROSSES` range cropped every 0.1s, and its source is now in `demo/` so it can be rendered again. The
+  GIF, poster, 720p copy, social card and every number the site states about the reel were redone from it.
 - **Docs an assistant can use.** A test with fresh Claude sessions answering twelve user questions scored 12 of 12 from
   the site's `llms.txt` but 6 of 12 from the README, which never linked the skill docs and called `edge-scan`'s
   `CROSSES` a failure (it exits 0). The README is now half the length and links three new guides in `docs/` (quality

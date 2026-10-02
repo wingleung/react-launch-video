@@ -39,6 +39,9 @@ Nothing client-owned or personal goes in this repo. The client-name gate is ther
 
 ## Regenerating the demo
 
+The demo reel's source is in `demo/`: `demo/relay-web` is the test app as the create skill left it after its split, and
+`demo/reel` is the reel package. `demo/README.md` has the commands that render it into `docs/demo-relay-web.mp4`.
+
 `docs/demo.gif` and `docs/poster.png` both come from `docs/demo-relay-web.mp4` through `./scripts/make-demo.sh`. Do
 not convert the MP4 by hand: both start after the title card has risen, because the reel fades up from black and
 frame 0 is the only frame a thumbnail ever shows.

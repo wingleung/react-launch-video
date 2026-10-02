@@ -31,29 +31,42 @@ const cliPoster = await getImage({ src: cliPosterSource, format: "webp", width: 
 // The same 1280x640 card the GitHub repository uses as its social preview, so a shared link looks the same everywhere.
 const ogImage = await getImage({ src: socialCard, format: "png" });
 
-// The reel in band 1, measured at 30 fps from docs/demo-relay-web.mp4 (ffmpeg scene score on a crop of each text block):
-// held runs from the moment the text settles to the moment its exit starts. "Needs" is plugin/skills/review/scripts/
-// reading-time.mjs on those holds.
+// The reel in band 1. Settled and exit times come from its storyboard (demo/reel/storyboard.md), computed from the
+// reel's code and asserted by the kit when the composition loads. A scene-score scan of docs/demo-relay-web.mp4 agrees
+// on every exit to within 0.1s. "Needs" is plugin/skills/review/scripts/reading-time.mjs on those holds.
 const holds = [
-  { beat: "Title card", text: "Relay Focus mode", chars: 16, needs: 1.44, held: 1.97 },
-  { beat: "Caption 01", text: "01 Inbox Every open issue", chars: 25, needs: 1.97, held: 2.54 },
-  { beat: "Caption 02", text: "02 Focus mode Only your team's issues", chars: 37, needs: 2.68, held: 3.23 },
-  { beat: "End card", text: "Relay Focus mode", chars: 16, needs: 1.44, held: 2.0 },
+  { beat: "Title card", text: "Relay Focus mode", chars: 16, needs: 1.44, held: 1.71 },
+  { beat: "Caption 01", text: "01 Inbox Every open issue, grouped by status.", chars: 45, needs: 3.15, held: 3.44 },
+  {
+    beat: "Settings dialog",
+    text: "Focus mode Only show issues assigned to the web team.",
+    chars: 53,
+    needs: 3.62,
+    held: 3.85,
+  },
+  {
+    beat: "Caption 02",
+    text: "02 Focus mode Shows only the issues assigned to your team.",
+    chars: 58,
+    needs: 3.91,
+    held: 4.14,
+  },
+  { beat: "End card", text: "Relay Focus mode", chars: 16, needs: 1.44, held: 1.66 },
 ];
 
 // Verbatim output of check-video.mjs and edge-scan.mjs on docs/demo-relay-web.mp4. Both exited 0.
 const gateRun = [
   "$ node check-video.mjs reel.mp4",
   "ok    resolution 1920x1080",
-  "ok    duration 15 to 30s (is 21.37s)",
+  "ok    duration 15 to 30s (is 24.53s)",
   "ok    opens from black",
   "ok    ends on black",
   "ok    no near-empty stage mid-reel",
   "",
   "$ node edge-scan.mjs reel.mp4",
-  "reel.mp4: 1920x1080, 21.37s, sampled every 0.2s, action safe is 67px left and right, 38px top and bottom",
-  "  CROSSES  top      7.80s to  13.00s  content runs off the edge: crop it and check nothing is sliced",
-  "  CROSSES  right   17.60s to  18.20s  content runs off the edge: crop it and check nothing is sliced",
+  "reel.mp4: 1920x1080, 24.53s, sampled every 0.2s, action safe is 67px left and right, 38px top and bottom",
+  "  CROSSES  top     10.00s to  14.40s  content runs off the edge: crop it and check nothing is sliced",
+  "  CROSSES  bottom  10.00s to  14.40s  content runs off the edge: crop it and check nothing is sliced",
 ];
 const tone = (line: string) =>
   line.startsWith("$") ? "cmd" : line.startsWith("ok") ? "pass" : line.includes("CROSSES") ? "flag" : undefined;
@@ -150,7 +163,7 @@ const tone = (line: string) =>
               </tbody>
             </table>
             <figcaption class="caption">
-              The video above, measured at 30 fps and checked with <code>reading-time.mjs</code>.
+              From the reel's storyboard, asserted when it loads and checked with <code>reading-time.mjs</code>.
             </figcaption>
           </figure>
         </div>

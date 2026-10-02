@@ -7,34 +7,54 @@ import reel from "../../../docs/demo-relay-web.mp4?url";
 import reelSmall from "../assets/demo-relay-web-720p.mp4?url";
 import posterSource from "../../../docs/poster.png";
 
-// Beats and motion spans of docs/demo-relay-web.mp4, measured from the render rather than taken from its storyboard: a
-// frame-difference scan at 10 fps (ffmpeg scene score above 0.001), so every edge is within 0.1s. Re-measure when the
-// reel is replaced, because the timeline claims to show what this file does, and read its frame rate again for the
-// timecode (ffprobe r_frame_rate).
-const duration = 21.37;
+// Beats and motion spans of docs/demo-relay-web.mp4. Clip edges are the cue starts in demo/reel/storyboard.md (the
+// reel's source). Motion spans are measured from the render, not taken from the storyboard: a frame-difference scan at
+// 10 fps (ffmpeg scene score above 0.001), so every edge is within 0.1s. Re-measure when the reel is replaced, because
+// the timeline claims to show what this file does, and read its frame rate again for the timecode (ffprobe
+// r_frame_rate).
+const duration = 24.53;
 const fps = 60;
 const clips = [
-  { label: "Title card", kind: "title", start: 0, end: 3.1, moves: [[0.2, 1.1]] },
-  { label: "01 Inbox", kind: "product", start: 3.1, end: 7.2, moves: [[3.1, 4.3]] },
+  { label: "Title card", kind: "title", start: 0, end: 3.0, moves: [[0.2, 1.0]] },
+  {
+    label: "01 Inbox",
+    kind: "product",
+    start: 3.0,
+    end: 9.1,
+    moves: [
+      [3.0, 4.3],
+      [8.4, 8.5],
+    ],
+  },
+  {
+    label: "Settings",
+    kind: "product",
+    start: 9.1,
+    end: 15.1,
+    moves: [
+      [9.1, 10.4],
+      [10.9, 11.0],
+      [14.1, 15.1],
+    ],
+  },
   {
     label: "02 Focus mode",
     kind: "product",
-    start: 7.2,
-    end: 17.3,
+    start: 15.1,
+    end: 20.8,
     moves: [
-      [7.2, 8.7],
-      [9.5, 9.6],
-      [12.4, 13.8],
+      [15.1, 15.5],
+      [20.5, 20.6],
     ],
   },
   {
     label: "End card",
     kind: "title",
-    start: 17.3,
+    start: 20.8,
     end: duration,
     moves: [
-      [17.3, 18.6],
-      [20.7, duration],
+      [20.8, 21.9],
+      [23.8, duration],
     ],
   },
 ];
