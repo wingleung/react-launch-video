@@ -1,0 +1,13 @@
+/* Remotion renders frame by frame, so CSS transitions and keyframes would freeze mid-flight. Motion is frame-driven. */
+*,
+*::before,
+*::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Relay's own stack from its theme.css. Root.tsx loads Inter 400 and 600 from the product's @fontsource package. */
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
