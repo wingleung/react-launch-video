@@ -115,7 +115,9 @@ Fill it in as you review. Every problem ends as **fixed** (the change and the re
 (the rule that allows it). "Accepted", "known issue" and "left for later" are not verdicts: they mean another pass. The
 final rows name the render and paste the result of all six gates, exiting 0. Any range passed to `edge-scan --accept`
 goes in this log with the reason: an accepted range is a judgement, and a judgement nobody wrote down is a defect that
-the review skill will raise again from scratch.
+the review skill will raise again from scratch. The claims gate reads this log too: a percentage or pixel figure beside
+a signal's name needs a `[measured: ...]` claim it can re-derive from the timeline, or a `[rendered]` tag when it was
+read off real frames that no curve can reproduce (a border's position on a still, banding, peak brightness).
 
 ## Worked example (a 26s reel of a browser extension)
 

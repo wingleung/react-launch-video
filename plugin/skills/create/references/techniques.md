@@ -160,6 +160,11 @@ Remotion renders frames in parallel tabs and out of order. Every visual value mu
 
 - Heights and positions of real UI depend on data. Measure them in a `useLayoutEffect` (runs before capture) and write
   styles directly: `offsetHeight`, and `boxWithin(element, container)` in the kit for positions that ignore transforms.
+- Measure after the product's fonts have loaded. A layout effect runs before a Fontsource or `@remotion/fonts` file
+  arrives, so it reads the fallback font's metrics: on the demo reel the window measured 672px tall that way and 689px
+  once Inter had loaded, enough to push a card border into the bottom safe margin. Hold the frame with `delayRender()`
+  until `document.fonts.ready` resolves, measure, then `continueRender()`, and take step 1c's numbers from a still
+  rendered the same way.
 - To animate between two states (loading to loaded), render BOTH as real DOM (one hidden if needed), measure both and
   interpolate a shared panel's height. One panel background with crossfading contents avoids a dark flash, which a
   second opaque panel on top causes.

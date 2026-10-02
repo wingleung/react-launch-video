@@ -49,6 +49,10 @@ below was reproduced first, and each script fix has a regression test.
   a pull-back, which the skill's own edge rule fails. It was re-made by following the create skill on the bundled test
   app, with every `CROSSES` range cropped every 0.1s, and its source is now in `demo/` so it can be rendered again. The
   GIF, poster, 720p copy, social card and every number the site states about the reel were redone from it.
+- **What re-making the demo taught the skill.** Measure boxes after the product's fonts load (the demo's window read
+  17px short before Inter arrived), give the cursor its own compositing layer so parallel renders agree, add a reading
+  window for key UI text, tag measured figures in the frame review log for the claims gate, and drop the logo cue
+  from the title when a product has no logo.
 - **Docs an assistant can use.** A test with fresh Claude sessions answering twelve user questions scored 12 of 12 from
   the site's `llms.txt` but 6 of 12 from the README, which never linked the skill docs and called `edge-scan`'s
   `CROSSES` a failure (it exits 0). The README is now half the length and links three new guides in `docs/` (quality
