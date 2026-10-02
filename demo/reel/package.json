@@ -1,0 +1,35 @@
+{
+  "_comment": [
+    "The reel package's own manifest. Copy this directory to your reel package root, then copy the kit into src/.",
+    "These versions are the ones the kit is tested against on every commit by scripts/kit-check.mjs in the",
+    "react-launch-video repo, so they are pins rather than suggestions. Keep remotion and every @remotion/* package on",
+    "the same exact version or the bundler and the renderer disagree in ways that surface as a blank frame rather than",
+    "an error. @remotion/fonts is already here for a product that ships its own font files. Add any other @remotion/*",
+    "package exact at the version remotion is pinned to below (npm i -E @remotion/<name>@<that>): a plain npm install",
+    "writes a caret range on the latest release and every render then prints a version mismatch. The product's own",
+    "dependencies are NOT copied here: the reel imports them from the product through the alias in remotion.config.ts.",
+    "The still script renders frame 480 on purpose. Frame 0 is the reel's fade from black, so a default still is a",
+    "solid black image that looks identical whether the toolchain works or not."
+  ],
+  "name": "reel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Reel outputs/reel.mp4",
+    "still": "remotion still src/index.ts Reel outputs/still.png --frame=480",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "remotion": "4.0.529",
+    "@remotion/cli": "4.0.529",
+    "@remotion/fonts": "4.0.529",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}
