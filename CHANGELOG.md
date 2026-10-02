@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.1
+
+- **A listing icon** for the Claude plugin directory, at `plugin/.claude-plugin/icon.png`, rendered from the site's
+  favicon by `scripts/make-icon.mjs` so the two cannot drift apart.
+- **The product's `.env` stays out of the reel.** The bundling notes said a Vite product's `import.meta.env` needs a
+  `DefinePlugin` without saying what goes in it. They now say placeholder values, never the product's `.env`, since a
+  reel takes its data as props and no key or token belongs in its bundle. The grep command beside it had a stray
+  quote that kept it from running.
+
 ## 2.0.0
 
 The plugin is renamed from `product-reel` to **`react-launch-video`**, so the name says what it makes and the stack it

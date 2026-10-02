@@ -39,11 +39,12 @@ still fail to bundle here. Work through this before splitting anything: a split 
 found after the storyboard is not.
 
 - **A Vite product bundles fine unless it uses Vite's own features.** Grep for them before assuming a fight:
-  `grep -rE "import\.meta\.(glob|env)|\.ya?ml"" src`. `import.meta.glob` has no webpack equivalent and needs a small
-  pre-loader that expands it into real imports. `import.meta.env` needs a `DefinePlugin` and any import the product's
-  plugins handle (yaml, and anything else non-standard) needs its own loader. Root-relative `url()` in CSS resolves
-  only once `resolve.roots` points at the product's public folder. A plain Vite app with none of these needs one
-  alias.
+  `grep -rE "import\.meta\.(glob|env)|\.ya?ml" src`. `import.meta.glob` has no webpack equivalent and needs a small
+  pre-loader that expands it into real imports. `import.meta.env` needs a `DefinePlugin` with placeholder values,
+  never the product's `.env`: the reel passes its data in as props, so no key or token belongs in its bundle. Any
+  import the product's plugins handle (yaml, and anything else non-standard) needs its own loader. Root-relative
+  `url()` in CSS resolves only once `resolve.roots` points at the product's public folder. A plain Vite app with none
+  of these needs one alias.
 - **Root-relative URLs built at runtime return 404.** `Config.setPublicDir` is necessary and not sufficient: Remotion
   serves that folder under `/public/`, not at `/`. Any path the product assembles while running, an image path inside
   its data or a CSS custom property a theme loader sets, has to go through `staticFile`.
