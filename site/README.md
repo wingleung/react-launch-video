@@ -14,9 +14,10 @@ Nothing about the plugin is written twice. The version, descriptions, skills and
 repo at build time (`src/lib/repo.ts`), `index.md` is the README with its links made absolute and `llms.txt` is built
 from the manifest and the skills. The reels are imported from `docs/`.
 
-Three things are measured from `docs/demo-relay-web.mp4` by hand: the hero timeline in `src/components/Reel.astro`, and
-the holds table and the gate output in `src/pages/index.astro`. Replace that reel and all three have to be measured
-again, the way their comments describe, and its 720p copy for phones in `src/assets/` re-encoded with the command in
-`Reel.astro`.
+Three things describe `docs/demo-relay-web.mp4`: the hero timeline in `src/components/Reel.astro` (clip edges from the
+reel's storyboard, motion measured from the render), the holds table in `src/pages/index.astro` (from
+`demo/reel/storyboard.md`, cross-checked against the render) and the gate output beside it (verbatim). Replace that reel
+and all three have to be redone the way their comments describe, and its 720p copy for phones in `src/assets/`
+re-encoded with the command in `Reel.astro`. The social card in `docs/social-card.png` is built from `docs/poster.png`.
 
 Before the first deploy, set the repo's Pages source to GitHub Actions (Settings, Pages).

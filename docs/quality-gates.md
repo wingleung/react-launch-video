@@ -32,12 +32,14 @@ not 16:9, pass `--width` and `--height` to `gates.mjs` (see [Other sizes](other-
   Once you have judged a range, pass it with `--accept "top:7.8-13.0"` and it prints as `ALLOWED`.
 
 ```
-reel.mp4: 1920x1080, 21.37s, sampled every 0.2s, action safe is 67px left and right, 38px top and bottom
-  CROSSES  top      7.80s to  13.00s  content runs off the edge: crop it and check nothing is sliced
+reel.mp4: 1920x1080, 24.53s, sampled every 0.2s, action safe is 67px left and right, 38px top and bottom
+  CROSSES  top     10.00s to  14.40s  content runs off the edge: crop it and check nothing is sliced
+  CROSSES  bottom  10.00s to  14.40s  content runs off the edge: crop it and check nothing is sliced
 ```
 
-That output is from the demo reel, where the camera pushes into the settings dialog and pulls back out. A range like
-this is the cue to crop those frames and look, not a verdict either way.
+That output is from the demo reel, where the camera pushes into the settings dialog. Crops of both edges every 0.1s
+across the push-in show only the window's top and bottom borders bleeding off, with no text, row or control cut, so
+the ranges pass. The frame review log in [`demo/reel/storyboard.md`](../demo/reel/storyboard.md) records them.
 
 ## Tools
 
