@@ -51,6 +51,10 @@ The CLI reel has its own pair, `docs/demo-relay-cli.mp4` and `docs/poster-relay-
 `site/src/assets/demo-relay-web-720p.mp4`. Replace `docs/demo-relay-web.mp4` and that copy has to be re-encoded too,
 with the command `site/README.md` points to.
 
+The plugin directory's listing icon, `plugin/.claude-plugin/icon.png`, comes from `site/public/favicon.svg` through
+`node scripts/make-icon.mjs`. The directory reads it only when the plugin is first saved in its portal, so a new icon
+reaches the site's tab and not the listing.
+
 ## Scope
 
 This plugin covers React web apps and CLIs. Support for other stacks is a real piece of work, not a tweak: open an issue

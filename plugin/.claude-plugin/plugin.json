@@ -1,7 +1,7 @@
 {
   "name": "react-launch-video",
   "displayName": "React Launch Video",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Launch videos of React apps and CLIs, rendered in Remotion from your real components, with scripted quality gates and a review skill. Not for Vue, Svelte, Angular or plain HTML.",
   "author": {
     "name": "Wing Leung"
