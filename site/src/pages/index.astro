@@ -17,7 +17,7 @@ import Reel from "../components/Reel.astro";
 import cliReel from "../../../docs/demo-relay-cli.mp4?url";
 import cliPosterSource from "../../../docs/poster-relay-cli.png";
 import socialCard from "../../../docs/social-card.png";
-import { cloneDir, install, plugin, repoUrl } from "../lib/repo";
+import { cloneDir, install, plugin, remotion, repoUrl } from "../lib/repo";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 // The try-it prompt from the README. The hero video is that same test app, the inbox and then the settings dialog, so
@@ -198,8 +198,9 @@ const tone = (line: string) =>
         <div class="wrap">
           <h2 id="ship-title" class="section-title">It renders the product you ship</h2>
           <p class="lede">
-            Your real React components, split so each frame can be drawn. It checks your tests and build still pass. CLIs are
-            rebuilt from their own source.
+            <a href={remotion.home}>Remotion</a> renders your real React components frame by frame. The plugin splits
+            them so each frame can be drawn and checks your tests and build still pass. CLIs are rebuilt from their own
+            source.
           </p>
           <figure class="picture">
             <video
@@ -279,8 +280,16 @@ const tone = (line: string) =>
         </div>
       </section>
 
-      <section class="facts-band" aria-label="Scope, privacy and licensing">
+      <section class="facts-band" aria-label="Credits, scope, privacy and licensing">
        <div class="wrap facts">
+        <div>
+          <h3>Built on Remotion</h3>
+          <p>
+            <a href={remotion.home}>Remotion</a> does the rendering, from React components to an MP4. This plugin adds a
+            method, a starter kit and quality gates on top. To prompt a video from scratch rather than from your
+            product, start with Remotion's own <a href={remotion.agents}>Agent Skills</a>.
+          </p>
+        </div>
         <div>
           <h3>What it covers</h3>
           <p>
@@ -298,7 +307,7 @@ const tone = (line: string) =>
           <h3>Licensing</h3>
           <p>
             {plugin.license} licensed. Remotion is free for individuals, non-profits and companies of up to 3 people.
-            Bigger for-profits need a <a href="https://github.com/remotion-dev/remotion/blob/main/LICENSE.md"
+            Bigger for-profits need a <a href={remotion.license}
               >Remotion Company License</a
             >. Independent, not affiliated with Remotion or React.
           </p>
@@ -314,6 +323,7 @@ const tone = (line: string) =>
         <a class="quiet-link" href={repoUrl("README.md")}>README</a>
         <a class="quiet-link" href={repoUrl("CHANGELOG.md")}>Changelog</a>
         <a class="quiet-link" href={`${base}/llms.txt`}>llms.txt</a>
+        <a class="quiet-link" href={remotion.home}>Built on Remotion</a>
       </div>
     </footer>
   </body>
@@ -627,7 +637,7 @@ const tone = (line: string) =>
 
   .facts {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 2rem clamp(2rem, 5vw, 3.5rem);
     padding-block: clamp(3rem, 6vw, 4.5rem);
   }

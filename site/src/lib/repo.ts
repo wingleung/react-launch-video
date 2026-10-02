@@ -37,6 +37,13 @@ export const install = [
   `/plugin install ${plugin.name}@${plugin.name}`,
 ];
 
+// The project every reel is rendered with, credited wherever the page explains how a reel is made.
+export const remotion = {
+  home: "https://www.remotion.dev",
+  agents: "https://www.remotion.dev/docs/ai/coding-agents",
+  license: "https://github.com/remotion-dev/remotion/blob/main/LICENSE.md",
+};
+
 export const shellInstall = install.map((line) => `claude ${line.slice(1)}`);
 
 function frontmatter(markdown: string, key: string) {

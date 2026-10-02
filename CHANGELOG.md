@@ -8,6 +8,9 @@
   `DefinePlugin` without saying what goes in it. They now say placeholder values, never the product's `.env`, since a
   reel takes its data as props and no key or token belongs in its bundle. The grep command beside it had a stray
   quote that kept it from running.
+- **Credit where it is due.** The README, the listing text and the product page now say plainly that Remotion does
+  the rendering and the plugin is a method on top, link Remotion wherever a reel is explained and point anyone who
+  wants to prompt a video from scratch to Remotion's own Agent Skills.
 
 ## 2.0.0
 
