@@ -8,7 +8,7 @@ It gives Claude a proven method (storyboard first, reading-time holds, overlappi
 holds still), a starter kit of scene components and scripted quality gates that a render has to pass before it counts
 as done. A second skill reviews a reel against the same standards.
 
-![A reel of the Relay test fixture: title card, the inbox, the settings dialog and the end card](docs/demo.gif)
+[![A reel of the Relay test fixture: title card, the inbox, the settings dialog and the end card](docs/demo.gif)](https://wingleung.github.io/react-launch-video)
 
 That reel is built from `evals/fixtures/relay-web`, the small React app in this repo, and rendered by the plugin with
 no hand editing ([full quality MP4](docs/demo-relay-web.mp4)). The product page is

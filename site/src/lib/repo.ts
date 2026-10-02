@@ -100,7 +100,7 @@ export const skillDocs = Object.entries(skillFiles).map(([key, text]) => doc(rep
 export function withAbsoluteLinks(markdown: string, path: string) {
   const directory = posix.dirname(path);
   return markdown.replace(
-    /(!?)\[([^\]]*)\]\((?!<|https?:|#|mailto:)([^)\s]+)\)/g,
+    /(!?)\[([^[\]]*)\]\((?!<|https?:|#|mailto:)([^)\s]+)\)/g,
     (_, bang: string, text: string, target: string) => {
       const [file, anchor] = target.split("#");
       const resolved = posix.normalize(posix.join(directory, file));
