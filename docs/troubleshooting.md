@@ -20,6 +20,21 @@ What goes wrong when a reel is set up, rendered or checked, with the cause and t
 | Every render prints a version mismatch        | A `@remotion/*` package was installed with a caret range. Install it exact at the version `remotion` is pinned to: `npm i -E @remotion/<name>@<version>`                                                                                                                   |
 | An update does not show up                    | Installed copies only update when the plugin's version changes, and Claude Code needs a restart to apply an update                                                                                                                                                         |
 
+## Loading a font
+
+The fonts gate accepts a licensed package or the product's own files, never a stylesheet link or a system font:
+
+```ts
+// A licensed package: import its CSS once, from the reel's entry file
+import "@fontsource/inter/400.css";
+
+// The product's own files, served from its public folder
+import { loadFont } from "@remotion/fonts";
+import { staticFile } from "remotion";
+
+loadFont({ family: "Inter", url: staticFile("fonts/inter.woff2"), weight: "400" });
+```
+
 For anything not listed, the create skill's [techniques and pitfalls](../plugin/skills/create/references/techniques.md)
 covers what goes wrong when a real product is rendered in Remotion, and
 [what renders, and what does not](../plugin/skills/create/references/frameworks.md) covers each framework.
