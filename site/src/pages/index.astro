@@ -16,7 +16,7 @@ import Command from "../components/Command.astro";
 import Reel from "../components/Reel.astro";
 import cliReel from "../../../docs/demo-relay-cli.mp4?url";
 import cliPosterSource from "../../../docs/poster-relay-cli.png";
-import posterSource from "../../../docs/poster.png";
+import socialCard from "../../../docs/social-card.png";
 import { cloneDir, install, plugin, repoUrl } from "../lib/repo";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -26,10 +26,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const heroPrompt = "a launch video of the Relay inbox and the settings dialog";
 const fixturePrompt = `${heroPrompt}, in evals/fixtures/relay-web`;
 const title = plugin.displayName;
-const description =
-  "A Claude Code plugin that makes launch videos of React apps and CLIs from their real components, in Remotion.";
+const description = plugin.description;
 const cliPoster = await getImage({ src: cliPosterSource, format: "webp", width: 1920 });
-const ogImage = await getImage({ src: posterSource, format: "png", width: 1200 });
+// The same 1280x640 card the GitHub repository uses as its social preview, so a shared link looks the same everywhere.
+const ogImage = await getImage({ src: socialCard, format: "png" });
 
 // The reel in band 1, measured at 30 fps from docs/demo-relay-web.mp4 (ffmpeg scene score on a crop of each text block):
 // held runs from the moment the text settles to the moment its exit starts. "Needs" is plugin/skills/review/scripts/
@@ -79,7 +79,7 @@ const tone = (line: string) =>
     <meta property="og:image:height" content={String(ogImage.attributes.height)} />
     <meta
       property="og:image:alt"
-      content="A frame of the reel: the Relay inbox with its open issues in three columns, captioned 01 Inbox"
+      content="React Launch Video, a Claude Code plugin: launch videos of your React app, rendered in Remotion from its real components, beside the Relay inbox"
     />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
@@ -159,7 +159,7 @@ const tone = (line: string) =>
         <div class="wrap">
           <h2 id="ship-title" class="section-title">It renders the product you ship</h2>
           <p class="lede">
-            Your real React components, split so each frame can be drawn. Your tests and build still pass. CLIs are
+            Your real React components, split so each frame can be drawn. It checks your tests and build still pass. CLIs are
             rebuilt from their own source.
           </p>
           <figure class="picture">
