@@ -1,6 +1,6 @@
 {
   "name": "react-launch-video",
-  "description": "Launch videos of React apps, rendered in Remotion from their real components, with scripted quality gates.",
+  "description": "Launch videos of React apps and CLIs, rendered in Remotion from your real components, with scripted quality gates and a review skill. Not for Vue, Svelte, Angular or plain HTML.",
   "owner": {
     "name": "Wing Leung",
     "url": "https://github.com/wingleung/react-launch-video"

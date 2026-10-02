@@ -32,8 +32,7 @@ Remotion is installed per reel and downloads its own headless browser on the fir
 **What it costs.** Remotion is free for individuals, non-profits and companies with up to 3 employees. A for-profit
 company with more than 3 employees needs a
 [Remotion Company License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). The fixture reel below takes
-20 to 30 minutes. A real product takes longer: two reels of a Vite monorepo app took 3 to 4 hours before v1.5.0
-rebuilt the setup step, and the most recent run reached its first rendered frame 18 seconds from a cold start.
+20 to 30 minutes. A real codebase takes longer, mostly in the one-time component split.
 
 | Skill                        | Use it for                                                                     |
 | ---------------------------- | ------------------------------------------------------------------------------ |
@@ -81,12 +80,9 @@ What happens next:
 4. **It runs the gates** and keeps iterating until they pass, reporting which gate still fails if it cannot.
 5. **You get** `reel.mp4` (1920x1080), `storyboard.md` and the frames it reviewed.
 
-A real product takes longer than the fixture, and the time goes into getting it to render rather than into the motion:
-two reels of a Vite monorepo app took **3 to 4 hours** end to end, before v1.5.0 rebuilt the setup step. The most
-recent run, unattended and against a real browser extension, reached a rendered frame **18 seconds** from a cold
-start and produced a reel that passed every gate on the first attempt. Most of a run is unattended, but stay for
-step 2, which is the one that edits your components. Ask for motion blur at the end ("render the final with motion
-blur"). It multiplies render time, so it is not used during iteration.
+A real product takes longer than the fixture, and the time goes into getting it to render rather than into the motion.
+Most of a run is unattended, but stay for step 2, which is the one that edits your components. Ask for motion blur at
+the end ("render the final with motion blur"). It multiplies render time, so it is not used during iteration.
 
 ### What it changes in your repo
 
@@ -95,7 +91,8 @@ blur"). It multiplies render time, so it is not used during iteration.
   props, so it can be rendered frame by frame. The split is mechanical and the skill verifies your typecheck, tests
   and build still pass, but start from a clean git tree so you can read the diff.
 - **It does not** upload or send your product, your reel or your data anywhere. It does download npm packages and
-  Remotion's headless browser. See [SECURITY.md](SECURITY.md).
+  Remotion's headless browser. Remotion itself reports render usage to remotion.pro only when a Remotion license key
+  is configured, which the plugin never does. See [SECURITY.md](SECURITY.md).
 
 ## What it covers
 

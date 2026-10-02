@@ -2,7 +2,7 @@
   "name": "react-launch-video",
   "displayName": "React Launch Video",
   "version": "2.0.0",
-  "description": "Launch videos of React apps, rendered in Remotion from the app's real components, with sourced pacing, scripted quality gates and a review counterpart. CLIs too. Not for Vue, Svelte, Angular or plain HTML.",
+  "description": "Launch videos of React apps and CLIs, rendered in Remotion from your real components, with scripted quality gates and a review skill. Not for Vue, Svelte, Angular or plain HTML.",
   "author": {
     "name": "Wing Leung"
   },
@@ -19,6 +19,9 @@
     "product-demo",
     "react",
     "cli",
-    "claude-code"
+    "claude-code",
+    "promo-video",
+    "product-video",
+    "claude-code-plugin"
   ]
 }

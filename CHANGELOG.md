@@ -41,6 +41,10 @@ below was reproduced first, and each script fix has a regression test.
   run costs up front. `SECURITY.md` and `CODE_OF_CONDUCT.md` link this repository's private reporting form.
 - **Listing.** The marketplace entry no longer overrides `plugin.json`'s description in `/plugin`, and `release-check`
   now asserts that instead of only counting characters.
+- **Directory readiness.** `plugin/README.md` is the listing text the Claude plugin directory requires, and says what
+  the plugin runs, fetches and changes. One description is shared by both manifests, the site and the repository. Line
+  endings are left to Git, since the directory refuses a `.gitattributes` that rewrites file contents, and prettier
+  accepts either ending instead. A 1280x640 card is the repository's social preview and the site's share image.
 - **Site.** Every Copy button has its own name and announces the copy. The timeline's stripes meet 3:1 and each beat
   says where it moves. Phones get a 720p hero reel (616KB instead of 4MB). Pages write access is scoped to the deploy
   job and every action is pinned to a commit.

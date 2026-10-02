@@ -3,8 +3,9 @@
 ## What this plugin does on your machine
 
 It writes a reel package next to your product, installs npm packages into it, runs Remotion (which downloads its own
-headless browser on first use) and runs ffmpeg over the render. It may split your components into display-only views.
-It does not upload, publish or send your product, your reel or your data anywhere.
+headless browser on first use) and runs ffmpeg over the render. It may split your components into display-only views. It
+does not upload, publish or send your product, your reel or your data anywhere. Remotion itself reports render usage to
+remotion.pro only when a Remotion license key is configured, which the plugin never does.
 
 ## Reporting a vulnerability
 
