@@ -308,13 +308,14 @@ Then:
 - **Camera** as focus point plus zoom per keyframe through `smoothPath`, so it never stops at intermediate keys. Push-in
   keys come from `fitCamera(measuredBox, safeArea)`, which fits inside `ACTION_SAFE` by default. Add a small pull back
   before push-ins, and hold the camera perfectly still while text is read (two equal keys): a zoom that keeps creeping
-  through a hold rescales the text every frame and reads as wobble. List every reading window in
-  `READING` in `assets/kit/camera.ts`, one per caption plus the title and end card. The `assertStillWhileReading` call
-  at the foot of that file throws when the camera moves inside one, so the render fails in seconds instead of after an
-  hour. Give each window the `text` it shows and `assertReadingTime` checks the hold against reading time in the same
-  place, which is cheaper than measuring it off a contact sheet later. Keys run strictly forward in time: the kit
-  throws on a key out of order or two keys at one time (a hold is two equal keys at different times), and `fitCamera`
-  throws on a box it cannot fit. Pull back fully before the page under it changes.
+  through a hold rescales the text every frame and reads as wobble. List every reading window in `READING` in
+  `assets/kit/camera.ts`, one per caption plus the title and end card, and one for any key UI text a beat is about (a
+  dialog's label, a result row), since the review skill holds that text to its reading time too. The
+  `assertStillWhileReading` call at the foot of that file throws when the camera moves inside one, so the render fails
+  in seconds instead of after an hour. Give each window the `text` it shows and `assertReadingTime` checks the hold
+  against reading time in the same place, which is cheaper than measuring it off a contact sheet later. Keys run
+  strictly forward in time: the kit throws on a key out of order or two keys at one time (a hold is two equal keys at
+  different times), and `fitCamera` throws on a box it cannot fit. Pull back fully before the page under it changes.
 - **Measure, don't guess**: heights, positions and cursor targets come from the DOM (`offsetHeight`, `boxWithin`) or a
   rendered still.
 - **Spend only the effect budget from the storyboard** (see Restraint above).
