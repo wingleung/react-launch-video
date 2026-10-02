@@ -74,7 +74,7 @@ launch video of the settings page"):
    reviewing frames as it goes.
 4. **It runs the [quality gates](docs/quality-gates.md)** and keeps iterating until they pass, reporting which gate
    still fails if it cannot.
-5. **You get** `reel.mp4` (1920x1080 unless you ask for [another size](docs/other-sizes.md)), `storyboard.md` and the
+5. **You get** `reel.mp4` (1920x1080 unless you ask for [another size](docs/frame-sizes.md)), `storyboard.md` and the
    frames it reviewed. Ask for motion blur at the end ("render the final with motion blur"), it multiplies render time.
 
 It does not upload or send your product, your reel or your data anywhere. It downloads npm packages and Remotion's
@@ -96,14 +96,12 @@ than redrawing your product by hand.
 
 - [Quality gates](docs/quality-gates.md): the six gates, how to read `edge-scan` output and the tools around them
 - [Troubleshooting](docs/troubleshooting.md): a black still, missing styles, fonts, version mismatches
-- [Vertical, square and 4:5 cuts](docs/other-sizes.md): another frame size for stories and social posts
+- [Frame sizes](docs/frame-sizes.md): landscape 1920x1080 by default, plus vertical, square and 4:5 cuts
 - The skills themselves: [create](plugin/skills/create/SKILL.md) and [review](plugin/skills/review/SKILL.md), with the
   create skill's references on [pacing](plugin/skills/create/references/pacing.md),
   [the storyboard](plugin/skills/create/references/storyboard.md),
   [what to change in the kit](plugin/skills/create/references/customise.md) and
   [techniques and pitfalls](plugin/skills/create/references/techniques.md)
-- For AI assistants: [llms.txt](https://wingleung.github.io/react-launch-video/llms.txt) indexes all of it, and
-  [llms-full.txt](https://wingleung.github.io/react-launch-video/llms-full.txt) is the whole set in one file
 
 ## Updating and removing
 

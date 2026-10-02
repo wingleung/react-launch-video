@@ -17,7 +17,7 @@ The runner refuses to start on a reel that was never really finished, an unedite
 placeholder colours, which takes milliseconds instead of failing after a twenty minute render. It runs
 `easing-inventory`, `claims`, `fonts` and `lightness` with `--strict`, so a package with no motion call, no claim, no
 loaded font or a product it cannot find in the frame fails instead of passing with nothing to check. For a cut that is
-not 16:9, pass `--width` and `--height` to `gates.mjs` (see [Other sizes](other-sizes.md)).
+not 16:9, pass `--width` and `--height` to `gates.mjs` (see [Frame sizes](frame-sizes.md)).
 
 ## Reading edge-scan output
 

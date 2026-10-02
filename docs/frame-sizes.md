@@ -1,7 +1,8 @@
-# Vertical, square and 4:5 cuts
+# Frame sizes
 
-How to make a reel in another frame size: a 1080x1920 vertical story, a 1080x1350 (4:5) post or a 1080x1080 square.
-Reels render at 1920x1080 by default. Ask for another size in plain words and the create skill makes these changes:
+Reels render landscape at 1920x1080 (16:9) by default, the size for a product page, a launch post or a video site.
+For a 1080x1920 vertical story, a 1080x1350 (4:5) post or a 1080x1080 square, ask for the size in plain words, in a new
+reel or as a second cut of one you have, and the create skill makes these changes:
 
 ```
 /react-launch-video:create a 4:5 cut of the same reel for LinkedIn, at 1080x1350

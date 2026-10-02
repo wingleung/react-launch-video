@@ -84,7 +84,7 @@ export const references = Object.entries(referenceFiles).map(([key, text]) => do
 
 // The guides in reading order. A new page in docs/ fails the build until it is placed here, so the order agents read
 // them in is always a choice.
-const GUIDE_ORDER = ["docs/quality-gates.md", "docs/troubleshooting.md", "docs/other-sizes.md"];
+const GUIDE_ORDER = ["docs/quality-gates.md", "docs/troubleshooting.md", "docs/frame-sizes.md"];
 export const guides = Object.entries(guideFiles).map(([key, text]) => doc(repoPath(key), text));
 for (const guide of guides) {
   if (!GUIDE_ORDER.includes(guide.path)) throw new Error(`${guide.path} is not in GUIDE_ORDER in site/src/lib/repo.ts`);
