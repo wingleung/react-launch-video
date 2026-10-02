@@ -76,6 +76,9 @@ export function Cursor({
         transform: `scale(${press})`,
         transformOrigin: "3px 2px",
         filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))",
+        // Its own compositing layer. Without it Chrome re-rasterises the shadow inside the product's tiles, and the
+        // result depended on which frame a parallel render tab had drawn before: two renders differed by up to 4 levels.
+        willChange: "transform",
       }}
     >
       <path
