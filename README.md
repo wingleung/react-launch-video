@@ -23,23 +23,23 @@ In Claude Code:
 /plugin install react-launch-video@react-launch-video
 ```
 
-That is `plugin@marketplace`, and both are called `react-launch-video`.
-
-You also need **Node.js 22.18 or later** and **ffmpeg** on your PATH. Ask Claude to run the doctor
-(`/react-launch-video:create run the doctor`) and it prints the install command for your OS when something is missing.
-Remotion is installed per reel and downloads its own headless browser on the first render, so the first one is slower.
+That is `plugin@marketplace`, and both are called `react-launch-video`. You also need **Node.js 22.18 or later** and
+**ffmpeg** on your PATH. Ask Claude to run the doctor (`/react-launch-video:create run the doctor`) and it prints the
+install command for your OS when something is missing.
 
 **What it costs.** Remotion is free for individuals, non-profits and companies with up to 3 employees. A for-profit
 company with more than 3 employees needs a
-[Remotion Company License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). The fixture reel below takes
-20 to 30 minutes. A real codebase takes longer, mostly in the one-time component split.
+[Remotion Company License](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md). The fixture reel above takes
+20 to 30 minutes. Expect a few hours the first time on a real codebase, mostly the one-time component split, and most
+of it unattended.
 
-| Skill                        | Use it for                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `/react-launch-video:create` | Plan, build, render and verify a reel of your app or CLI                       |
-| `/react-launch-video:review` | Review an existing reel or Remotion project and get ranked findings with fixes |
+| Skill                        | Use it for                                                                                                                                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/react-launch-video:create` | Plan, build, render and verify a reel of your app or CLI                                                                                                                                     |
+| `/react-launch-video:review` | Review a reel you already have, a Remotion project or a bare MP4. Findings come ranked by severity with a fix each, and anything it cannot check from frames alone is listed as not verified |
 
-Claude also picks them up on its own when you ask for a promo video, launch reel or feature teaser.
+Claude also picks them up on its own when you ask for a promo video, launch reel or feature teaser. To review a video,
+ask `/react-launch-video:review the video in ./promo.mp4 and tell me what to fix`.
 
 ## Try it before you point it at your product
 
@@ -56,109 +56,54 @@ Then, in Claude Code from that directory:
 /react-launch-video:create a launch video of the Relay inbox and the settings dialog, in evals/fixtures/relay-web
 ```
 
-That takes **20 to 30 minutes**, most of it unattended. It is the cheapest way to decide whether the output is worth
-the longer first run on a real codebase.
-
 ## Using it on your product
 
-Open Claude Code in your product's repo and ask for what you want:
+Open Claude Code in your product's repo and ask for what you want, in a slash command or plain English ("make me a
+launch video of the settings page"):
 
 ```
 /react-launch-video:create a 20 second launch video of our issue inbox and the command palette
 ```
 
-Plain English works too ("make me a launch video of the settings page").
-
-What happens next:
-
 1. **It reads your product** and asks what the reel should say, then writes a storyboard: beats, timings, easings,
    which data is real and which is a placeholder. Read that storyboard, it is where changes are cheap.
 2. **It makes your components renderable**: where a page fetches its own data, it splits it into a display-only view
-   that takes its state as props, and checks your typecheck, tests and build before and after.
-3. **It builds a reel package** next to your product (`reel/` by default) and renders drafts, reviewing frames as it
-   goes.
-4. **It runs the gates** and keeps iterating until they pass, reporting which gate still fails if it cannot.
-5. **You get** `reel.mp4` (1920x1080), `storyboard.md` and the frames it reviewed.
+   that takes its state as props, and checks your typecheck, tests and build before and after. Stay for this step,
+   and start from a clean git tree so you can read the diff.
+3. **It builds a reel package** next to your product (`reel/` by default, Remotion pinned) and renders drafts,
+   reviewing frames as it goes.
+4. **It runs the [quality gates](docs/quality-gates.md)** and keeps iterating until they pass, reporting which gate
+   still fails if it cannot.
+5. **You get** `reel.mp4` (1920x1080 unless you ask for [another size](docs/other-sizes.md)), `storyboard.md` and the
+   frames it reviewed. Ask for motion blur at the end ("render the final with motion blur"), it multiplies render time.
 
-A real product takes longer than the fixture, and the time goes into getting it to render rather than into the motion.
-Most of a run is unattended, but stay for step 2, which is the one that edits your components. Ask for motion blur at
-the end ("render the final with motion blur"). It multiplies render time, so it is not used during iteration.
-
-### What it changes in your repo
-
-- **It adds** a reel package (its own `package.json` and `node_modules`, Remotion pinned).
-- **It may edit your components**: a page usually has to be split into a display-only view that takes its state as
-  props, so it can be rendered frame by frame. The split is mechanical and the skill verifies your typecheck, tests
-  and build still pass, but start from a clean git tree so you can read the diff.
-- **It does not** upload or send your product, your reel or your data anywhere. It does download npm packages and
-  Remotion's headless browser. Remotion itself reports render usage to remotion.pro only when a Remotion license key
-  is configured, which the plugin never does. See [SECURITY.md](SECURITY.md).
+It does not upload or send your product, your reel or your data anywhere. It downloads npm packages and Remotion's
+headless browser. Remotion itself reports render usage to remotion.pro only when a Remotion license key is configured,
+which the plugin never does. See [SECURITY.md](SECURITY.md).
 
 ## What it covers
 
-- **React web apps.** The reel imports your real components, split into display-only views, and renders them frame by
-  frame. What ships is what the video shows.
+- **React web apps.** The reel imports your real components and renders them frame by frame, so what ships is what the
+  video shows. Next.js works for client components (`"use client"`), not server components, and Gatsby does not work.
+  [What renders, and what does not](plugin/skills/create/references/frameworks.md) has the full table.
 - **CLIs.** The terminal session is recreated from the CLI's own source: its strings, colours and prompts, traced
   through the code path that actually runs.
 
 Other stacks (Vue, Svelte, Angular, plain HTML, native apps) are out of scope. The skill says so and stops, rather
 than redrawing your product by hand.
 
-## What you get in a reel
+## Documentation
 
-- A title card that recedes as the product rises in front of it, numbered feature captions and an end card, all held
-  for their reading time (characters ÷ 17 + 0.5s, measured from fully settled).
-- A camera that pushes in on what matters, computed from measured bounds, and holds perfectly still while text is read.
-- Frame-perfect determinism: no CSS transitions, clocks or randomness leaking into the render.
-- Optional band-free motion blur for the final render.
-
-Every rule is sourced in the create skill's `references/pacing.md`.
-
-## Quality gates
-
-These run on every render, and a failing one means another pass rather than a caveat in the report. The skill runs all
-six through a single `gates.mjs` command, so a round of iteration is one invocation rather than six.
-
-| Gate                   | Fails when                                                                                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `check-video.mjs`      | wrong resolution or length, no fade from or to black, an empty stage mid-reel                                                                                |
-| `edge-scan.mjs`        | a border rests inside the action-safe margin, or content runs off the frame                                                                                  |
-| `easing-inventory.mjs` | an animated value does not have the easing the storyboard says it has                                                                                        |
-| `claims.mjs`           | a number a comment or a doc states about the timing is not what the code does                                                                                |
-| `fonts.mjs`            | a font comes from a machine's font folder or the network (`@remotion/google-fonts` included), or a family named in CSS or a JSX `fontFamily` is never loaded |
-| `lightness.mjs`        | the product's lightness is not what the kit was told, so the outro is mistuned                                                                               |
-
-The runner also refuses to start on a reel that was never really finished, an unedited storyboard template or the
-kit's own placeholder colours, which takes milliseconds instead of failing after a twenty minute render. It runs
-`easing-inventory`, `claims`, `fonts` and `lightness` with `--strict`, so a package with no motion call, no claim, no
-loaded font or a product it cannot find in the frame fails instead of passing with nothing to check.
-
-These are tools rather than gates, and pass or fail nothing:
-
-| Tool                     | In skill | Does                                                                                 |
-| ------------------------ | -------- | ------------------------------------------------------------------------------------ |
-| `contact-sheet.mjs`      | `create` | builds the frame sheets and crops the review is done on                              |
-| `doctor.mjs`             | `create` | checks this machine has Node and ffmpeg with the right filters                       |
-| `render-motion-blur.mjs` | `create` | renders the final with band-free motion blur                                         |
-| `add-music.mjs`          | `create` | adds a music track without re-encoding the video, padding a short track with silence |
-| `reading-time.mjs`       | `review` | works out how long a piece of on-screen text has to be held                          |
-
-The kit adds two more that run when the composition loads, so a render fails in seconds instead of after an hour:
-`assertStillWhileReading` throws when the camera moves while text is being read, and `assertReadingTime` throws when
-a caption is held for less time than it takes to read.
-
-## Troubleshooting
-
-| Symptom                                      | Cause and fix                                                                                                                                                          |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The doctor reports a missing tool            | Install it with the command it prints, then open a new terminal so the PATH is picked up                                                                               |
-| Motion blur render fails on a missing filter | Remotion's bundled ffmpeg has no `tmix`. Install a system ffmpeg and make sure it is first on the PATH                                                                 |
-| Styles missing in the render                 | Utility CSS (Tailwind, UnoCSS) has to be generated over the reel and your components before each render, see the skill's step 4                                        |
-| Icons or colours missing, nothing else       | A class name assembled at runtime is invisible to the utility-CSS scanner. Write the full name as a literal                                                            |
-| The product picks its widest layout          | A media query measures the composition, not the window drawn around the product. Override the breakpoint in the reel's CSS                                             |
-| Text renders in a fallback font              | Fonts must be loaded through `@remotion/fonts` from your product or a licensed package, not a stylesheet link                                                          |
-| Frames differ between renders                | Something is not derived from the frame: a clock, `Math.random`, a CSS transition or an async effect. The storyboard's determinism table lists how each is neutralised |
-| A gate fails and the reel looks fine         | Read the gate's output before overriding it. It reports times, so crop those frames and look at full resolution                                                        |
+- [Quality gates](docs/quality-gates.md): the six gates, how to read `edge-scan` output and the tools around them
+- [Troubleshooting](docs/troubleshooting.md): a black still, missing styles, fonts, version mismatches
+- [Vertical, square and 4:5 cuts](docs/other-sizes.md): another frame size for stories and social posts
+- The skills themselves: [create](plugin/skills/create/SKILL.md) and [review](plugin/skills/review/SKILL.md), with the
+  create skill's references on [pacing](plugin/skills/create/references/pacing.md),
+  [the storyboard](plugin/skills/create/references/storyboard.md),
+  [what to change in the kit](plugin/skills/create/references/customise.md) and
+  [techniques and pitfalls](plugin/skills/create/references/techniques.md)
+- For AI assistants: [llms.txt](https://wingleung.github.io/react-launch-video/llms.txt) indexes all of it, and
+  [llms-full.txt](https://wingleung.github.io/react-launch-video/llms-full.txt) is the whole set in one file
 
 ## Updating and removing
 
@@ -167,29 +112,21 @@ a caption is held for less time than it takes to read.
 /plugin uninstall react-launch-video
 ```
 
-Installed copies only update when the version in `plugin/.claude-plugin/plugin.json` changes. See
-[CHANGELOG.md](CHANGELOG.md) for what moved.
+Restart Claude Code after an update to apply it. Installed copies only update when the version in
+`plugin/.claude-plugin/plugin.json` changes, see [CHANGELOG.md](CHANGELOG.md). Uninstalling leaves the
+`react-launch-video` marketplace in place (`/plugin marketplace remove react-launch-video` removes it) and leaves any
+`reel/` package it built in your product, which is yours to keep or delete.
 
 ## Licensing
 
 This plugin is MIT licensed (see [LICENSE](LICENSE)). It is an independent project, not affiliated with or endorsed by
-Remotion or the React project. Remotion and React are trademarks of their owners.
-
-**Remotion has its own licence.** It is free for individuals, non-profits and for-profit organisations with up to 3
-employees. A for-profit company with more than 3 employees needs a Remotion Company License. Read the terms in
-[Remotion's LICENSE.md](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md) before using this at work. The
-plugin states this before it installs anything.
-
-Fonts in a reel must come from your product or a licensed package such as `@fontsource`, never copied out of your
-system font folder or another app. The skill enforces this.
-
-## Evals
-
-`evals/` holds three test cases and the fixtures they run against: a small React app, a small CLI and a deliberately
-flawed reel for the review skill. See `evals/README.md` for how to run them with and without the plugin.
+Remotion or the React project. Remotion and React are trademarks of their owners. The plugin states Remotion's licence
+terms before it installs anything. Fonts in a reel must come from your product or a licensed package such as
+`@fontsource`, never copied out of your system font folder or another app, and the skill enforces this.
 
 ## Contributing
 
 Issues and pull requests are welcome. Keep changes to the method sourced (a reference, a measurement or a rendered
-before and after) and run the gate scripts on any change to the kit. Start with
-[CONTRIBUTING.md](CONTRIBUTING.md), and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies here.
+before and after) and run `./scripts/check.sh`. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies here. [evals/README.md](evals/README.md) covers the test cases and
+fixtures.
