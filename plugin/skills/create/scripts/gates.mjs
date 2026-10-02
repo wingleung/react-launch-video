@@ -10,7 +10,7 @@
 //
 // It also refuses to pass a reel that has not really been made yet. Four of the gates can be satisfied by doing less
 // work rather than more: write no claims and the claim gate passes, load no font and the font gate only warns, copy
-// no motion and the easing gate has nothing to check. The runner calls those three with --strict, which makes each
+// no motion and the easing gate has nothing to check. The runner calls those four with --strict, which makes each
 // absence a failure, and a preflight catches the untouched kit before any of them run, since failing in a second
 // beats failing after a twenty minute render.
 //
